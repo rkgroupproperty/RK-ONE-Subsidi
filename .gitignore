@@ -42,3 +42,6 @@ yarn-error.log
 /public/assets/SP3K/
 /public/config_media/
 /public/document_templates/
+
+# Agent config - jangan di-track git
+AGENTS.md

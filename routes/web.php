@@ -123,6 +123,9 @@ Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar'
 
 Route::middleware(['auth'])->group(function () {
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
+    Route::get('admin/beranda/chart-data', [BerandaController::class, 'getChartData'])->name('beranda.chart-data');
+    Route::get('admin/detail-grafik-penjualan-bulanan', [BerandaController::class, 'detailGrafik'])->name('beranda.detail-grafik');
+    Route::get('admin/detail-grafik-penjualan-bulanan/data', [BerandaController::class, 'detailGrafikData'])->name('beranda.detail-grafik.data');
 
     Route::prefix('admin')->controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard.index');

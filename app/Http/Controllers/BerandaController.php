@@ -18,6 +18,7 @@ use App\Models\WawancaraSp3k;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
 
 class BerandaController extends Controller
 {
@@ -122,6 +123,14 @@ class BerandaController extends Controller
             ->sortByDesc('jumlah')
             ->values();
 
+        $availableYears = Customer::whereNotNull('tanggal_verif')
+            ->selectRaw('YEAR(tanggal_verif) as tahun')
+            ->distinct()
+            ->orderByDesc('tahun')
+            ->pluck('tahun');
+
+        $currentYear = Carbon::now('Asia/Jakarta')->year;
+
         return view('admin.beranda.index', compact(
             'username',
             'pipelineCounts',
@@ -129,7 +138,128 @@ class BerandaController extends Controller
             'projectStats',
             'projectTotals',
             'marketingStats',
-            'bankStats'
+            'bankStats',
+            'availableYears',
+            'currentYear'
         ));
+    }
+
+    public function getChartData(Request $request)
+    {
+        $tahun = $request->input('tahun', Carbon::now('Asia/Jakarta')->year);
+        $status = $request->input('status', 'semua');
+
+        $months = collect(range(1, 12))->map(function ($month) use ($tahun, $status) {
+            $monthName = Carbon::create($tahun, $month, 1)->translatedFormat('M');
+
+            $query = Customer::whereYear('tanggal_verif', $tahun)
+                ->whereMonth('tanggal_verif', $month)
+                ->where('stt_arsip', 0);
+
+            if ($status !== 'semua') {
+                $statusMap = [
+                    'wawancara' => 7,
+                    'sp3k' => 4,
+                    'akad' => 3,
+                ];
+                $query->where('id_status_progres', $statusMap[$status] ?? 0);
+            }
+
+            $count = $query->count();
+
+            return [
+                'month' => $monthName,
+                'count' => $count,
+            ];
+        });
+
+        return response()->json([
+            'labels' => $months->pluck('month')->toArray(),
+            'data' => $months->pluck('count')->toArray(),
+        ]);
+    }
+
+    public function detailGrafik(Request $request)
+    {
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
+        $status = $request->input('status', 'semua');
+
+        $statusMap = [
+            'wawancara' => 7,
+            'sp3k' => 4,
+            'akad' => 3,
+        ];
+
+        $namaBulan = Carbon::create($tahun, $bulan, 1)->translatedFormat('F');
+        $namaStatus = $status === 'semua' ? 'Semua Status' : ucfirst($status);
+
+        $judul = "Data Penjualan Bulan $namaBulan Tahun $tahun Status $namaStatus";
+
+        return view('admin.beranda.detail_grafik', compact('judul', 'tahun', 'bulan', 'status', 'statusMap'));
+    }
+
+    public function detailGrafikData(Request $request)
+    {
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
+        $status = $request->input('status', 'semua');
+
+        $data = Customer::with(['marketing', 'lokasi', 'kavling', 'progres'])
+            ->where('stt_arsip', 0)
+            ->whereYear('tanggal_verif', $tahun)
+            ->whereMonth('tanggal_verif', $bulan);
+
+        if ($status !== 'semua') {
+            $statusMap = [
+                'wawancara' => 7,
+                'sp3k' => 4,
+                'akad' => 3,
+            ];
+            $data->where('id_status_progres', $statusMap[$status] ?? 0);
+        }
+
+        return DataTables::of($data)
+            ->addIndexColumn()
+            ->editColumn('tgl_terima', function ($row) {
+                $tgl = $row->tanggal_verif ? Carbon::parse($row->tanggal_verif)->translatedFormat('d F Y') : '-';
+                $kode = $row->kode_customer ? '<strong>' . $row->kode_customer . '</strong>' : '';
+                $jenisPembelian = $row->jenis_pembelian
+                    ? '<div><small><strong>' . strtoupper($row->jenis_pembelian) . '</strong></small></div>'
+                    : '';
+                return "$tgl<br>$kode<br>$jenisPembelian";
+            })
+            ->editColumn('id_marketing', function ($row) {
+                return $row->marketing->nama_marketing ?? '-';
+            })
+            ->editColumn('id_lokasi', function ($row) {
+                $namaLokasi = $row->lokasi->nama_kavling ?? '-';
+                $kodeKavling = $row->kavling->kode_kavling ?? '-';
+                return '<strong>' . $namaLokasi . '</strong><br> ' . $kodeKavling;
+            })
+            ->editColumn('id_status_progres', function ($row) {
+                $status = $row->progres->status_progres ?? '-';
+                $badgeColors = [
+                    'BOOKING FEE' => 'warning',
+                    'WAWANCARA' => 'secondary',
+                    'SP3K' => 'success',
+                    'AKAD' => 'info',
+                    'SERAH TERIMA' => 'dark',
+                ];
+                if (array_key_exists($status, $badgeColors)) {
+                    $statusDisplay = '<span class="badge bg-' . $badgeColors[$status] . '">' . $status . '</span>';
+                } else {
+                    $statusDisplay = $status;
+                }
+                return $statusDisplay;
+            })
+            ->editColumn('nama_lengkap', function ($row) {
+                $nama = '<strong>' . $row->nama_lengkap . '</strong>';
+                $wa = $row->no_telp ?? '-';
+                $ktp = $row->nik ? '<span class="badge bg-info">NIK: ' . $row->nik . '</span>' : '';
+                return "$nama<br>$wa<br>$ktp";
+            })
+            ->rawColumns(['tgl_terima', 'id_marketing', 'id_lokasi', 'id_status_progres', 'nama_lengkap'])
+            ->make(true);
     }
 }

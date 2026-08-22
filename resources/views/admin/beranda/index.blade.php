@@ -356,12 +356,13 @@
 
     .bottom-grid {
       display: grid;
-      grid-template-columns: 1.15fr .95fr 1.05fr;
+      grid-template-columns: 1.5fr 1fr 1fr;
       gap: 16px;
     }
 
     .chart-box {
-      height: 270px;
+      height: 300px;
+      position: relative;
     }
 
     .bar-chart {
@@ -725,30 +726,34 @@
           </div>
         </div>
       </section>
-      <section class="bottom-grid">
+      <section class="bottom-grid" style="grid-template-columns: 1fr 1fr">
         <article class="panel">
           <div class="panel-body">
             <div class="section-head">
               <h2>Grafik Penjualan Bulanan <span>(Semua Project)</span></h2>
-              <button class="filter-btn">Tahun 2026 <i class="fa-solid fa-chevron-down"></i></button>
+              <div style="display:flex;gap:10px;align-items:center">
+                <div>
+                  <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Tahun</label>
+                  <select id="filterTahun" class="form-control" style="width:120px">
+                    @foreach($availableYears as $year)
+                      <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>{{ $year }}</option>
+                    @endforeach
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Status</label>
+                  <select id="filterStatus" class="form-control" style="width:150px">
+                    <option value="semua" selected>Semua</option>
+                    <option value="wawancara">Wawancara</option>
+                    <option value="sp3k">SP3K</option>
+                    <option value="akad">Akad</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div class="chart-box">
-              <div class="bar-chart">
-                <div class="bar-group"><div class="bar target" style="height:42%"></div><div class="bar actual" style="height:34%"></div><span class="bar-label">Jan</span></div>
-                <div class="bar-group"><div class="bar target" style="height:51%"></div><div class="bar actual" style="height:47%"></div><span class="bar-label">Feb</span></div>
-                <div class="bar-group"><div class="bar target" style="height:62%"></div><div class="bar actual" style="height:68%"></div><span class="bar-label">Mar</span></div>
-                <div class="bar-group"><div class="bar target" style="height:58%"></div><div class="bar actual" style="height:63%"></div><span class="bar-label">Apr</span></div>
-                <div class="bar-group"><div class="bar target" style="height:70%"></div><div class="bar actual" style="height:68%"></div><span class="bar-label">Mei</span></div>
-                <div class="bar-group"><div class="bar target" style="height:82%"></div><div class="bar actual" style="height:53%"></div><span class="bar-label">Jun</span></div>
-                <div class="bar-group"><div class="bar target" style="height:54%"></div><div class="bar actual" style="height:50%"></div><span class="bar-label">Jul</span></div>
-                <div class="bar-group"><div class="bar target" style="height:72%"></div><div class="bar actual" style="height:41%"></div><span class="bar-label">Agu</span></div>
-                <div class="bar-group"><div class="bar target" style="height:45%"></div><div class="bar actual" style="height:31%"></div><span class="bar-label">Sep</span></div>
-                <div class="bar-group"><div class="bar target" style="height:83%"></div><div class="bar actual" style="height:50%"></div><span class="bar-label">Okt</span></div>
-                <div class="bar-group"><div class="bar target" style="height:65%"></div><div class="bar actual" style="height:45%"></div><span class="bar-label">Nov</span></div>
-                <div class="bar-group"><div class="bar target" style="height:55%"></div><div class="bar actual" style="height:39%"></div><span class="bar-label">Des</span></div>
-              </div>
-              <div class="legend"><span><i style="background:#ddd6fe"></i>Target</span><span><i style="background:#5b2cff"></i>Realisasi</span></div>
+              <canvas id="salesChart"></canvas>
             </div>
           </div>
         </article>
@@ -776,12 +781,14 @@
             </div>
           </div>
         </article>
+      </section>
 
+      <section class="bottom-grid" style="grid-template-columns: 1fr 1fr; margin-top:16px">
         <article class="panel">
           <div class="panel-body">
             <div class="section-head"><h2>Statistik Penggunaan Bank</h2></div>
 
-            <div class="bank-list">
+            <div class="bank-list" style="max-height:250px">
               @forelse ($bankStats as $index => $bank)
                 <div class="bank-item">
                   <span class="rank">{{ $index + 1 }}</span>
@@ -804,6 +811,103 @@
   </main>
 
     </div>
+
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        let salesChart;
+        const labelsBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        function initChart(data) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            if (salesChart) salesChart.destroy();
+
+            salesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labelsBulan,
+                    datasets: [{
+                        label: 'Penjualan',
+                        data: data,
+                        backgroundColor: 'rgba(91, 44, 255, 0.7)',
+                        borderColor: 'rgba(91, 44, 255, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: function(evt, elements) {
+                        if (elements.length > 0) {
+                            var index = elements[0].index;
+                            var bulan = index + 1;
+                            var tahun = $('#filterTahun').val();
+                            var status = $('#filterStatus').val();
+                            var url = '{{ route("beranda.detail-grafik") }}?tahun=' + tahun + '&bulan=' + bulan + '&status=' + status;
+                            window.open(url, '_blank');
+                        }
+                    },
+                    onHover: function(evt, elements) {
+                        evt.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.parsed.y + ' unit';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, precision: 0 },
+                            grid: { color: '#f0f1f4' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadChartData() {
+            const tahun = $('#filterTahun').val();
+            const status = $('#filterStatus').val();
+
+            $.ajax({
+                url: '{{ route("beranda.chart-data") }}',
+                type: 'GET',
+                data: { tahun: tahun, status: status },
+                success: function(response) {
+                    initChart(response.data);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            $('#filterTahun').select2({
+                theme: "bootstrap4",
+                minimumResultsForSearch: Infinity,
+            });
+            $('#filterStatus').select2({
+                theme: "bootstrap4",
+                minimumResultsForSearch: Infinity,
+            });
+
+            loadChartData();
+
+            $('#filterTahun, #filterStatus').on('change', function() {
+                loadChartData();
+            });
+        });
+    </script>
+    @endpush
 @endsection
 
 
