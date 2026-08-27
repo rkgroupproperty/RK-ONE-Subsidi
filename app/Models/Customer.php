@@ -40,6 +40,7 @@ class Customer extends Model
         'pekerjaan',
         'id_marketing',
         'jenis_pembelian',
+        'sumber_prospek',
         'an_surat_cash',
         'termin_x_cash_b',
         'stt_arsip',

@@ -260,6 +260,7 @@ class PengajuanHoldController extends Controller
             'booking_fee'      => 'required|gt:0',
             'jenis_perumahan'  => 'required',
             'jenis_pembelian'  => 'required',
+            'sumber_prospek'   => 'required',
         ], [
             'nama_lengkap.required'     => 'Nama lengkap wajib diisi.',
             'nik.required'              => 'NIK wajib diisi.',
@@ -279,6 +280,7 @@ class PengajuanHoldController extends Controller
             'booking_fee.gt'            => 'Booking fee harus lebih dari 0.',
             'jenis_perumahan.required'  => 'Jenis Perumahan wajib dipilih.',
             'jenis_pembelian.required'  => 'Jenis Pembelian wajib dipilih.',
+            'sumber_prospek.required'   => 'Sumber Prospek wajib dipilih.',
         ]);
 
         DB::beginTransaction();
@@ -310,6 +312,7 @@ class PengajuanHoldController extends Controller
                 'id_marketing'      => $request->id_marketing,
                 'jenis_perumahan'   => $request->jenis_perumahan,
                 'jenis_pembelian'   => $request->jenis_pembelian,
+                'sumber_prospek'    => $request->sumber_prospek,
             ];
 
             if ($user->role == 2) {
@@ -475,7 +478,10 @@ class PengajuanHoldController extends Controller
     public function getKavling($id)
     {
         $kavling = KavlingPeta::where('id_lokasi', $id)
-            ->where('status', 0)
+            ->where(function ($query) {
+                $query->where('status', 0)
+                    ->orWhereNull('status');
+            })
             ->get(['id', 'kode_kavling']);
 
         return response()->json($kavling);
@@ -560,12 +566,13 @@ class PengajuanHoldController extends Controller
             'booking_fee'      => 'required|gt:0',
             'jenis_perumahan'  => 'required',
             'jenis_pembelian'  => 'required',
+            'sumber_prospek'   => 'required',
             'foto_ktp'         => 'required|mimes:jpg,jpeg,png|max:2048',
             'foto_npwp'        => 'nullable|mimes:jpg,jpeg,png|max:2048',
             'foto_kk'          => 'nullable|mimes:jpg,jpeg,png|max:2048',
             'foto_bpjs'        => 'nullable|mimes:jpg,jpeg,png|max:2048',
             'foto_ktp_p'       => 'nullable|mimes:jpg,jpeg,png|max:2048',
-            'file_bukti'       => 'nullable|mimes:jpg,jpeg,png|max:2048',
+            'file_bukti'       => 'required|mimes:jpg,jpeg,png|max:2048',
             'file_sppr'        => 'nullable|mimes:jpg,jpeg,png|max:2048',
             'foto_pemohon'     => 'nullable|mimes:jpg,jpeg,png|max:2048',
         ], [
@@ -590,6 +597,7 @@ class PengajuanHoldController extends Controller
             'booking_fee.gt'            => 'Booking fee harus lebih dari 0.',
             'jenis_perumahan.required'  => 'Jenis Perumahan wajib dipilih.',
             'jenis_pembelian.required'  => 'Jenis Pembelian wajib dipilih.',
+            'sumber_prospek.required'   => 'Sumber Prospek wajib dipilih.',
             'foto_ktp.required'         => 'Foto KTP wajib diunggah.',
             'foto_ktp.mimes'            => 'Foto KTP harus berformat JPG atau PNG.',
             'foto_ktp.max'              => 'Foto KTP maksimal 2 MB.',
@@ -601,8 +609,11 @@ class PengajuanHoldController extends Controller
             'foto_bpjs.max'             => 'Foto BPJS maksimal 2 MB.',
             'foto_ktp_p.mimes'          => 'Foto KTP pasangan harus berformat JPG atau PNG.',
             'foto_ktp_p.max'            => 'Foto KTP pasangan maksimal 2 MB.',
-            'file_sppr.mimes'           => 'File SPPR harus berformat JPG atau PNG.',
-            'file_sppr.max'             => 'File SPPR maksimal 2 MB.',
+            'file_bukti.required'       => 'Bukti transfer wajib diunggah.',
+            'file_bukti.mimes'          => 'Bukti transfer harus berformat JPG atau PNG.',
+            'file_bukti.max'            => 'Bukti transfer maksimal 2 MB.',
+            'file_sppr.mimes'           => 'Bukti Proses Admin harus berformat JPG atau PNG.',
+            'file_sppr.max'             => 'Bukti Proses Admin maksimal 2 MB.',
             'foto_pemohon.mimes'        => 'Foto pemohon harus berformat JPG atau PNG.',
             'foto_pemohon.max'          => 'Foto pemohon maksimal 2 MB.',
         ]);
@@ -669,6 +680,7 @@ class PengajuanHoldController extends Controller
                 'id_marketing'      => $request->id_marketing ?? 0,
                 'jenis_perumahan'   => $request->jenis_perumahan ?? '',
                 'jenis_pembelian'   => $request->jenis_pembelian ?? '',
+                'sumber_prospek'    => $request->sumber_prospek ?? '',
                 'foto_ktp'          => $fileNames['foto_ktp'] ?? null,
                 'foto_npwp'         => $fileNames['foto_npwp'] ?? null,
                 'foto_kk'           => $fileNames['foto_kk'] ?? null,
@@ -828,6 +840,7 @@ class PengajuanHoldController extends Controller
             'no_telp_saudara'   => $data->no_telp_saudara,
             'jenis_perumahan'   => $data->jenis_perumahan,
             'jenis_pembelian'   => $data->jenis_pembelian,
+            'sumber_prospek'    => $data->sumber_prospek,
             'id_marketing'      => $data->id_marketing,
             'no_telp'           => $data->no_telp,
             'email'             => $data->email,

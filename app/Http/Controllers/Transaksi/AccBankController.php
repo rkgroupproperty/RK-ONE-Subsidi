@@ -87,8 +87,8 @@ class AccBankController extends Controller
                     return '-';
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
-                    $editUrl   = route('acc-bank.show', $row->id_wawancara);
-                    $deleteUrl = route('acc-bank.destroy', $row->id);
+                    $editUrl   = route('sp3k.show', $row->id_wawancara);
+                    $deleteUrl = route('sp3k.destroy', $row->id);
 
                     $btn = '<div class="d-flex justify-content-center">';
                     if ($permissions['edit']) {
@@ -178,7 +178,7 @@ class AccBankController extends Controller
 
             $data->delete();
 
-            $this->logDelete('Wawancara ACC BANK', $data->id);
+            $this->logDelete('Proses Bank SP3K', $data->id);
 
             DB::commit();
 

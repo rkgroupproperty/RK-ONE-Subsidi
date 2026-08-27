@@ -13,12 +13,12 @@
                         <div class="card">
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
-                                    <h3 class="font-weight-bold text-lg">Data SPPR</h3>
+                                    <h3 class="font-weight-bold text-lg">Data Proses Admin</h3>
                                     <div class="d-flex align-items-center">
                                         @if ($permissions['tambah'])
                                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                                 data-target="#modalForm">
-                                                <i class="fas fa-plus"></i> Tambah SPPR
+                                                <i class="fas fa-plus"></i> Tambah Proses Admin
                                             </button>
                                         @endif
                                     </div>
@@ -74,7 +74,7 @@
 
                             <hr>
                             <div class="form-group row">
-                                <label for="no_sppr" class="col-sm-3 col-form-label">No. SPPR</label>
+                                <label for="no_sppr" class="col-sm-3 col-form-label">No. Proses Admin</label>
                                 <div class="col-sm-8">
                                     <input type="text" name="no_sppr" id="no_sppr" class="form-control" readonly>
                                 </div>
@@ -397,7 +397,7 @@
 @push('scripts')
     <script>
         $(document).on('click', '[data-target="#modalForm"]', function() {
-            $('#modalFormLabel').text('Tambah SPPR');
+            $('#modalFormLabel').text('Tambah Proses Admin');
             $('#id_customer').val('').trigger('change').prop('disabled', false);
             $('#no_sppr').val(nextNoSppr);
         });
@@ -427,7 +427,7 @@
                 serverSide: false,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('sppr.index') }}",
+                ajax: "{{ route('proses-admin.index') }}",
                 columns: [{
                     data: 'DT_RowIndex',
                     name: 'DT_RowIndex',
@@ -480,7 +480,7 @@
                 return;
             }
 
-            const url = '{{ route('sppr.get-customer-detail', ':id') }}'.replace(':id', id);
+            const url = '{{ route('proses-admin.get-customer-detail', ':id') }}'.replace(':id', id);
             $.get(url, function(res) {
                 if (res.status === 'success') {
                     let d = res.data;
@@ -552,7 +552,7 @@
             var url = $(this).data('url');
             $.get(url, function(response) {
                 if (response.status === 'success') {
-                    $('#modalFormLabel').text('Edit SPPR');
+                    $('#modalFormLabel').text('Edit Proses Admin');
                     let d = response.data;
                     $('#primary_id').val(d.id);
                     $('#id_customer').val(d.id_customer).prop('disabled', true);
@@ -646,8 +646,8 @@
             submitBtn.prop('disabled', true);
 
             let id = $('#primary_id').val();
-            let url = id ? '{{ route('sppr.update', ['sppr' => ':id']) }}'.replace(':id', id) :
-                '{{ route('sppr.store') }}';
+            let url = id ? '{{ route('proses-admin.update', ['sppr' => ':id']) }}'.replace(':id', id) :
+                '{{ route('proses-admin.store') }}';
             let method = id ? 'PUT' : 'POST';
 
             $('.is-invalid').removeClass('is-invalid');

@@ -13,7 +13,7 @@
                         <div class="card">
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
-                                    <h3 class="font-weight-bold text-lg">Detail Wawancara</h3>
+                                    <h3 class="font-weight-bold text-lg">Detail Proses Bank</h3>
                                     <div class="d-flex align-items-center" style="gap: 3px">
                                         <a href="{{ route('dashboard.index') }}"
                                             class="btn btn-secondary align-items-center d-flex btn-sm"><i
@@ -49,7 +49,7 @@
                 serverSide: false,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('dashboard.wawancara-unit') }}",
+                ajax: "{{ route('dashboard.proses-bank-unit') }}",
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',

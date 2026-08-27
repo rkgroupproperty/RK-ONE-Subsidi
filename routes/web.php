@@ -124,6 +124,7 @@ Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar'
 Route::middleware(['auth'])->group(function () {
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
     Route::get('admin/beranda/chart-data', [BerandaController::class, 'getChartData'])->name('beranda.chart-data');
+    Route::get('admin/beranda/sumber-prospek-data', [BerandaController::class, 'getSumberProspekData'])->name('beranda.sumber-prospek-data');
     Route::get('admin/detail-grafik-penjualan-bulanan', [BerandaController::class, 'detailGrafik'])->name('beranda.detail-grafik');
     Route::get('admin/detail-grafik-penjualan-bulanan/data', [BerandaController::class, 'detailGrafikData'])->name('beranda.detail-grafik.data');
 
@@ -135,7 +136,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard/customer-marketing/{id}', 'showCustomer')->name('dashboard.customer-marketing-show');
         Route::get('/total-unit', 'totalUnit')->name('dashboard.total-unit');
         Route::get('/booking-unit', 'booking')->name('dashboard.booking-unit');
-        Route::get('/wawancara-unit', 'wawancara')->name('dashboard.wawancara-unit');
+        Route::get('/wawancara-unit', 'wawancara')->name('dashboard.proses-bank-unit');
         Route::get('/akad-unit', 'akad')->name('dashboard.akad-unit');
 
         Route::prefix('/siteplan')->group(function () {
@@ -201,13 +202,13 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('admin/transaksi')->group(function () {
-        Route::resource('wawancara', WawancaraController::class);
-        Route::get('/wawancara/detail-customer/{id_customer}', [WawancaraController::class, 'detailCustomer'])->name('wawancara.detail-customer');
-        Route::post('/wawancara/acc-bank/{id_wawancara}', [WawancaraController::class, 'simpanSp3k'])->name('wawancara.sp3k');
-        Route::get('/wawancara/{id}/acc', [WawancaraController::class, 'acc'])->name('wawancara.acc');
+        Route::resource('wawancara', WawancaraController::class)->names('proses-bank');
+        Route::get('/wawancara/detail-customer/{id_customer}', [WawancaraController::class, 'detailCustomer'])->name('proses-bank.detail-customer');
+        Route::post('/wawancara/acc-bank/{id_wawancara}', [WawancaraController::class, 'simpanSp3k'])->name('proses-bank.sp3k');
+        Route::get('/wawancara/{id}/acc', [WawancaraController::class, 'acc'])->name('proses-bank.acc');
         Route::get('/sp3k/data', [AccBankController::class, 'getDataSp3k'])->name('sp3k.data');
 
-        Route::resource('acc-bank', AccBankController::class);
+        Route::resource('acc-bank', AccBankController::class)->names('sp3k');
         Route::resource('akad', AkadController::class);
         Route::post('akad/seleksi-customer/{id_akad}', [AkadController::class, 'seleksiCustomer'])->name('akad.seleksi-customer');
         Route::get('akad/seleksi-customer/hadir/{id_detail}', [AkadController::class, 'showHadir'])->name('akad.seleksi-customer.get-hadir');
@@ -242,14 +243,15 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('ganti-nama', GantiNamaController::class);
         Route::get('ganti-nama/{id}/get-customer', [GantiNamaController::class, 'getCustomer'])->name('ganti-nama.get-customer');
 
-        Route::resource('sppr', SPPRController::class);
-        Route::get('sppr/{id}/cetak', [SPPRController::class, 'cetak'])->name('sppr.cetak');
-        Route::get('sppr/get-customer-detail/{id}', [SPPRController::class, 'getCustomerDetail'])->name('sppr.get-customer-detail');
+        Route::resource('sppr', SPPRController::class)->names('proses-admin');
+        Route::get('sppr/{id}/cetak', [SPPRController::class, 'cetak'])->name('proses-admin.cetak');
+        Route::get('sppr/get-customer-detail/{id}', [SPPRController::class, 'getCustomerDetail'])->name('proses-admin.get-customer-detail');
     });
 
     Route::prefix('admin/customer')->group(function () {
         Route::get('get-kavling/{idLokasi}', [CustomerController::class, 'getKavling'])->name('customer.getKavling');
         Route::get('get-harga-kavling/{id_kavling}', [CustomerController::class, 'getHargaKavling'])->name('customer.getHargaKavling');
+        Route::post('unit-sudah-laku', [CustomerController::class, 'unitSudahLakuStore'])->name('customer.unit-sudah-laku-store');
         Route::get('customer/cetak', [CustomerController::class, 'cetakData'])->name('customer.cetak');
         Route::get('customer/{id_customer}/subsidi-cetak', [CustomerController::class, 'cetakFormSubsidi'])->name('subsidi.cetak');
         Route::get('customer/print-document/{template_code}/{id_customer}', [CustomerController::class, 'printDocument'])->name('customer.print-document');

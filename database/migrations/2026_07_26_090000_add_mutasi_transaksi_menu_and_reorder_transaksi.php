@@ -58,9 +58,9 @@ return new class extends Migration
 
         $transaksiOrder = [
             'pengajuan-hold.index' => 1,
-            'sppr.index' => 2,
-            'wawancara.index' => 3,
-            'acc-bank.index' => 4,
+            'proses-admin.index' => 2,
+            'proses-bank.index' => 3,
+            'sp3k.index' => 4,
             'ppjb.index' => 5,
             'akad.index' => 6,
             'bast.index' => 7,

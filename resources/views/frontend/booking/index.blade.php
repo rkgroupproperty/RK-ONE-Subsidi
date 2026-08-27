@@ -1,6 +1,6 @@
 ﻿@extends('layouts.app')
 
-@section('title', 'Booking Dealaska')
+@section('title', 'Booking RK One Subsidi')
 
 @push('styles')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -446,24 +446,23 @@
                                 <h5 class="stage-title">Data Pribadi</h5>
                             </div>
                                 <div class="form-group row">
-                                    <label class="col-sm-3 col-form-label">Tanggal <span style="color: red;">*</span></label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">Tanggal <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <input type="date" class="form-control" id="tanggal" name="tanggal"
                                             value="{{ date('Y-m-d') }}">
                                     </div>
                                 </div>
 
                                  <div class="form-group row">
-<label class="col-sm-3 col-form-label">Nama Lengkap <span
-                                             style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Nama Lengkap <span style="color: red;">*</span></label>
+                                    <div class="col-sm-10">
                                         <input name="nama_lengkap" id="nama_lengkap" class="form-control" type="text"
                                             placeholder="Masukkan nama lengkap sesuai KTP">
                                     </div>
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">NIK <span style="color: red;">*</span></label>
+                                    <label class="col-sm-2 col-form-label">NIK <span style="color: red;">*</span></label>
                                     <div class="col-sm-4">
                                         <input name="nik" id="nik" class="form-control" type="text"
                                         placeholder="Masukkan NIK">
@@ -471,26 +470,26 @@
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Tempat Lahir <span style="color: red;">*</span></label>
+                                    <label class="col-sm-2 col-form-label">Tempat Lahir <span style="color: red;">*</span></label>
                                     <div class="col-sm-4">
                                         <input name="tempat_lahir" id="tempat_lahir" class="form-control" type="text"
-                                        placeholder="Masukkan tempat lahir">
+                                            placeholder="Masukkan tempat lahir">
 
                                     </div>
-                                    <label class="control-label col-sm-2">Tanggal Lahir <span style="color: red;">*</span></label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">Tanggal Lahir <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <input name="tgl_lahir" id="tgl_lahir" class="form-control" type="date">
                                     </div>
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">No. Telp / WA <span style="color: red;">*</span></label>
+                                    <label class="col-sm-2 col-form-label">No. Telp / WA <span style="color: red;">*</span></label>
                                     <div class="col-sm-4">
                                         <input name="no_telp" id="no_telp" class="form-control" type="text"
                                          placeholder="Contoh: 08123*****">
                                     </div>
-                                    <label class="control-label col-sm-2">Jenis Kelamin <span style="color: red;">*</span></label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">Jenis Kelamin <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <select class="form-control select-jk" name="jenis_kelamin" id="jenis_kelamin">
                                             <option value=""></option>
                                             <option value="Laki-laki">Laki-laki</option>
@@ -500,20 +499,20 @@
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Email</label>
+                                    <label class="col-sm-2 col-form-label">Email</label>
                                     <div class="col-sm-4">
                                         <input name="email" id="email" class="form-control" type="text"
                                         placeholder="Contoh: xyz@gmail.com">
                                     </div>
-                                    <label class="control-label col-sm-2">NPWP</label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">NPWP</label>
+                                    <div class="col-sm-4">
                                         <input name="npwp" id="npwp" class="form-control" type="text"
                                         placeholder="Masukan npwp">
                                     </div>
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Pekerjaan</label>
+                                    <label class="col-sm-2 col-form-label">Pekerjaan</label>
                                     <div class="col-sm-4">
                                         <select class="form-control select-pekerjaan" name="pekerjaan"
                                             id="pekerjaan">
@@ -537,14 +536,14 @@
                                             <option value="Lain-lain">Lain-lain</option>
                                         </select>
                                     </div>
-                                    <label class="control-label col-sm-2">No. BPJS Kes</label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">No. BPJS Kes</label>
+                                    <div class="col-sm-4">
                                         <input name="no_bpjs_kes" id="no_bpjs_kes" class="form-control" type="text"
                                          placeholder="Masukan BPJS Kes">
                                     </div>
                                 </div>
                                 <div class="form-group row" id="row-pekerjaan-lain" style="display: none;">
-                                    <label class="control-label col-sm-3">Pekerjaan Lainnya</label>
+                                    <label class="col-sm-2 col-form-label">Pekerjaan Lainnya</label>
                                     <div class="col-sm-4">
                                         <input type="text" class="form-control" name="pekerjaan_lain" id="pekerjaan_lain"
                                             placeholder="Masukkan pekerjaan">
@@ -552,21 +551,21 @@
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Alamat KTP <span style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Alamat KTP <span style="color: red;">*</span></label>
+                                    <div class="col-sm-10">
                                         <textarea name="alamat_ktp" id="alamat_ktp" class="form-control" rows="2" placeholder="Alamat lengkap sesuai KTP"></textarea>
                                     </div>
                                 </div>
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Alamat Domisili <span style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Alamat Domisili <span style="color: red;">*</span></label>
+                                    <div class="col-sm-10">
                                         <textarea name="alamat_domisili" id="alamat_domisili" class="form-control" rows="2" placeholder="Alamat lengkap sesuai Domisili"></textarea>
                                     </div>
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Status Pernikahan <span style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Status Pernikahan <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <select class="form-control select-status" name="status_pernikahan"
                                             id="status_pernikahan">
                                             <option value=""></option>
@@ -581,13 +580,13 @@
 
                             <div id="pasangan" style="display: none;">
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Nama Pasangan</label>
+                                    <label class="col-sm-2 col-form-label">Nama Pasangan</label>
                                     <div class="col-sm-4">
                                         <input name="nama_p" id="nama_p" class="form-control" type="text"
                                         placeholder="Masukan Nama Pasangan">
                                     </div>
-                                    <label class="control-label col-sm-2">NIK Pasangan</label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">NIK Pasangan</label>
+                                    <div class="col-sm-4">
                                         <input name="nik_p" id="nik_p" class="form-control" type="text"
                                         placeholder="Masukan NIK Pasangan">
                                     </div>
@@ -595,13 +594,13 @@
                             </div>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-3">Nama Saudara</label>
+                                <label class="col-sm-2 col-form-label">Nama Saudara</label>
                                 <div class="col-sm-4">
                                     <input name="nama_saudara" id="nama_saudara" class="form-control" type="text"
                                     placeholder="Masukan Nama Saudara">
                                 </div>
-                                <label class="control-label col-sm-2">No. Telp Saudara</label>
-                                <div class="col-sm-3">
+                                <label class="col-sm-2 col-form-label">No. Telp Saudara</label>
+                                <div class="col-sm-4">
                                     <input name="no_telp_saudara" id="no_telp_saudara" class="form-control" type="text"
                                     placeholder="Masukan No. Telp Saudara">
                                 </div>
@@ -616,8 +615,8 @@
                                 </div>
 
                                <div class="form-group row mb-3">
-                                    <label class="control-label col-sm-3">Lokasi Perumahan <span style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Lokasi Perumahan <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <select class="form-control select-lokasi" name="id_lokasi" id="id_lokasi">
                                             <option value=""></option>
                                             @foreach ($lokasi as $l)
@@ -625,19 +624,24 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                </div>
-
-                                <div class="form-group row mb-3">
-                                    <label class="control-label col-sm-3">Blok/Kav <span style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Blok/Kav <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <select name="id_kavling" id="id_kavling" class="form-control select-kavling"></select>
                                     </div>
                                 </div>
 
-                                <div id="rincian-harga-container">
-                                    <div class="text-muted">Pilih kavling terlebih dahulu untuk menampilkan rincian harga.</div>
+                                <div class="form-group row mb-3">
+                                    <label class="col-sm-2 col-form-label">Harga Jual</label>
+                                    <div class="col-sm-4">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Rp.</span>
+                                            </div>
+                                            <input type="text" name="total_harga" id="total_harga"
+                                                class="form-control" readonly disabled placeholder="Pilih kavling terlebih dahulu">
+                                        </div>
+                                    </div>
                                 </div>
-                                <input type="hidden" name="total_harga" id="total_harga" value="">
                             </div>
                             <hr>
 
@@ -647,8 +651,8 @@
                                     <h5 class="stage-title">Data Pembelian</h5>
                                 </div>
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Marketing <span style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Marketing <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <select class="form-control select-marketing" name="id_marketing" id="id_marketing">
                                             <option value=""></option>
                                             <option value="0">Non Marketing</option>
@@ -657,25 +661,34 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    {{-- --}}
+                                    <label class="col-sm-2 col-form-label">Sumber Prospek <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
+                                        <select class="form-control select-sumber-prospek" name="sumber_prospek"
+                                            id="sumber_prospek">
+                                            <option value=""></option>
+                                            <option value="Iklan Kantor">Iklan Kantor</option>
+                                            <option value="Market Place FB">Market Place FB</option>
+                                            <option value="Freelance">Freelance</option>
+                                            <option value="Kanvasing">Kanvasing</option>
+                                            <option value="Sosmed Pribadi">Sosmed Pribadi</option>
+                                            <option value="Sosmed Kantor">Sosmed Kantor</option>
+                                            <option value="Referensi">Referensi</option>
+                                            <option value="WIC">WIC</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-3">Jenis Perumahan <span
-                                            style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Jenis Perumahan <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <select class="form-control select-jp" name="jenis_perumahan" id="jenis_perumahan">
                                             <option value=""></option>
                                             <option value="Subsidi">Subsidi</option>
                                             <option value="Komersil">Komersil</option>
                                         </select>
                                     </div>
-                                </div>
-
-                                <div class="form-group row">
-                                   <label class="control-label col-sm-3">Jenis Pembelian <span
-                                            style="color: red;">*</span></label>
-                                    <div class="col-sm-9">
+                                    <label class="col-sm-2 col-form-label">Jenis Pembelian <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <select class="form-control select-pembelian" name="jenis_pembelian"
                                             id="jenis_pembelian">
                                             <option value=""></option>
@@ -686,8 +699,8 @@
                                     </div>
                                 </div>
 
-                                <div class="form-group row">
-                                    <label class="control-label col-sm-3">Booking Fee <span style="color: red;">*</span></label>
+                                 <div class="form-group row">
+                                     <label class="col-sm-2 col-form-label">Booking Fee <span style="color: red;">*</span></label>
                                     <div class="col-sm-4">
                                         <div class="input-group">
                                             <div class="input-group-prepend">
@@ -708,7 +721,7 @@
                                     <h5 class="stage-title">File Upload</h5>
                                 </div>
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-2">Foto Pemohon</label>
+                                    <label class="col-sm-2 col-form-label">Foto Pemohon</label>
                                     <div class="col-sm-4">
                                         <input name="foto_pemohon" id="foto_pemohon" type="file" accept=".jpg,.jpeg,.png"
                                             onchange="handleFileChange(this, 'preview_foto_pemohon')">
@@ -719,8 +732,8 @@
                                                 onclick="clearFile('foto_pemohon', 'preview_foto_pemohon')">Hapus</button>
                                         </div>
                                     </div>
-                                    <label class="control-label col-sm-2">Foto KTP <span style="color: red;">*</span></label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">Foto KTP <span style="color: red;">*</span></label>
+                                    <div class="col-sm-4">
                                         <input name="foto_ktp" id="foto_ktp" type="file" accept=".jpg,.jpeg,.png"
                                             onchange="handleFileChange(this, 'preview_foto_ktp')">
                                         <div id="preview_foto_ktp" class="mt-2 d-none">
@@ -732,7 +745,7 @@
                                     </div>
                                 </div>
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-2">Foto NPWP</label>
+                                    <label class="col-sm-2 col-form-label">Foto NPWP</label>
                                     <div class="col-sm-4">
                                         <input name="foto_npwp" id="foto_npwp" type="file" accept=".jpg,.jpeg,.png"
                                             onchange="handleFileChange(this, 'preview_foto_npwp')">
@@ -743,8 +756,8 @@
                                                 onclick="clearFile('foto_npwp', 'preview_foto_npwp')">Hapus</button>
                                         </div>
                                     </div>
-                                    <label class="control-label col-sm-2">Foto KK</label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">Foto KK</label>
+                                    <div class="col-sm-4">
                                         <input name="foto_kk" id="foto_kk" type="file" accept=".jpg,.jpeg,.png"
                                             onchange="handleFileChange(this, 'preview_foto_kk')">
                                         <div id="preview_foto_kk" class="mt-2 d-none">
@@ -757,7 +770,7 @@
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-2">Foto BPJS</label>
+                                    <label class="col-sm-2 col-form-label">Foto BPJS</label>
                                     <div class="col-sm-4">
                                         <input name="foto_bpjs" id="foto_bpjs" type="file" accept=".jpg,.jpeg,.png"
                                             onchange="handleFileChange(this, 'preview_foto_bpjs')">
@@ -768,8 +781,8 @@
                                                 onclick="clearFile('foto_bpjs', 'preview_foto_bpjs')">Hapus</button>
                                         </div>
                                     </div>
-                                    <label class="control-label col-sm-2">Foto KTP Pasangan</label>
-                                    <div class="col-sm-3">
+                                    <label class="col-sm-2 col-form-label">Foto KTP Pasangan</label>
+                                    <div class="col-sm-4">
                                         <input name="foto_ktp_p" id="foto_ktp_p" type="file" accept=".jpg,.jpeg,.png"
                                             onchange="handleFileChange(this, 'preview_foto_ktp_p')">
                                         <div id="preview_foto_ktp_p" class="mt-2 d-none">
@@ -782,7 +795,7 @@
                                 </div>
 
                                 <div class="form-group row">
-                                    <label class="control-label col-sm-2">Bukti Transfer</label>
+                                    <label class="col-sm-2 col-form-label">Bukti Transfer <span style="color: red;">*</span></label>
                                     <div class="col-sm-4">
                                         <input name="file_bukti" id="file_bukti" type="file"
                                             onchange="handleFileChange(this, 'preview_file_bukti')">
@@ -794,7 +807,7 @@
                                         </div>
                                     </div>
 
-                                    <label class="control-label col-sm-2">Bukti SPPR</label>
+                                    <label class="col-sm-2 col-form-label">Bukti Proses Admin</label>
                                     <div class="col-sm-4">
                                         <input name="file_sppr" id="file_sppr" type="file"
                                             onchange="handleFileChange(this, 'preview_file_sppr')">
@@ -897,7 +910,6 @@
         }
 
         $(document).ready(function() {
-
             $('.select-lokasi').select2({
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
@@ -910,98 +922,55 @@
             });
             $('.select-kavling').select2({
                 theme: "bootstrap4",
+                allowClear: true,
+                placeholder: "Pilih Kavling",
             });
             $('.select-marketing').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Marketing",
             });
-
             $('.select-jp').select2({
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
                 placeholder: "Pilih Jenis Perumahan",
             });
-
             $('.select-pembelian').select2({
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
                 placeholder: "Pilih Jenis Pembelian",
             });
-
+            $('.select-sumber-prospek').select2({
+                theme: "bootstrap4",
+                placeholder: "Pilih Sumber Prospek",
+            });
             $('.select-status').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Status",
                 minimumResultsForSearch: Infinity,
             });
-
             $('.select-pekerjaan').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Pekerjaan",
-            });
-        });
-
-        $(document).ready(function() {
-            $('.select-lokasi').select2({
-                theme: "bootstrap4",
-                placeholder: "Pilih Lokasi",
-            });
-
-            $('.select-kavling').select2({
-                theme: "bootstrap4",
-                placeholder: "Pilih Kavling",
             });
 
             const routeGetKavling = "{{ route('booking.getKavling', ':id') }}";
             const routeGetHarga = "{{ route('booking.getHargaKavling', ':id') }}";
 
-            function renderRincianHarga(rincian, total) {
-                let container = $('#rincian-harga-container');
-                container.empty();
-
-                if (!rincian || rincian.length === 0) {
-                    container.html('<div class="text-muted">Tidak ada rincian biaya.</div>');
-                    $('#total_harga').val('');
-                    return;
-                }
-
-                let html = '';
-                rincian.forEach(function(item) {
-                    if ((item.nilai || 0) <= 0) return;
-                    html += '<div class="form-group row">';
-                    html += '<label class="control-label col-sm-3">' + item.nama + '</label>';
-                    html += '<div class="col-sm-4">';
-                    html += '<div class="input-group">';
-                    html += '<div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>';
-                    html += '<input type="text" class="form-control" readonly value="' + item.nilai.toLocaleString('id-ID') + '">';
-                    html += '</div></div></div>';
-                });
-
-                html += '<div class="form-group row">';
-                html += '<label class="control-label col-sm-3"><strong>Total Harga</strong></label>';
-                html += '<div class="col-sm-4">';
-                html += '<div class="input-group">';
-                html += '<div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>';
-                html += '<input type="text" class="form-control" readonly value="' + (total || 0).toLocaleString('id-ID') + '">';
-                html += '</div></div></div>';
-
-                container.html(html);
-                $('#total_harga').val(total || 0);
-            }
-
             $('#id_lokasi').on('change', function() {
                 let idLokasi = $(this).val();
-                $('#id_kavling').html('<option value="">Loading...</option>').trigger('change');
-                renderRincianHarga([], 0);
+                $('#id_kavling').html('<option value="">Loading...</option>').val('').trigger('change.select2');
+                $('#total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
 
                 if (idLokasi) {
                     const urlKavling = routeGetKavling.replace(':id', idLokasi);
                     $.get(urlKavling, function(data) {
                         let options = '<option value=""></option>';
                         data.forEach(function(item) {
-                            options +=
-                                `<option value="${item.id}">${item.kode_kavling}</option>`;
+                            options += `<option value="${item.id}">${item.kode_kavling}</option>`;
                         });
-                        $('#id_kavling').html(options).trigger('change');
+                        $('#id_kavling').html(options).val('').trigger('change.select2');
+                    }).fail(function() {
+                        $('#id_kavling').html('<option value="">Gagal memuat data</option>').trigger('change.select2');
                     });
                 }
             });
@@ -1012,10 +981,17 @@
                 if (idKavling) {
                     const urlHarga = routeGetHarga.replace(':id', idKavling);
                     $.get(urlHarga, function(data) {
-                        renderRincianHarga(data.rincian_biaya, data.total_harga);
+                        let hargaJual = 0;
+                        if (data.rincian_biaya && data.rincian_biaya.length) {
+                            let hr = data.rincian_biaya.find(function(item) {
+                                return item.nama === 'Harga Rumah';
+                            });
+                            hargaJual = hr ? hr.nilai : data.total_harga;
+                        }
+                        $('#total_harga').val(hargaJual ? hargaJual.toLocaleString('id-ID') : '').attr('placeholder', '0');
                     });
                 } else {
-                    renderRincianHarga([], 0);
+                    $('#total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
                 }
             });
 
@@ -1056,19 +1032,6 @@
             let submitBtn = $('#submitBtn');
             let spinner = submitBtn.find('.spinner-border');
             let btnText = submitBtn.find('.button-text');
-
-            let totalHarga = parseInt($('#total_harga').val()) || 0;
-            if (totalHarga <= 0) {
-                toastr.error("Harga kavling belum ditentukan!", "GAGAL!", {
-                    progressBar: true,
-                    timeOut: 3500,
-                    positionClass: "toast-bottom-right",
-                });
-                spinner.addClass('d-none');
-                btnText.text('Kirim Data');
-                submitBtn.prop('disabled', false);
-                return;
-            }
 
             spinner.removeClass('d-none');
             btnText.text('Mengirim...');

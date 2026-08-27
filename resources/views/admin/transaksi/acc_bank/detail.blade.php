@@ -106,7 +106,7 @@
         $(function() {
 
             let id = $('#id_wawancara').val();
-            let url = '{{ route('acc-bank.show', ['acc_bank' => ':id']) }}'.replace(':id', id)
+            let url = '{{ route('sp3k.show', ['acc_bank' => ':id']) }}'.replace(':id', id)
 
             var table = $('.data-table').DataTable({
                 processing: false,

@@ -54,13 +54,13 @@ class WawancaraController extends Controller
                 })
                 ->addColumn('id_bank_kpr', fn($row) => $row->bankKPR?->nama ?? '-')
                 ->addColumn('action', function ($row) use ($permissions) {
-                    $editUrl   = route('wawancara.edit', $row->id);
-                    $deleteUrl = route('wawancara.destroy', $row->id);
+                    $editUrl   = route('proses-bank.edit', $row->id);
+                    $deleteUrl = route('proses-bank.destroy', $row->id);
 
                     $btn = '<div class="d-flex justify-content-center">';
 
                     if ($permissions['edit']) {
-                        $btn .= '<button class="btn btn-warning text-white btn-xs acc-bank-button" data-id="' . e($row->id) . '" data-url="' . e($editUrl) . '">Acc Bank</button>';
+                        $btn .= '<button class="btn btn-warning text-white btn-xs acc-bank-button" data-id="' . e($row->id) . '" data-url="' . e($editUrl) . '">SP3K</button>';
                         $btn .= '<button class="btn btn-primary btn-xs mx-1 edit-button" data-id="' . e($row->id) . '" data-url="' . e($editUrl) . '">Edit</button>';
                     }
 
@@ -188,7 +188,7 @@ class WawancaraController extends Controller
             $customer->id_status_progres = 7;
             $customer->save();
 
-            $this->logCreate('Wawancara', $wawancara->id);
+            $this->logCreate('Proses Bank', $wawancara->id);
 
             DB::commit();
 
@@ -228,7 +228,7 @@ class WawancaraController extends Controller
                 'catatan_wawancara' => $request->catatan_wawancara ?? '',
             ]);
 
-            $this->logEdit('Wawancara', $wawancara->id);
+            $this->logEdit('Proses Bank', $wawancara->id);
 
             DB::commit();
 
@@ -305,7 +305,7 @@ class WawancaraController extends Controller
                 'id_status_progres' => 4,
             ]);
 
-            $this->logEdit('Wawancara ACC BANK', $id);
+            $this->logEdit('Proses Bank SP3K', $id);
 
             DB::commit();
             return response()->json([
@@ -330,7 +330,7 @@ class WawancaraController extends Controller
             'id_status_progres' => 2,
         ]);
 
-        $this->logDelete('Wawancara', $id);
+        $this->logDelete('Proses Bank', $id);
         $data->delete();
 
         return response()->json(['status' => 'success']);

@@ -278,6 +278,14 @@
                                 </div>
                             </div>
 
+                            <div class="form-group row">
+                                <label class="control-label col-sm-3">Sumber Prospek</label>
+                                <div class="col-sm-4">
+                                    <input type="text" name="sumber_prospek" id="sumber_prospek"
+                                        class="form-control" readonly>
+                                </div>
+                            </div>
+
                             <!-- CASH ==================================> -->
                             <hr class="hr-transaksi" style="display: none;">
                             <div id="trx_cash" style="display: none;">
@@ -372,6 +380,7 @@
             $('#id_kavling').val('').trigger('change');
             $('#id_marketing').val('').trigger('change');
             $('#jenis_pembelian').val('').trigger('change');
+            $('#sumber_prospek').val('');
 
             let submitBtn = $('#submitBtn');
             let spinner = submitBtn.find('.spinner-border');
@@ -430,6 +439,7 @@
                     $('#id_marketing').val(data.id_marketing).trigger('change');
                     $('#jenis_pembelian').val(data.jenis_pembelian).trigger('change');
                     $('#jenis_perumahan').val(data.jenis_perumahan).trigger('change');
+                    $('#sumber_prospek').val(data.sumber_prospek);
 
                     $('#modalForm').modal('show');
 

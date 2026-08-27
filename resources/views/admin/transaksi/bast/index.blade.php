@@ -161,7 +161,7 @@
                 return
             }
 
-            const detailCustomerUrl = "{{ route('wawancara.detail-customer', ':id') }}"
+            const detailCustomerUrl = "{{ route('proses-bank.detail-customer', ':id') }}"
 
             let url = detailCustomerUrl.replace(':id', id)
 

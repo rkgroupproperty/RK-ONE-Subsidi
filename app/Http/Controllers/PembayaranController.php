@@ -15,8 +15,9 @@ use App\Models\PengaturanProfil;
 use App\Models\Perusahaan;
 use App\Models\Piutang;
 use App\Models\PemasukanRetensi;
-use App\Models\ProgresListPenjualan;
 use App\Models\Retensi;
+use App\Models\ProgresListPenjualan;
+use App\Models\SPPR;
 use App\Traits\LogAktivitasTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -550,153 +551,175 @@ class PembayaranController extends Controller
 
     public function cetak($id)
     {
-        $pembayaran = Pemasukan::with(['customer', 'metode'])
+        $pembayaran = Pemasukan::with(['customer.lokasi', 'customer.kavling', 'customer.piutangs.kategori', 'metode', 'kategori'])
             ->where('id', $id)
             ->where('keterangan', 'NOT LIKE', 'Biaya ganti nama%')
             ->firstOrFail();
 
         $nasabah    = $pembayaran->customer;
-        $lokasi     = LokasiKavling::with('perusahaan')->find($nasabah->id_lokasi);
-        $kavling    = KavlingPeta::with('perusahaan')->find($nasabah->id_kavling);
-        $perusahaan = $kavling->perusahaan;
+        $lokasi     = $nasabah->lokasi ?? LokasiKavling::find($nasabah->id_lokasi);
+        $kavling    = $nasabah->kavling ?? KavlingPeta::find($nasabah->id_kavling);
 
-        if (! $perusahaan && $lokasi) {
-            $perusahaanId = $lokasi->perusahaan->first()->id_perusahaan ?? null;
-            $perusahaan   = $perusahaanId ? Perusahaan::find($perusahaanId) : null;
+        $perusahaan = null;
+        if ($kavling && $kavling->id_perusahaan) {
+            $perusahaan = Perusahaan::find($kavling->id_perusahaan);
+        }
+        if (!$perusahaan && $lokasi) {
+            $perusahaan = $lokasi->perusahaan->first() ?? null;
+        }
+        if (!$perusahaan) {
+            $perusahaan = Perusahaan::first();
         }
 
-        $blokNomor = $lokasi && $lokasi->is_cluster
-            ? (($kavling->cluster ?? '-') . '.' . ($kavling->no ?? '-'))
-            : str_replace('-', '.', $kavling->kode_kavling ?? '-');
+        $blokNomor = '-';
+        if ($kavling) {
+            if (!empty($kavling->blok) && !empty($kavling->no)) {
+                $blokNomor = 'Blok ' . $kavling->blok . ' No. ' . $kavling->no;
+            } elseif (!empty($kavling->kode_kavling)) {
+                $blokNomor = $kavling->kode_kavling;
+            }
+        }
 
-        $namaPerusahaan   = $lokasi->nama_kavling ?? 'Nama Perusahaan Belum diisi';
-        $alamatPerusahaan = $perusahaan->alamat_perusahaan ?? 'Alamat Belum diisi';
+        // Data Rincian Pembayaran
+        $sppr = SPPR::where('id_customer', $nasabah->id)->latest()->first();
+        $hargaDasar = $sppr->harga_jual ?? ($nasabah->hrg_jual ?: ($kavling->hrg_jual ?: 0));
+        $klt = $sppr->biaya_kelebihan_tanah ?? 0;
+        $totalDp = $sppr->nominal_dp ?? ($nasabah->piutangs ? $nasabah->piutangs->filter(fn($p) => str_contains(strtoupper($p->kategori->kategori ?? ''), 'DP'))->sum('nominal') : 0);
+        $potongan = $sppr->biaya_lain_lain ?? 0;
+
+        $dpTerbayar = Pemasukan::where('id_customer', $nasabah->id)
+            ->whereHas('kategori', function ($q) {
+                $q->where('kategori', 'LIKE', '%DP%')->orWhere('kategori', 'LIKE', '%UANG MUKA%');
+            })->sum('nominal');
+        $sisaDp = max(0, $totalDp - $dpTerbayar);
+        $promo = $sppr->promo ?? '-';
 
         $pageFormat = [140, 210];
         $pdf = new TCPDF('L', 'mm', $pageFormat, true, 'UTF-8', false);
         $pdf->SetTitle('Kwitansi - ' . ($pembayaran->no_kwitansi ?? '-'));
-        $pdf->SetAuthor('Dealaska');
+        $pdf->SetAuthor('RK Group Property');
         $pdf->SetMargins(0, 0, 0);
         $pdf->SetAutoPageBreak(false, 0);
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
         $pdf->AddPage('L', $pageFormat);
 
-        $marginL  = 15;
-        $marginR  = 15;
-        $pageW    = 210;
-        $contentW = $pageW - $marginL - $marginR;
+        $bgPath = file_exists(public_path('assets/img/bg-kwitansi.jpg'))
+            ? public_path('assets/img/bg-kwitansi.jpg')
+            : (file_exists(public_path('assets/img/bg-kwitansi.png')) ? public_path('assets/img/bg-kwitansi.png') : public_path('assets/img/kop-kwitansi.jpg'));
 
-        $kopPath  = public_path('assets/img/kop-kwitansi.jpg');
-        $logoPath = public_path('templates/logo_rhabayu.jpg');
+        if (file_exists($bgPath)) {
+            $pdf->Image($bgPath, 0, 0, 210, 140, '', '', '', false, 300);
+        }
 
+        $drawCheck = function ($x, $y, $size = 3) use ($pdf) {
+            $pdf->SetFont('zapfdingbats', '', 8.5);
+            $pdf->SetTextColor(0, 51, 153);
+            $pdf->SetXY($x, $y);
+            $pdf->Cell($size, $size, '4', 0, 0, 'C');
+            $pdf->SetTextColor(20, 20, 20);
+        };
 
-            $pdf->Image($kopPath, 5, 5, 200, 0, 'JPG', '', '', false, 100);
+        // 1. Checkbox Perusahaan (Header Atas)
+        $perusahaanName = strtoupper($perusahaan->nama_perusahaan ?? '');
+        if (str_contains($perusahaanName, 'UNGGUL PERKASA PROPERTINDO') || str_contains($perusahaanName, 'PROPERTINDO')) {
+            $drawCheck(72.3, 14.1);
+        } elseif (str_contains($perusahaanName, 'ALZAFA')) {
+            $drawCheck(72.3, 9.5);
+        } else {
+            $drawCheck(72.3, 4.8);
+        }
 
-            $pdf->SetFont('helvetica', 'B', 18);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->SetXY(60, 16);
-            $pdf->Cell(140, 5, strtoupper($namaPerusahaan), 0, 1, 'C');
+        // 2. Nomor Kwitansi
+        $pdf->SetFont('helvetica', 'B', 9.5);
+        $pdf->SetTextColor(20, 20, 20);
+        $pdf->SetXY(25.0, 35);
+        $pdf->Cell(20, 4.5, $pembayaran->no_kwitansi ?? '-', 0, 0, 'L');
 
-            $pdf->SetFont('helvetica', '', 9);
-            $pdf->SetX(60);
-            $pdf->Cell(140, 4, $alamatPerusahaan, 0, 1, 'C');
-            $pdf->SetX(60);
-            $pdf->Cell(140, 4, 'Telp: ' . ($perusahaan->telp_perusahaan ?? '-'), 0, 1, 'C');
-
-            // if (file_exists($logoPath)) {
-            //     $pdf->Image($logoPath, 140, 13, 55, 0, '', '', '', false, 150);
-            // }
-
-
-        $lineY1 = 33.5;
-        $pdf->SetLineWidth(0.3);
-        $pdf->SetDrawColor(0, 0, 0);
-        $pdf->Line(9, $lineY1, 200, $lineY1);
-
-        $pdf->ln(2);
-        $pdf->SetFont('helvetica', 'BU', 14);
-        $pdf->SetX(15);
-        $pdf->Cell(180, 10, 'KWITANSI', 0, 0, 'C');
-
-        $pdf->ln(3);
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->SetX(15);
-        $pdf->Cell(30, 5, 'No. : ' . ($pembayaran->no_kwitansi ?? '-'), 'B', 1, 'L');
-        $pdf->ln(5);
-
-        $pdf->SetFont('helvetica', '', 11);
-        $pdf->SetX(15);
-        $pdf->Cell(48, 6, 'Telah Diterima Dari', 0, 0, 'L');
-        $pdf->Cell(5, 6, ':', 0, 0);
-        $pdf->Cell(127, 6, strtoupper($nasabah->nama_lengkap) ?? '-', 'B', 1);
-
-        $pdf->ln(3);
-        $pdf->SetX(15);
-
-        $pdf->Cell(48, 8, 'Uang Sejumlah', 0, 0);
-        $pdf->Cell(5, 8, ':', 0, 0);
-        $pdf->SetFillColor(219, 153, 47);
-        $pdf->Cell(127, 8, '#'.strtoupper($this->terbilang($pembayaran->nominal)) . ' RUPIAH#', 0, 1, 'L', true);
-        $pdf->SetFillColor(255, 255, 255);
-
-        $pdf->ln(3);
-        $pdf->SetX(15);
-        $pdf->Cell(48, 6, 'Untuk Pembayaran', 0, 0);
-        $pdf->Cell(5, 6, ':', 0, 0);
-        $pdf->Cell(127, 6, $pembayaran->keterangan ?? '-', 'B', 1, 'L');
-
-        $pdf->ln(2);
-        $pdf->SetX(15);
-        $pdf->Cell(180, 6, '', 'B', 1, 'L');
-        // ----------
-
-        $pdf->ln(3);
-        $pdf->SetX(15);
-        $pdf->Cell(180, 5, 'Cara Pembayaran :', 0, 0, 'L');
-        $pdf->SetX(55);
-        $pdf->Cell(50, 5, strtoupper($pembayaran->metode->jenis_bayar ?? 'CASH'), 0, 0, 'L');
-        $tanggal = \Carbon\Carbon::parse($pembayaran->tanggal)->locale('id')->isoFormat('D MMMM YYYY');
-
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->SetX(145);
-        $pdf->Cell(40, 6, 'Jambi, '.$tanggal, 'B', 1,'C');
-
-
-        $pdf->ln(10);
+        // 3. Nominal Rp
         $pdf->SetFont('helvetica', 'B', 11);
-        $pdf->SetFillColor(255, 255, 255);
-        $pdf->SetDrawColor(0, 0, 0);
-        $pdf->SetLineWidth(0.3);
-        $pdf->SetX(15);
-        $pdf->Cell(15, 10, 'Rp.', 'TB', 0, 'C', false);
+        $pdf->SetTextColor(20, 20, 20);
+        $pdf->SetXY(136.0, 34.8);
+        $pdf->Cell(56, 5, number_format($pembayaran->nominal, 0, ',', '.') . '', 0, 0, 'L');
 
-        $pdf->SetFont('helvetica', 'B', 12);
-        $pdf->SetFillColor(219, 153, 47);
-        $pdf->SetX(30);
-        $pdf->Cell(35, 10, ' ' . number_format($pembayaran->nominal, 0, ',', '.') . ',-', 'LTBR', 0, 'L', true);
-        $pdf->SetFillColor(255, 255, 255);
+        // 4. Telah Terima dari
+        $pdf->SetFont('helvetica', 'B', 9);
+        $pdf->SetXY(52.0, 44.1);
+        $pdf->Cell(147, 4.5, strtoupper($nasabah->nama_lengkap ?? '-'), 0, 0, 'L');
 
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->ln(7);
-        $pdf->SetX(92);
-        $pdf->Cell(35, 6, $perusahaan->nama_mengetahui, 'B', 0, 'C');
-        $pdf->Cell(20, 6, '', 0, 0, 'C');
-        $pdf->Cell(35, 6, $perusahaan->nama_penandatangan, 'B', 1, 'C');
+        // 5. Uang Sejumlah (terbilang)
+        $pdf->SetFont('helvetica', 'I', 8.5);
+        $pdf->SetXY(52.0, 50.5);
+        $pdf->Cell(147, 4.5, '' . ucwords(trim($this->terbilang($pembayaran->nominal))) . ' Rupiah', 0, 0, 'L');
 
-        $pdf->SetX(92);
-        $pdf->Cell(35, 6, 'Direktur', 0, 0, 'C');
-        $pdf->Cell(20, 6, '', 0, 0, 'C');
-        $pdf->Cell(35, 6, 'Admin', 0, 1, 'C');
+        // 6. Untuk Pembayaran (Checkbox & Label)
+        $kategoriStr = strtoupper(($pembayaran->kategori->kategori ?? '') . ' ' . ($pembayaran->keterangan ?? '') . ' ' . ($pembayaran->keterangan_kategori ?? ''));
+        if (str_contains($kategoriStr, 'BOOKING') || str_contains($kategoriStr, 'TANDA JADI')) {
+            $drawCheck(51.8, 57.5);
+        } elseif (str_contains($kategoriStr, 'DP') || str_contains($kategoriStr, 'UANG MUKA') || str_contains($kategoriStr, 'DOWN PAYMENT')) {
+            $drawCheck(76.2, 57.5);
+        } elseif (str_contains($kategoriStr, 'KLT') || str_contains($kategoriStr, 'KELEBIHAN TANAH')) {
+            $drawCheck(92.2, 57.5);
+        } else {
+            $drawCheck(109.2, 57.5);
+            $labelLain = !empty($pembayaran->keterangan_kategori)
+                ? $pembayaran->keterangan_kategori
+                : ($pembayaran->kategori->kategori ?? $pembayaran->keterangan ?? '-');
+            $pdf->SetFont('helvetica', '', 8.5);
+            $pdf->SetXY(127.0, 57.5);
+            $pdf->Cell(73, 4.5, $labelLain, 0, 0, 'L');
+        }
 
+        // 7. Perumahan / Project
+        $pdf->SetFont('helvetica', '', 9);
+        $pdf->SetXY(52.0, 61.5);
+        $pdf->Cell(147, 4.5, $lokasi->nama_kavling ?? '-', 0, 0, 'L');
 
+        // 8. Blok / No
+        $pdf->SetFont('helvetica', 'B', 9);
+        $pdf->SetXY(52.0, 67.5);
+        $pdf->Cell(147, 4.5, $blokNomor, 0, 0, 'L');
+
+        // 9. Rincian Pembayaran (Kotak Kiri)
+        $pdf->SetFont('helvetica', '', 8.5);
+        $pdf->SetXY(64.0, 82.4);
+        $pdf->Cell(57, 4.2, $hargaDasar > 0 ? number_format($hargaDasar, 0, ',', '.') : '-', 0, 0, 'L');
+
+        $pdf->SetXY(64.0, 86.8);
+        $pdf->Cell(57, 4.2, $klt > 0 ? number_format($klt, 0, ',', '.') : '-', 0, 0, 'L');
+
+        $pdf->SetXY(64.0, 91.2);
+        $pdf->Cell(57, 4.2, $totalDp > 0 ? number_format($totalDp, 0, ',', '.') : '-', 0, 0, 'L');
+
+        $pdf->SetXY(64.0, 95.6);
+        $pdf->Cell(57, 4.2, $potongan > 0 ? number_format($potongan, 0, ',', '.') : '-', 0, 0, 'L');
+
+        $pdf->SetXY(64.0, 100.0);
+        $pdf->Cell(57, 4.2, $sisaDp > 0 ? number_format($sisaDp, 0, ',', '.') : ($totalDp > 0 ? '0' : '-'), 0, 0, 'L');
+
+        $pdf->SetXY(53.0, 104.4);
+        $pdf->Cell(68, 4.2, $promo ?: '-', 0, 0, 'L');
+
+        // 10. Rincian Lainnya (Kotak Kanan)
+        $rincianLainnya = [];
+        $rincianLainnya[] = "Metode Pembayaran : " . strtoupper($pembayaran->metode->jenis_bayar ?? 'CASH');
+        if (!empty($pembayaran->keterangan)) {
+            $rincianLainnya[] = "Keterangan : " . $pembayaran->keterangan;
+        }
+        if (!empty($pembayaran->keterangan_kategori)) {
+            $rincianLainnya[] = "Keterangan Kategori : " . $pembayaran->keterangan_kategori;
+        }
         $pdf->SetFont('helvetica', '', 8);
-        $pdf->SetX(15);
-        $pdf->Cell(45, 4, 'Catatan : ', 0, 1, 'l');
-        $pdf->SetX(15);
-        $pdf->Cell(45, 4, '1. Setelah melakukan pembayaran, segera konfirmasi ke WA 082173603773 : ', 0, 1, 'l');
-        $pdf->SetX(15);
-        $pdf->Cell(45, 4, '2. Butuh informasi bubungi 082173603773 : ', 0, 1, 'l');
+        $pdf->SetXY(132.0, 82.5);
+        $pdf->MultiCell(66, 4.3, implode("\n", $rincianLainnya), 0, 'L');
+
+        // 11. Palembang, Tanggal
+        $tglCarbon = Carbon::parse($pembayaran->tanggal)->locale('id');
+        $pdf->SetFont('helvetica', '', 7);
+        $pdf->SetXY(169.0, 110.5);
+        $pdf->Cell(32, 4.5, $tglCarbon->isoFormat('D MMMM'), 0, 0, 'L');
+        $pdf->SetXY(185.5, 110.5);
+        $pdf->Cell(10, 4.5, $tglCarbon->format('y'), 0, 0, 'L');
 
         $filename = 'Kwitansi-' . ($pembayaran->no_kwitansi ?? 'draft') . '.pdf';
         $pdf->Output($filename, 'I');

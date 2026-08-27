@@ -50,7 +50,7 @@ class ArsipCustomerController extends Controller
                     $status     = $row->progres ? $row->progres->status_progres : '-';
                     $badgeClass = match (strtolower($status)) {
                         'booking fee' => 'bg-warning text-dark',
-                        'WAWANCARA'    => 'bg-secondarry',
+                        'PROSES BANK'    => 'bg-secondarry',
                         'akad'         => 'bg-info text-dark',
                         'serah terima' => 'bg-dark',
                         'soldout'      => 'bg-danger',

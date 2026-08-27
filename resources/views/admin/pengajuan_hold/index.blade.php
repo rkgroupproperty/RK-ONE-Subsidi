@@ -236,6 +236,24 @@
                         </div>
 
                         <div class="form-group row">
+                            <label class="control-label col-sm-3">Sumber Prospek <span style="color: red;">*</span></label>
+                            <div class="col-sm-4">
+                                <select class="form-control select-sumber-prospek" name="sumber_prospek"
+                                    id="sumber_prospek">
+                                    <option value=""></option>
+                                    <option value="Iklan Kantor">Iklan Kantor</option>
+                                    <option value="Market Place FB">Market Place FB</option>
+                                    <option value="Freelance">Freelance</option>
+                                    <option value="Kanvasing">Kanvasing</option>
+                                    <option value="Sosmed Pribadi">Sosmed Pribadi</option>
+                                    <option value="Sosmed Kantor">Sosmed Kantor</option>
+                                    <option value="Referensi">Referensi</option>
+                                    <option value="WIC">WIC</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
                             <label class="control-label col-sm-3">Booking Fee <span style="color: red;">*</span></label>
                             <div class="col-sm-4">
                                 <div class="input-group">
@@ -307,6 +325,12 @@
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
                 placeholder: "Pilih Jenis Pembelian",
+            });
+
+            $('.select-sumber-prospek').select2({
+                theme: "bootstrap4",
+                minimumResultsForSearch: Infinity,
+                placeholder: "Pilih Sumber Prospek",
             });
 
             $('.select-status').select2({
@@ -431,6 +455,7 @@
 
                     $('#id_marketing').val(data.id_marketing).trigger('change');
                     $('#jenis_pembelian').val(data.jenis_pembelian).trigger('change');
+                    $('#sumber_prospek').val(data.sumber_prospek).trigger('change');
                     $('#jenis_perumahan').val(data.jenis_perumahan).trigger('change');
 
                     $('#modalForm').modal('show');
@@ -539,6 +564,7 @@
             $('.id_marketing').val('').trigger('change');
             $('.jenis_perumahan').val('').trigger('change');
             $('.jenis_pembelian').val('').trigger('change');
+            $('.sumber_prospek').val('').trigger('change');
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
 

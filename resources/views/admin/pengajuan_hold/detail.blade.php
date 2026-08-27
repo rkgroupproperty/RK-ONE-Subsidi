@@ -390,6 +390,15 @@
                                     </div>
                                 </div>
 
+                                <div class="form-group row">
+                                    <label for="sumber_prospek" class="col-sm-2 col-form-label">Sumber
+                                        Prospek</label>
+                                    <div class="col-sm-3">
+                                        <input type="text" id="sumber_prospek"
+                                            value="{{ $data->sumber_prospek ?? '-' }}" class="form-control" readonly>
+                                    </div>
+                                </div>
+
                                 <!-- CASH ==================================> -->
                                 @if ($data->jenis_pembelian == 'Pembelian Cash')
                                     <hr>

@@ -41,9 +41,9 @@ class SPPRController extends Controller
                     return 'Rp ' . number_format($row->cicilan_per_bulan, 0, ',', '.');
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
-                    $cetakUrl = route('sppr.cetak', $row->id);
-                    $editUrl = route('sppr.edit', $row->id);
-                    $deleteUrl = route('sppr.destroy', $row->id);
+$cetakUrl = route('proses-admin.cetak', $row->id);
+                $editUrl = route('proses-admin.edit', $row->id);
+                $deleteUrl = route('proses-admin.destroy', $row->id);
 
                     $btn = '<div class="d-flex justify-content-center">';
                     if ($permissions['edit']) {
@@ -230,7 +230,7 @@ class SPPRController extends Controller
             'keterangan_shm' => $request->keterangan_shm,
         ]);
 
-        $this->logCreate('SPPR', $sppr->id);
+        $this->logCreate('Proses Admin', $sppr->id);
 
         return response()->json(['status' => 'success']);
     }
@@ -338,7 +338,7 @@ class SPPRController extends Controller
             'keterangan_shm' => $request->keterangan_shm,
         ]);
 
-        $this->logEdit('SPPR', $sppr->id);
+        $this->logEdit('Proses Admin', $sppr->id);
 
         return response()->json(['status' => 'success']);
     }
@@ -347,7 +347,7 @@ class SPPRController extends Controller
     {
         $sppr = SPPR::findOrFail($id);
 
-        $this->logDelete('SPPR', $sppr->id);
+        $this->logDelete('Proses Admin', $sppr->id);
         $sppr->delete();
 
         return response()->json(['status' => 'success']);

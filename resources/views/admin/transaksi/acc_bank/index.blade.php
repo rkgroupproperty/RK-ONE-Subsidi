@@ -15,7 +15,7 @@
                         <div class="card">
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
-                                    <h3 class="font-weight-bold text-lg">Data Acc Bank</h3>
+                                    <h3 class="font-weight-bold text-lg">Data SP3K</h3>
                                 </div>
                             </div>
                             <div class="card-body">
@@ -56,7 +56,7 @@
                 serverSide: false,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('acc-bank.index') }}",
+                ajax: "{{ route('sp3k.index') }}",
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',

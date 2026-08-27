@@ -15,11 +15,11 @@
                         <div class="card">
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
-                                    <h3 class="font-weight-bold text-lg">Data Wawancara</h3>
+                                    <h3 class="font-weight-bold text-lg">Data Proses Bank</h3>
                                     <div class="d-flex align-items-center" style="gap: 3px">
                                         <button class="btn btn-primary btn-sm" data-toggle="modal"
                                             data-target="#modalForm"><i class="fas fa-plus" id="btnTambah"></i>
-                                            Tambah Data Wawancara</button>
+                                            Tambah Data Proses Bank</button>
                                     </div>
                                 </div>
                             </div>
@@ -59,7 +59,7 @@
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-indigo">
-                    <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel">Form Wawancara</h5>
+                    <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel">Form Proses Bank</h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -381,7 +381,7 @@
                 return
             }
 
-            const detailCustomerUrl = "{{ route('wawancara.detail-customer', ':id') }}"
+            const detailCustomerUrl = "{{ route('proses-bank.detail-customer', ':id') }}"
 
             let url = detailCustomerUrl.replace(':id', id)
 
@@ -403,7 +403,7 @@
                 serverSide: false,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('wawancara.index') }}",
+                ajax: "{{ route('proses-bank.index') }}",
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
@@ -614,8 +614,8 @@
             submitBtn.prop('disabled', true);
 
             let id = $('#primary_id').val();
-            let url = id ? '{{ route('wawancara.update', ['wawancara' => ':id']) }}'.replace(':id', id) :
-                '{{ route('wawancara.store') }}';
+            let url = id ? '{{ route('proses-bank.update', ['wawancara' => ':id']) }}'.replace(':id', id) :
+                '{{ route('proses-bank.store') }}';
             let method = id ? 'PUT' : 'POST';
 
             $('.is-invalid').removeClass('is-invalid');
@@ -633,7 +633,7 @@
                 success: function(response) {
                     $('#modalForm').modal('hide');
                     audio.play();
-                    let msg = id ? "Wawancara berhasil diupdate!" : "Wawancara berhasil ditambahkan!";
+                    let msg = id ? "Proses Bank berhasil diupdate!" : "Proses Bank berhasil ditambahkan!";
                     toastr.success(msg, "BERHASIL", {
                         progressBar: true,
                         timeOut: 3500,
@@ -681,7 +681,7 @@
             submitBtn.prop('disabled', true);
 
             let id = $('#id_wawancara').val();
-            let url = '{{ route('wawancara.sp3k', ['id_wawancara' => ':id']) }}'.replace(':id', id);
+            let url = '{{ route('proses-bank.sp3k', ['id_wawancara' => ':id']) }}'.replace(':id', id);
             let method = 'POST';
 
             $('.is-invalid').removeClass('is-invalid');

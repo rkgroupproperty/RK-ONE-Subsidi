@@ -54,7 +54,7 @@
                             <div class="inner">
                                 <h3>{{ $hijau }}</h3>
 
-                                <p>Wawancara</p>
+                                <p>Proses Bank</p>
                             </div>
                             <div class="icon">
                                 <i class="ion ion-pie-graph"></i>

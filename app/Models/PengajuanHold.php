@@ -45,6 +45,7 @@ class PengajuanHold extends Model
         'total_harga',
         'jenis_perumahan',
         'jenis_pembelian',
+        'sumber_prospek',
         'pembayaran_cash',
         'an_surat_cash',
         'dp_cash_b',

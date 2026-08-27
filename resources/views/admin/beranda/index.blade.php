@@ -626,21 +626,21 @@
             </article>
 
             <article class="pipeline-card c-cyan">
-              <h3>SPPR</h3>
+              <h3>Proses Admin</h3>
               <div class="count">{{ $pipelineCounts['sppr'] ?? 0 }}</div>
-              <a class="pipeline-btn" href="{{ route('sppr.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-btn" href="{{ route('proses-admin.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-card c-green">
-              <h3>Wawancara</h3>
+              <h3>Proses Bank</h3>
               <div class="count">{{ $pipelineCounts['wawancara'] ?? 0 }}</div>
-              <a class="pipeline-btn" href="{{ route('wawancara.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-btn" href="{{ route('proses-bank.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-card c-orange">
-              <h3>ACC Bank</h3>
+              <h3>SP3K</h3>
               <div class="count">{{ $pipelineCounts['acc_bank'] ?? 0 }}</div>
-              <a class="pipeline-btn" href="{{ route('acc-bank.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-btn" href="{{ route('sp3k.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-card c-pink">
@@ -677,9 +677,9 @@
                 <tr>
                   <th>Project / Perumahan</th>
                   <th>Booking</th>
-                  <th>SPPR</th>
-                  <th>Wawancara</th>
-                  <th>ACC Bank</th>
+                  <th>Proses Admin</th>
+                  <th>Proses Bank</th>
+                  <th>SP3K</th>
                   <th>PPJB</th>
                   <th>Akad</th>
                   <th>BAST</th>
@@ -744,7 +744,7 @@
                   <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Status</label>
                   <select id="filterStatus" class="form-control" style="width:150px">
                     <option value="semua" selected>Semua</option>
-                    <option value="wawancara">Wawancara</option>
+                    <option value="wawancara">Proses Bank</option>
                     <option value="sp3k">SP3K</option>
                     <option value="akad">Akad</option>
                   </select>
@@ -805,6 +805,28 @@
             </div>
           </div>
         </article>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-body">
+          <div class="section-head">
+            <h2>Grafik Sumber Prospek</h2>
+            <div style="display:flex;gap:10px;align-items:center">
+              <div>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Filter</label>
+                <select id="filterSumberProspek" class="form-control" style="width:150px">
+                  <option value="semua" selected>Semua</option>
+                  <option value="booking">Booking</option>
+                  <option value="customer">Customer</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-box" style="height:350px">
+            <canvas id="sumberProspekChart"></canvas>
+          </div>
+        </div>
       </section>
 
     </div>
@@ -899,13 +921,97 @@
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
             });
+            $('#filterSumberProspek').select2({
+                theme: "bootstrap4",
+                minimumResultsForSearch: Infinity,
+            });
 
             loadChartData();
 
             $('#filterTahun, #filterStatus').on('change', function() {
                 loadChartData();
             });
+
+            loadSumberProspekChart();
+            $('#filterSumberProspek').on('change', function() {
+                loadSumberProspekChart();
+            });
         });
+
+        let sumberProspekChart;
+        const spColors = [
+            'rgba(59, 130, 246, 0.7)',
+            'rgba(239, 68, 68, 0.7)',
+            'rgba(34, 197, 94, 0.7)',
+            'rgba(249, 115, 22, 0.7)',
+            'rgba(168, 85, 247, 0.7)',
+            'rgba(236, 72, 153, 0.7)',
+            'rgba(20, 184, 166, 0.7)',
+            'rgba(234, 179, 8, 0.7)',
+        ];
+        const spBorders = spColors.map(c => c.replace('0.7', '1'));
+
+        function loadSumberProspekChart() {
+            const filter = $('#filterSumberProspek').val();
+            $.ajax({
+                url: '{{ route("beranda.sumber-prospek-data") }}',
+                type: 'GET',
+                data: { filter: filter },
+                success: function(response) {
+                    renderSumberProspekChart(response.labels, response.combined);
+                }
+            });
+        }
+
+        function renderSumberProspekChart(labels, data) {
+            const ctx = document.getElementById('sumberProspekChart').getContext('2d');
+            if (sumberProspekChart) sumberProspekChart.destroy();
+
+            sumberProspekChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah',
+                        data: data,
+                        backgroundColor: spColors,
+                        borderColor: spBorders,
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.parsed.y + ' data';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, precision: 0 },
+                            grid: { color: '#f0f1f4' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     </script>
     @endpush
 @endsection

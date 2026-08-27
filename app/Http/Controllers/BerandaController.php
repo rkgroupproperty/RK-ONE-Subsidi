@@ -241,7 +241,7 @@ class BerandaController extends Controller
                 $status = $row->progres->status_progres ?? '-';
                 $badgeColors = [
                     'BOOKING FEE' => 'warning',
-                    'WAWANCARA' => 'secondary',
+                    'PROSES BANK' => 'secondary',
                     'SP3K' => 'success',
                     'AKAD' => 'info',
                     'SERAH TERIMA' => 'dark',
@@ -261,5 +261,54 @@ class BerandaController extends Controller
             })
             ->rawColumns(['tgl_terima', 'id_marketing', 'id_lokasi', 'id_status_progres', 'nama_lengkap'])
             ->make(true);
+    }
+
+    public function getSumberProspekData(Request $request)
+    {
+        $filter = $request->input('filter', 'semua');
+
+        $options = [
+            'Iklan Kantor',
+            'Market Place FB',
+            'Freelance',
+            'Kanvasing',
+            'Sosmed Pribadi',
+            'Sosmed Kantor',
+            'Referensi',
+            'WIC',
+        ];
+
+        $bookingData = [];
+        $customerData = [];
+
+        foreach ($options as $option) {
+            $bookingCount = PengajuanHold::where('sumber_prospek', $option)
+                ->where('stt_reg', '!=', 2)
+                ->count();
+
+            $customerCount = Customer::where('sumber_prospek', $option)
+                ->where('stt_arsip', 0)
+                ->count();
+
+            $bookingData[] = $bookingCount;
+            $customerData[] = $customerCount;
+        }
+
+        if ($filter === 'booking') {
+            $combined = $bookingData;
+        } elseif ($filter === 'customer') {
+            $combined = $customerData;
+        } else {
+            $combined = array_map(function ($b, $c) {
+                return $b + $c;
+            }, $bookingData, $customerData);
+        }
+
+        return response()->json([
+            'labels' => $options,
+            'booking' => $bookingData,
+            'customer' => $customerData,
+            'combined' => $combined,
+        ]);
     }
 }
