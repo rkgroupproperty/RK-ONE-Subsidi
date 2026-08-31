@@ -424,8 +424,18 @@
                                     <div class="modal-footer text-center">
                                         <a href="{{ route('pengajuan-hold.index') }}" class="btn btn-danger">Kembali</a>
 
+                                        @php
+                                            $isAlreadyVerified = isset($data) && $data->stt_reg == 2;
+                                            $hasAdminPemberkasan = !empty($data->id_admin_pemberkasan);
+                                            $isCurrentUserAdmin = $hasAdminPemberkasan && $currentUser && $currentUser->id == $data->id_admin_pemberkasan;
+                                            $canSave = !$isAlreadyVerified && $isCurrentUserAdmin;
+                                            $disableReason = $isAlreadyVerified ? 'Data sudah diverifikasi' : (!$hasAdminPemberkasan ? 'Admin Pemberkasan belum dipilih' : 'Hanya Admin Pemberkasan yang bisa memverifikasi data ini');
+                                        @endphp
+
                                         <button type="submit" class="btn btn-primary ms-1" id="submitBtn"
-                                            @if (isset($data) && $data->stt_reg == 2) readonly @endif>
+                                            @if(!$canSave) disabled @endif
+                                            @if(!$canSave) title="{{ $disableReason }}" @endif
+                                            data-toggle="tooltip" data-placement="top">
                                             <span class="spinner-border spinner-border-sm me-2 d-none" role="status"
                                                 aria-hidden="true"></span>
                                             <span class="button-text">Simpan</span>

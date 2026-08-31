@@ -56,6 +56,7 @@ class PengajuanHold extends Model
         'tgl_tempo_cicilan_1',
         'an_surat_kpr',
         'stt_reg',
+        'id_admin_pemberkasan',
     ];
 
     public $timestamps = false;
@@ -78,5 +79,10 @@ class PengajuanHold extends Model
     public function kavling()
     {
         return $this->belongsTo(KavlingPeta::class, 'id_kavling');
+    }
+
+    public function adminPemberkasan()
+    {
+        return $this->belongsTo(\App\Models\PengaturanPengguna::class, 'id_admin_pemberkasan');
     }
 }

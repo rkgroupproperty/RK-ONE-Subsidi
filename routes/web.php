@@ -28,6 +28,7 @@ use App\Http\Controllers\Master\RetensiController;
 use App\Http\Controllers\Master\UploadTemplateController;
 use App\Http\Controllers\PanduanAplikasiController;
 use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\AdminPemberkasanController;
 use App\Http\Controllers\PengajuanHoldController;
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Http\Controllers\Pengaturan\KontenController;
@@ -125,6 +126,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
     Route::get('admin/beranda/chart-data', [BerandaController::class, 'getChartData'])->name('beranda.chart-data');
     Route::get('admin/beranda/sumber-prospek-data', [BerandaController::class, 'getSumberProspekData'])->name('beranda.sumber-prospek-data');
+    Route::get('admin/beranda/admin-pemberkasan-data', [BerandaController::class, 'adminPemberkasanData'])->name('beranda.admin-pemberkasan-data');
     Route::get('admin/detail-grafik-penjualan-bulanan', [BerandaController::class, 'detailGrafik'])->name('beranda.detail-grafik');
     Route::get('admin/detail-grafik-penjualan-bulanan/data', [BerandaController::class, 'detailGrafikData'])->name('beranda.detail-grafik.data');
 
@@ -174,6 +176,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/pengajuan-hold/{id}/verifikasi', [PengajuanHoldController::class, 'simpanVerifikasi'])->name('pengajuan-hold.verifikasi.simpan');
         Route::get('/pengajuan-hold/{id}/arsip-detail', [PengajuanHoldController::class, 'arsipDetail'])->name('pengajuan-hold.arsip.detail');
         Route::resource('pengajuan-hold', PengajuanHoldController::class);
+    });
+
+    Route::prefix('admin')->group(function () {
+        Route::post('admin-pemberkasan/set-admin', [AdminPemberkasanController::class, 'setAdmin'])->name('admin-pemberkasan.set-admin');
+        Route::get('admin-pemberkasan/chart-data', [AdminPemberkasanController::class, 'chartData'])->name('admin-pemberkasan.chart-data');
+        Route::resource('admin-pemberkasan', AdminPemberkasanController::class)->only(['index']);
     });
 
     Route::prefix('admin')->controller(PembayaranController::class)->group(function () {

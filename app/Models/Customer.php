@@ -44,6 +44,7 @@ class Customer extends Model
         'an_surat_cash',
         'termin_x_cash_b',
         'stt_arsip',
+        'id_admin_pemberkasan',
     ];
 
     public function persyaratan()
@@ -104,6 +105,11 @@ class Customer extends Model
     public function wawancara()
     {
         return $this->hasMany(Wawancara::class, 'id_customer');
+    }
+
+    public function adminPemberkasan()
+    {
+        return $this->belongsTo(\App\Models\PengaturanPengguna::class, 'id_admin_pemberkasan');
     }
 
     public $timestamps = false;

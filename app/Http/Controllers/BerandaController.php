@@ -11,6 +11,7 @@ use App\Models\LokasiKavling;
 use App\Models\Customer;
 use App\Models\MarketingOffline;
 use App\Models\PengajuanHold;
+use App\Models\PengaturanPengguna;
 use App\Models\PPJB;
 use App\Models\SPPR;
 use App\Models\Wawancara;
@@ -18,6 +19,7 @@ use App\Models\WawancaraSp3k;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class BerandaController extends Controller
@@ -131,6 +133,19 @@ class BerandaController extends Controller
 
         $currentYear = Carbon::now('Asia/Jakarta')->year;
 
+        $adminPemberkasanStats = PengajuanHold::where('stt_reg', '!=', 2)
+            ->whereNotNull('id_admin_pemberkasan')
+            ->select('id_admin_pemberkasan', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('id_admin_pemberkasan')
+            ->with('adminPemberkasan')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'nama' => $item->adminPemberkasan->username ?? '-',
+                    'jumlah' => $item->jumlah,
+                ];
+            });
+
         return view('admin.beranda.index', compact(
             'username',
             'pipelineCounts',
@@ -140,7 +155,8 @@ class BerandaController extends Controller
             'marketingStats',
             'bankStats',
             'availableYears',
-            'currentYear'
+            'currentYear',
+            'adminPemberkasanStats'
         ));
     }
 
@@ -309,6 +325,29 @@ class BerandaController extends Controller
             'booking' => $bookingData,
             'customer' => $customerData,
             'combined' => $combined,
+        ]);
+    }
+
+    public function adminPemberkasanData()
+    {
+        $data = PengajuanHold::where('stt_reg', '!=', 2)
+            ->whereNotNull('id_admin_pemberkasan')
+            ->select('id_admin_pemberkasan', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('id_admin_pemberkasan')
+            ->with('adminPemberkasan')
+            ->get();
+
+        $labels = [];
+        $values = [];
+
+        foreach ($data as $item) {
+            $labels[] = $item->adminPemberkasan->username ?? '-';
+            $values[] = $item->jumlah;
+        }
+
+        return response()->json([
+            'labels' => $labels,
+            'data'   => $values,
         ]);
     }
 }

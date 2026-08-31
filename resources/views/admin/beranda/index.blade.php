@@ -829,6 +829,18 @@
         </div>
       </section>
 
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-body">
+          <div class="section-head">
+            <h2>Grafik Admin Pemberkasan</h2>
+          </div>
+
+          <div class="chart-box" style="height:350px">
+            <canvas id="adminPemberkasanChart"></canvas>
+          </div>
+        </div>
+      </section>
+
     </div>
   </main>
 
@@ -1012,6 +1024,83 @@
                 }
             });
         }
+
+        let adminPemberkasanChart;
+        const apColors = [
+            'rgba(59, 130, 246, 0.7)',
+            'rgba(239, 68, 68, 0.7)',
+            'rgba(34, 197, 94, 0.7)',
+            'rgba(249, 115, 22, 0.7)',
+            'rgba(168, 85, 247, 0.7)',
+            'rgba(236, 72, 153, 0.7)',
+            'rgba(20, 184, 166, 0.7)',
+            'rgba(234, 179, 8, 0.7)',
+        ];
+        const apBorders = apColors.map(c => c.replace('0.7', '1'));
+
+        function renderAdminPemberkasanChart(labels, data) {
+            const ctx = document.getElementById('adminPemberkasanChart').getContext('2d');
+            if (adminPemberkasanChart) adminPemberkasanChart.destroy();
+
+            adminPemberkasanChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah Booking',
+                        data: data,
+                        backgroundColor: apColors.slice(0, labels.length),
+                        borderColor: apBorders.slice(0, labels.length),
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ctx.parsed.y + ' booking';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, precision: 0 },
+                            grid: { color: '#f0f1f4' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadAdminPemberkasanChart() {
+            $.ajax({
+                url: '{{ route("beranda.admin-pemberkasan-data") }}',
+                type: 'GET',
+                success: function(response) {
+                    renderAdminPemberkasanChart(response.labels, response.data);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            loadAdminPemberkasanChart();
+        });
     </script>
     @endpush
 @endsection
