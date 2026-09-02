@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\PengajuanHold;
-use App\Models\PengaturanPengguna;
+use App\Models\AdminPemberkasan;
 use App\Models\MarketingOffline;
 use App\Models\LokasiKavling;
 use App\Models\ProgresListPenjualan;
@@ -67,7 +67,7 @@ class AdminPemberkasanController extends Controller
 
                 ->addColumn('admin_pemberkasan', function ($row) {
                     if ($row->id_admin_pemberkasan && $row->adminPemberkasan) {
-                        return '<span class="badge bg-info">' . e($row->adminPemberkasan->username) . '</span>';
+                        return '<span class="badge bg-info">' . e($row->adminPemberkasan->nama_lengkap) . '</span>';
                     }
                     return '-';
                 })
@@ -102,7 +102,7 @@ class AdminPemberkasanController extends Controller
         $bank      = Bank::all();
         $progres   = ProgresListPenjualan::all();
         $lokasi    = LokasiKavling::all();
-        $admins    = PengaturanPengguna::where('id_role', 1)->get();
+        $admins    = AdminPemberkasan::where('status', 1)->get();
 
         return view('admin.admin_pemberkasan.index', compact('permissions', 'marketing', 'lokasi', 'progres', 'bank', 'admins'));
     }
@@ -111,11 +111,11 @@ class AdminPemberkasanController extends Controller
     {
         $request->validate([
             'id' => 'required|exists:pengajuan_hold,id',
-            'id_admin_pemberkasan' => 'nullable|exists:users,id',
+            'id_admin_pemberkasan' => 'nullable|exists:admin_pemberkasan,id',
         ], [
             'id.required' => 'Data tidak valid.',
             'id.exists'   => 'Data pengajuan tidak ditemukan.',
-            'id_admin_pemberkasan.exists' => 'Admin tidak ditemukan.',
+            'id_admin_pemberkasan.exists' => 'Admin Pemberkasan tidak ditemukan.',
         ]);
 
         DB::beginTransaction();
@@ -151,7 +151,7 @@ class AdminPemberkasanController extends Controller
         $values = [];
 
         foreach ($data as $item) {
-            $labels[] = $item->adminPemberkasan->username ?? '-';
+            $labels[] = $item->adminPemberkasan->nama_lengkap ?? '-';
             $values[] = $item->jumlah;
         }
 

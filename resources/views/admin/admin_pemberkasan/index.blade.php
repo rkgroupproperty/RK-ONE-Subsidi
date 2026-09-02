@@ -61,7 +61,7 @@
                                 <select class="form-control select-admin" name="id_admin_pemberkasan" id="id_admin_pemberkasan">
                                     <option value="">- Pilih Admin -</option>
                                     @foreach ($admins as $admin)
-                                        <option value="{{ $admin->id }}">{{ $admin->username }}</option>
+                                        <option value="{{ $admin->id }}">{{ $admin->nama_lengkap }}</option>
                                     @endforeach
                                 </select>
                             </div>

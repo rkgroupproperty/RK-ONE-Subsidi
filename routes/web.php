@@ -28,6 +28,7 @@ use App\Http\Controllers\Master\RetensiController;
 use App\Http\Controllers\Master\UploadTemplateController;
 use App\Http\Controllers\PanduanAplikasiController;
 use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\Master\AdminPemberkasanController as MasterAdminPemberkasanController;
 use App\Http\Controllers\AdminPemberkasanController;
 use App\Http\Controllers\PengajuanHoldController;
 use App\Http\Controllers\Pengaturan\HakAksesController;
@@ -181,7 +182,6 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::post('admin-pemberkasan/set-admin', [AdminPemberkasanController::class, 'setAdmin'])->name('admin-pemberkasan.set-admin');
         Route::get('admin-pemberkasan/chart-data', [AdminPemberkasanController::class, 'chartData'])->name('admin-pemberkasan.chart-data');
-        Route::resource('admin-pemberkasan', AdminPemberkasanController::class)->only(['index']);
     });
 
     Route::prefix('admin')->controller(PembayaranController::class)->group(function () {
@@ -328,7 +328,9 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('retensi', RetensiController::class);
         Route::resource('notaris', NotarisController::class);
         Route::resource('upload-template', UploadTemplateController::class);
+        Route::resource('admin-pemberkasan', MasterAdminPemberkasanController::class);
     });
+
 
     Route::prefix('admin/pengaturan')->group(function () {
         Route::resource('pengaturan-profil', PengaturanProfilController::class);

@@ -81,13 +81,6 @@ class PengajuanHoldController extends Controller
                     return $namaLokasi . '<br>' . $kodeKavling;
                 })
 
-                ->addColumn('admin_pemberkasan', function ($row) {
-                    if ($row->id_admin_pemberkasan && $row->adminPemberkasan) {
-                        return '<span class="badge bg-info">' . e($row->adminPemberkasan->username) . '</span>';
-                    }
-                    return '-';
-                })
-
                 ->addColumn('action', function ($row) use ($permissions): string {
                     $editUrl     = route('pengajuan-hold.edit', $row->id);
                     $deleteUrl   = route('pengajuan-hold.destroy', $row->id);
@@ -116,7 +109,6 @@ class PengajuanHoldController extends Controller
                     'nama_lengkap',
                     'kode_kavling',
                     'stt_reg',
-                    'admin_pemberkasan',
                     'action',
                 ])
 
@@ -893,7 +885,7 @@ class PengajuanHoldController extends Controller
         $data            = PengajuanHold::with('adminPemberkasan')->findOrFail($id);
         $bankList        = Bank::all();
         $metodeBayarList = MetodeBayar::all();
-        $currentUser     = Auth::user();
+        $adminPemberkasanList = \App\Models\AdminPemberkasan::where('status', 1)->get();
 
         if (! empty($data->tgl_booking)) {
             $data->tgl_booking_formatted = Carbon::createFromFormat('Y-m-d', $data->tgl_booking)
@@ -911,7 +903,7 @@ class PengajuanHoldController extends Controller
             $data->tgl_lahir_formatted = null;
         }
 
-        return view('admin.pengajuan_hold.verif', compact('data', 'bankList', 'metodeBayarList', 'currentUser'));
+        return view('admin.pengajuan_hold.verif', compact('data', 'bankList', 'metodeBayarList', 'adminPemberkasanList'));
     }
 
     public function simpanVerifikasi(Request $request, $id)
@@ -925,12 +917,13 @@ class PengajuanHoldController extends Controller
         ]);
 
         $rules = [
-            'stt_reg'         => 'required',
-            'jenis_pembelian' => 'required',
-            'id_metode_bayar' => 'required',
-            'id_bank'         => 'required',
-            'an_surat_cash'   => 'required_if:jenis_pembelian,Pembelian Cash',
-            'termin_x_cash_b' => 'required_if:jenis_pembelian,Cash Bertahap',
+            'stt_reg'              => 'required',
+            'jenis_pembelian'      => 'required',
+            'id_metode_bayar'      => 'required',
+            'id_bank'              => 'required',
+            'id_admin_pemberkasan' => 'required|exists:admin_pemberkasan,id',
+            'an_surat_cash'        => 'required_if:jenis_pembelian,Pembelian Cash',
+            'termin_x_cash_b'      => 'required_if:jenis_pembelian,Cash Bertahap',
         ];
 
         $messages = [
@@ -938,6 +931,8 @@ class PengajuanHoldController extends Controller
             'jenis_pembelian.required'    => 'Jenis Pembelian wajib dipilih!',
             'id_metode_bayar.required'    => 'Metode Pembayaran wajib dipilih!',
             'id_bank.required'            => 'Bank wajib dipilih!',
+            'id_admin_pemberkasan.required' => 'Admin Pemberkasan wajib dipilih!',
+            'id_admin_pemberkasan.exists'   => 'Admin Pemberkasan tidak ditemukan!',
             'an_surat_cash.required_if'   => 'Atas Nama Surat wajib diisi!',
             'termin_x_cash_b.required_if' => 'Termin wajib diisi!',
         ];
@@ -949,20 +944,23 @@ class PengajuanHoldController extends Controller
             if ($request->stt_reg == 2) {
                 if ($request->jenis_pembelian === 'Pembelian Cash') {
                     $db = [
-                        'stt_reg'         => $request->stt_reg,
-                        'jenis_pembelian' => $request->jenis_pembelian,
-                        'an_surat_cash'   => $request->an_surat_cash,
+                        'stt_reg'              => $request->stt_reg,
+                        'jenis_pembelian'      => $request->jenis_pembelian,
+                        'an_surat_cash'        => $request->an_surat_cash,
+                        'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
                     ];
                 } elseif ($request->jenis_pembelian === 'Cash Bertahap') {
                     $db = [
-                        'stt_reg'         => $request->stt_reg,
-                        'jenis_pembelian' => $request->jenis_pembelian,
-                        'termin_x_cash_b' => $request->termin_x_cash_b,
+                        'stt_reg'              => $request->stt_reg,
+                        'jenis_pembelian'      => $request->jenis_pembelian,
+                        'termin_x_cash_b'      => $request->termin_x_cash_b,
+                        'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
                     ];
                 } elseif ($request->jenis_pembelian === 'KPR') {
                     $db = [
-                        'stt_reg'         => $request->stt_reg,
-                        'jenis_pembelian' => $request->jenis_pembelian,
+                        'stt_reg'              => $request->stt_reg,
+                        'jenis_pembelian'      => $request->jenis_pembelian,
+                        'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
                     ];
                 }
 
@@ -1020,7 +1018,8 @@ class PengajuanHoldController extends Controller
                 Pemasukan::create($p1);
             } else {
                 $db = [
-                    'stt_reg' => $request->stt_reg,
+                    'stt_reg'              => $request->stt_reg,
+                    'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
                 ];
 
                 $data->update($db);

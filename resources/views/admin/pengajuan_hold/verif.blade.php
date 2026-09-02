@@ -337,6 +337,18 @@
                                                 </option>
                                             </select>
                                         </div>
+                                        <label for="id_admin_pemberkasan" class="col-sm-2 col-form-label">Admin Pemberkasan</label>
+                                        <div class="col-sm-3">
+                                            <select name="id_admin_pemberkasan" id="id_admin_pemberkasan"
+                                                class="form-control select-admin-pemberkasan">
+                                                <option value=""></option>
+                                                @foreach ($adminPemberkasanList as $item)
+                                                    <option value="{{ $item->id }}" {{ $data->id_admin_pemberkasan == $item->id ? 'selected' : '' }}>
+                                                        {{ $item->nama_lengkap }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
 
                                     <div class="form-group row">
@@ -424,18 +436,7 @@
                                     <div class="modal-footer text-center">
                                         <a href="{{ route('pengajuan-hold.index') }}" class="btn btn-danger">Kembali</a>
 
-                                        @php
-                                            $isAlreadyVerified = isset($data) && $data->stt_reg == 2;
-                                            $hasAdminPemberkasan = !empty($data->id_admin_pemberkasan);
-                                            $isCurrentUserAdmin = $hasAdminPemberkasan && $currentUser && $currentUser->id == $data->id_admin_pemberkasan;
-                                            $canSave = !$isAlreadyVerified && $isCurrentUserAdmin;
-                                            $disableReason = $isAlreadyVerified ? 'Data sudah diverifikasi' : (!$hasAdminPemberkasan ? 'Admin Pemberkasan belum dipilih' : 'Hanya Admin Pemberkasan yang bisa memverifikasi data ini');
-                                        @endphp
-
-                                        <button type="submit" class="btn btn-primary ms-1" id="submitBtn"
-                                            @if(!$canSave) disabled @endif
-                                            @if(!$canSave) title="{{ $disableReason }}" @endif
-                                            data-toggle="tooltip" data-placement="top">
+                                        <button type="submit" class="btn btn-primary ms-1" id="submitBtn">
                                             <span class="spinner-border spinner-border-sm me-2 d-none" role="status"
                                                 aria-hidden="true"></span>
                                             <span class="button-text">Simpan</span>
@@ -475,6 +476,12 @@
                 theme: "bootstrap4",
                 placeholder: 'Pilih Metode Bayar',
                 minimumResultsForSearch: Infinity,
+                width: '100%'
+            });
+
+            $('.select-admin-pemberkasan').select2({
+                theme: "bootstrap4",
+                placeholder: 'Pilih Admin Pemberkasan',
                 width: '100%'
             });
 

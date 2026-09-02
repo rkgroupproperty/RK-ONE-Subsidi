@@ -141,7 +141,7 @@ class BerandaController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'nama' => $item->adminPemberkasan->username ?? '-',
+                    'nama' => $item->adminPemberkasan->nama_lengkap ?? '-',
                     'jumlah' => $item->jumlah,
                 ];
             });
@@ -341,7 +341,7 @@ class BerandaController extends Controller
         $values = [];
 
         foreach ($data as $item) {
-            $labels[] = $item->adminPemberkasan->username ?? '-';
+            $labels[] = $item->adminPemberkasan->nama_lengkap ?? '-';
             $values[] = $item->jumlah;
         }
 

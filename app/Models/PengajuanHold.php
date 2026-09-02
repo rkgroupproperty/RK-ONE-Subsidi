@@ -83,6 +83,6 @@ class PengajuanHold extends Model
 
     public function adminPemberkasan()
     {
-        return $this->belongsTo(\App\Models\PengaturanPengguna::class, 'id_admin_pemberkasan');
+        return $this->belongsTo(\App\Models\AdminPemberkasan::class, 'id_admin_pemberkasan');
     }
 }

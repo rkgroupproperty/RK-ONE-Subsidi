@@ -29,7 +29,6 @@
                                             <th>Marketing</th>
                                             <th>Lokasi</th>
                                             <th>Status</th>
-                                            <th>Admin</th>
                                             <th class="text-center" width="200px">Action</th>
                                         </tr>
                                     </thead>
@@ -391,13 +390,6 @@
                     {
                         data: 'stt_reg',
                         name: 'stt_reg',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center'
-                    },
-                    {
-                        data: 'admin_pemberkasan',
-                        name: 'admin_pemberkasan',
                         orderable: false,
                         searchable: false,
                         className: 'text-center'
