@@ -130,6 +130,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('admin/beranda/admin-pemberkasan-data', [BerandaController::class, 'adminPemberkasanData'])->name('beranda.admin-pemberkasan-data');
     Route::get('admin/detail-grafik-penjualan-bulanan', [BerandaController::class, 'detailGrafik'])->name('beranda.detail-grafik');
     Route::get('admin/detail-grafik-penjualan-bulanan/data', [BerandaController::class, 'detailGrafikData'])->name('beranda.detail-grafik.data');
+    Route::get('admin/detail-customer-marketing/{id}', [BerandaController::class, 'detailCustomerMarketing'])->name('beranda.detail-customer-marketing');
+    Route::get('admin/detail-customer-marketing/{id}/data', [BerandaController::class, 'detailCustomerMarketingData'])->name('beranda.detail-customer-marketing.data');
+    Route::get('admin/detail-customer-admin-pemberkasan/{id}', [BerandaController::class, 'detailCustomerAdminPemberkasan'])->name('beranda.detail-customer-admin-pemberkasan');
+    Route::get('admin/detail-customer-admin-pemberkasan/{id}/data', [BerandaController::class, 'detailCustomerAdminPemberkasanData'])->name('beranda.detail-customer-admin-pemberkasan.data');
 
     Route::prefix('admin')->controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard.index');

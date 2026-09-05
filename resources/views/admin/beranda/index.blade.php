@@ -440,6 +440,12 @@
       border-bottom: 1px solid #f0f1f4;
     }
 
+    .marketing-item:hover {
+      background: #f8f9fa;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
     .bank-item {
       display: grid;
       grid-template-columns: 28px 1fr 74px 54px;
@@ -766,7 +772,7 @@
 
             <div class="marketing-list">
               @forelse ($marketingStats as $index => $marketing)
-                <div class="marketing-item">
+                <a href="{{ route('beranda.detail-customer-marketing', $marketing['id']) }}" class="marketing-item" style="text-decoration:none;color:inherit">
                   <span class="rank">{{ $index + 1 }}</span>
                   <span class="avatar">{{ $marketing['inisial'] }}</span>
                   <div class="item-main">
@@ -774,7 +780,7 @@
                     <div class="item-sub">{{ $marketing['kode'] }} · Marketing</div>
                   </div>
                   <div class="item-value">{{ $marketing['jumlah'] }} Unit</div>
-                </div>
+                </a>
               @empty
                 <div class="item-sub">Belum ada data marketing.</div>
               @endforelse
@@ -783,28 +789,57 @@
         </article>
       </section>
 
-      <section class="bottom-grid" style="grid-template-columns: 1fr 1fr; margin-top:16px">
-        <article class="panel">
-          <div class="panel-body">
-            <div class="section-head"><h2>Statistik Penggunaan Bank</h2></div>
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-body">
+          <div class="section-head"><h2>Statistik Penggunaan Bank</h2></div>
 
-            <div class="bank-list" style="max-height:250px">
-              @forelse ($bankStats as $index => $bank)
-                <div class="bank-item">
-                  <span class="rank">{{ $index + 1 }}</span>
-                  <div class="item-main">
-                    <div class="item-title">{{ $bank['nama'] }}</div>
-                    <div class="item-sub">Bank KPR</div>
-                  </div>
-                  <div class="item-value">{{ $bank['jumlah'] }} Nasabah</div>
-                  <div class="item-value">{{ $bank['persentase'] }}%</div>
+          <div class="bank-list" style="max-height:250px">
+            @forelse ($bankStats as $index => $bank)
+              <div class="bank-item">
+                <span class="rank">{{ $index + 1 }}</span>
+                <div class="item-main">
+                  <div class="item-title">{{ $bank['nama'] }}</div>
+                  <div class="item-sub">Bank KPR</div>
                 </div>
-              @empty
-                <div class="item-sub">Belum ada penggunaan bank.</div>
-              @endforelse
+                <div class="item-value">{{ $bank['jumlah'] }} Nasabah</div>
+                <div class="item-value">{{ $bank['persentase'] }}%</div>
+              </div>
+            @empty
+              <div class="item-sub">Belum ada penggunaan bank.</div>
+            @endforelse
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-body">
+          <div class="section-head">
+            <h2>Grafik Admin Pemberkasan</h2>
+            <div style="display:flex;gap:10px;align-items:center">
+              <div>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Tahun</label>
+                <select id="filterTahunAdmin" class="form-control" style="width:120px">
+                  @foreach($availableYears as $year)
+                    <option value="{{ $year }}" {{ $year == $currentYear ? 'selected' : '' }}>{{ $year }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Status</label>
+                <select id="filterStatusAdmin" class="form-control" style="width:150px">
+                  <option value="semua" selected>Semua</option>
+                  <option value="wawancara">Proses Bank</option>
+                  <option value="sp3k">SP3K</option>
+                  <option value="akad">Akad</option>
+                </select>
+              </div>
             </div>
           </div>
-        </article>
+
+          <div class="chart-box" style="height:350px">
+            <canvas id="adminPemberkasanChart"></canvas>
+          </div>
+        </div>
       </section>
 
       <section class="panel" style="margin-top:16px">
@@ -825,18 +860,6 @@
 
           <div class="chart-box" style="height:350px">
             <canvas id="sumberProspekChart"></canvas>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel" style="margin-top:16px">
-        <div class="panel-body">
-          <div class="section-head">
-            <h2>Grafik Admin Pemberkasan</h2>
-          </div>
-
-          <div class="chart-box" style="height:350px">
-            <canvas id="adminPemberkasanChart"></canvas>
           </div>
         </div>
       </section>
@@ -933,6 +956,14 @@
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
             });
+            $('#filterTahunAdmin').select2({
+                theme: "bootstrap4",
+                minimumResultsForSearch: Infinity,
+            });
+            $('#filterStatusAdmin').select2({
+                theme: "bootstrap4",
+                minimumResultsForSearch: Infinity,
+            });
             $('#filterSumberProspek').select2({
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
@@ -942,6 +973,11 @@
 
             $('#filterTahun, #filterStatus').on('change', function() {
                 loadChartData();
+            });
+
+            loadAdminPemberkasanChart();
+            $('#filterTahunAdmin, #filterStatusAdmin').on('change', function() {
+                loadAdminPemberkasanChart();
             });
 
             loadSumberProspekChart();
@@ -1038,7 +1074,21 @@
         ];
         const apBorders = apColors.map(c => c.replace('0.7', '1'));
 
-        function renderAdminPemberkasanChart(labels, data) {
+        function loadAdminPemberkasanChart() {
+            const tahun = $('#filterTahunAdmin').val();
+            const status = $('#filterStatusAdmin').val();
+
+            $.ajax({
+                url: '{{ route("beranda.admin-pemberkasan-data") }}',
+                type: 'GET',
+                data: { tahun: tahun, status: status },
+                success: function(response) {
+                    renderAdminPemberkasanChart(response.labels, response.data, response.ids);
+                }
+            });
+        }
+
+        function renderAdminPemberkasanChart(labels, data, ids) {
             const ctx = document.getElementById('adminPemberkasanChart').getContext('2d');
             if (adminPemberkasanChart) adminPemberkasanChart.destroy();
 
@@ -1047,7 +1097,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Jumlah Booking',
+                        label: 'Jumlah',
                         data: data,
                         backgroundColor: apColors.slice(0, labels.length),
                         borderColor: apBorders.slice(0, labels.length),
@@ -1059,12 +1109,24 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: function(evt, elements) {
+                        if (elements.length > 0) {
+                            var index = elements[0].index;
+                            var id = ids[index];
+                            if (id) {
+                                window.location.href = '{{ route("beranda.detail-customer-admin-pemberkasan", "__ID__") }}'.replace('__ID__', id);
+                            }
+                        }
+                    },
+                    onHover: function(evt, elements) {
+                        evt.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(ctx) {
-                                    return ctx.parsed.y + ' booking';
+                                    return ctx.parsed.y + ' unit';
                                 }
                             }
                         }
@@ -1088,19 +1150,7 @@
             });
         }
 
-        function loadAdminPemberkasanChart() {
-            $.ajax({
-                url: '{{ route("beranda.admin-pemberkasan-data") }}',
-                type: 'GET',
-                success: function(response) {
-                    renderAdminPemberkasanChart(response.labels, response.data);
-                }
-            });
-        }
 
-        $(document).ready(function() {
-            loadAdminPemberkasanChart();
-        });
     </script>
     @endpush
 @endsection

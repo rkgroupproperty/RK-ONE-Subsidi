@@ -89,7 +89,8 @@ class BerandaController extends Controller
             'bast' => $projectStats->sum('bast'),
         ];
 
-        $marketingStats = MarketingOffline::orderBy('nama_marketing')
+        $marketingStats = MarketingOffline::where('status', 1)
+            ->orderBy('nama_marketing')
             ->get()
             ->map(function (MarketingOffline $marketing) {
                 return [
@@ -133,19 +134,6 @@ class BerandaController extends Controller
 
         $currentYear = Carbon::now('Asia/Jakarta')->year;
 
-        $adminPemberkasanStats = PengajuanHold::where('stt_reg', '!=', 2)
-            ->whereNotNull('id_admin_pemberkasan')
-            ->select('id_admin_pemberkasan', DB::raw('COUNT(*) as jumlah'))
-            ->groupBy('id_admin_pemberkasan')
-            ->with('adminPemberkasan')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'nama' => $item->adminPemberkasan->nama_lengkap ?? '-',
-                    'jumlah' => $item->jumlah,
-                ];
-            });
-
         return view('admin.beranda.index', compact(
             'username',
             'pipelineCounts',
@@ -155,8 +143,7 @@ class BerandaController extends Controller
             'marketingStats',
             'bankStats',
             'availableYears',
-            'currentYear',
-            'adminPemberkasanStats'
+            'currentYear'
         ));
     }
 
@@ -328,26 +315,152 @@ class BerandaController extends Controller
         ]);
     }
 
-    public function adminPemberkasanData()
+    public function adminPemberkasanData(Request $request)
     {
-        $data = PengajuanHold::where('stt_reg', '!=', 2)
+        $tahun = $request->input('tahun', Carbon::now('Asia/Jakarta')->year);
+        $status = $request->input('status', 'semua');
+
+        $statusMap = [
+            'wawancara' => 7,
+            'sp3k' => 4,
+            'akad' => 3,
+        ];
+
+        $query = Customer::where('stt_arsip', 0)
             ->whereNotNull('id_admin_pemberkasan')
-            ->select('id_admin_pemberkasan', DB::raw('COUNT(*) as jumlah'))
+            ->whereYear('tanggal_verif', $tahun);
+
+        if ($status !== 'semua') {
+            $query->where('id_status_progres', $statusMap[$status] ?? 0);
+        }
+
+        $data = $query->select('id_admin_pemberkasan', DB::raw('COUNT(*) as jumlah'))
             ->groupBy('id_admin_pemberkasan')
             ->with('adminPemberkasan')
             ->get();
 
         $labels = [];
         $values = [];
+        $ids = [];
 
         foreach ($data as $item) {
             $labels[] = $item->adminPemberkasan->nama_lengkap ?? '-';
             $values[] = $item->jumlah;
+            $ids[] = $item->id_admin_pemberkasan;
         }
 
         return response()->json([
             'labels' => $labels,
             'data'   => $values,
+            'ids'    => $ids,
         ]);
+    }
+
+    public function detailCustomerMarketing($id)
+    {
+        $marketing = MarketingOffline::findOrFail($id);
+        return view('admin.beranda.detail_customer_marketing', compact('marketing'));
+    }
+
+    public function detailCustomerMarketingData(Request $request, $id)
+    {
+        $data = Customer::with(['marketing', 'lokasi', 'kavling', 'progres'])
+            ->where('stt_arsip', 0)
+            ->where('id_marketing', $id);
+
+        return DataTables::of($data)
+            ->addIndexColumn()
+            ->editColumn('tgl_terima', function ($row) {
+                $tgl = $row->tanggal_verif ? Carbon::parse($row->tanggal_verif)->translatedFormat('d F Y') : '-';
+                $kode = $row->kode_customer ? '<strong>' . $row->kode_customer . '</strong>' : '';
+                $jenisPembelian = $row->jenis_pembelian
+                    ? '<div><small><strong>' . strtoupper($row->jenis_pembelian) . '</strong></small></div>'
+                    : '';
+                return "$tgl<br>$kode<br>$jenisPembelian";
+            })
+            ->editColumn('id_marketing', function ($row) {
+                return $row->marketing->nama_marketing ?? '-';
+            })
+            ->editColumn('id_lokasi', function ($row) {
+                $namaLokasi = $row->lokasi->nama_kavling ?? '-';
+                $kodeKavling = $row->kavling->kode_kavling ?? '-';
+                return '<strong>' . $namaLokasi . '</strong><br> ' . $kodeKavling;
+            })
+            ->editColumn('id_status_progres', function ($row) {
+                $status = $row->progres->status_progres ?? '-';
+                $badgeColors = [
+                    'BOOKING FEE' => 'warning',
+                    'PROSES BANK' => 'secondary',
+                    'SP3K' => 'success',
+                    'AKAD' => 'info',
+                    'SERAH TERIMA' => 'dark',
+                ];
+                if (array_key_exists($status, $badgeColors)) {
+                    return '<span class="badge bg-' . $badgeColors[$status] . '">' . $status . '</span>';
+                }
+                return $status;
+            })
+            ->editColumn('nama_lengkap', function ($row) {
+                $nama = '<strong>' . $row->nama_lengkap . '</strong>';
+                $wa = $row->no_telp ?? '-';
+                $ktp = $row->nik ? '<span class="badge bg-info">NIK: ' . $row->nik . '</span>' : '';
+                return "$nama<br>$wa<br>$ktp";
+            })
+            ->rawColumns(['tgl_terima', 'id_marketing', 'id_lokasi', 'id_status_progres', 'nama_lengkap'])
+            ->make(true);
+    }
+
+    public function detailCustomerAdminPemberkasan($id)
+    {
+        $admin = \App\Models\AdminPemberkasan::findOrFail($id);
+        return view('admin.beranda.detail_customer_admin_pemberkasan', compact('admin'));
+    }
+
+    public function detailCustomerAdminPemberkasanData(Request $request, $id)
+    {
+        $data = Customer::with(['marketing', 'lokasi', 'kavling', 'progres'])
+            ->where('stt_arsip', 0)
+            ->where('id_admin_pemberkasan', $id);
+
+        return DataTables::of($data)
+            ->addIndexColumn()
+            ->editColumn('tgl_terima', function ($row) {
+                $tgl = $row->tanggal_verif ? Carbon::parse($row->tanggal_verif)->translatedFormat('d F Y') : '-';
+                $kode = $row->kode_customer ? '<strong>' . $row->kode_customer . '</strong>' : '';
+                $jenisPembelian = $row->jenis_pembelian
+                    ? '<div><small><strong>' . strtoupper($row->jenis_pembelian) . '</strong></small></div>'
+                    : '';
+                return "$tgl<br>$kode<br>$jenisPembelian";
+            })
+            ->editColumn('id_marketing', function ($row) {
+                return $row->marketing->nama_marketing ?? '-';
+            })
+            ->editColumn('id_lokasi', function ($row) {
+                $namaLokasi = $row->lokasi->nama_kavling ?? '-';
+                $kodeKavling = $row->kavling->kode_kavling ?? '-';
+                return '<strong>' . $namaLokasi . '</strong><br> ' . $kodeKavling;
+            })
+            ->editColumn('id_status_progres', function ($row) {
+                $status = $row->progres->status_progres ?? '-';
+                $badgeColors = [
+                    'BOOKING FEE' => 'warning',
+                    'PROSES BANK' => 'secondary',
+                    'SP3K' => 'success',
+                    'AKAD' => 'info',
+                    'SERAH TERIMA' => 'dark',
+                ];
+                if (array_key_exists($status, $badgeColors)) {
+                    return '<span class="badge bg-' . $badgeColors[$status] . '">' . $status . '</span>';
+                }
+                return $status;
+            })
+            ->editColumn('nama_lengkap', function ($row) {
+                $nama = '<strong>' . $row->nama_lengkap . '</strong>';
+                $wa = $row->no_telp ?? '-';
+                $ktp = $row->nik ? '<span class="badge bg-info">NIK: ' . $row->nik . '</span>' : '';
+                return "$nama<br>$wa<br>$ktp";
+            })
+            ->rawColumns(['tgl_terima', 'id_marketing', 'id_lokasi', 'id_status_progres', 'nama_lengkap'])
+            ->make(true);
     }
 }
