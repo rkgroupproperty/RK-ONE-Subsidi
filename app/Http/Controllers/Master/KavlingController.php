@@ -270,8 +270,11 @@ class KavlingController extends Controller
 
         $submittedByName = collect($submittedRincian)
             ->keyBy('nama');
+        
+        $editedKavling = KavlingPeta::findOrFail($editedId);
 
-        KavlingPeta::select('id', 'rincian_biaya')
+        KavlingPeta::where('id_lokasi', $editedKavling->id_lokasi)
+            ->select('id', 'rincian_biaya')
             ->orderBy('id')
             ->chunkById(100, function ($kavlings) use ($editedId, $submittedByName, $deletedNames) {
                 foreach ($kavlings as $kavling) {

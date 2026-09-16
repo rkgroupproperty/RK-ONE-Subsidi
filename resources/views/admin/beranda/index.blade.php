@@ -63,7 +63,7 @@
       justify-content: flex-end;
     }
 
-    .icon-btn, .date-btn, .filter-btn {
+    .icon-btn, .filter-btn {
       border: 1px solid var(--line);
       background: #fff;
       color: #374151;
@@ -76,6 +76,22 @@
       font-weight: 600;
       box-shadow: 0 5px 15px rgba(17,24,39,.04);
       cursor: pointer;
+    }
+
+    .date-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #374151;
+      border-radius: 12px;
+      min-height: 42px;
+      padding: 0 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(17,24,39,.04);
+      cursor: default !important;
+      pointer-events: none;
     }
 
     .icon-btn { width: 42px; justify-content: center; padding: 0; }
@@ -568,9 +584,8 @@
         </div>
 
         <div class="top-actions">
-          <button class="icon-btn"><i class="fa-regular fa-bell"></i></button>
-          <button class="icon-btn"><i class="fa-regular fa-calendar"></i></button>
-          <button class="date-btn"><i class="fa-regular fa-calendar-days"></i> 26 Juli 2026</button>
+          <button class="icon-btn" onclick="Swal.fire('Notifikasi', 'Tidak ada notifikasi baru', 'info')"><i class="fa-regular fa-bell"></i></button>
+          <button class="date-btn"><i class="fa-regular fa-calendar-days"></i> {{ Carbon\Carbon::now('Asia/Jakarta')->translatedFormat('d F Y') }}</button>
         </div>
       </header>
 
