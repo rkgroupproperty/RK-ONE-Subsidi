@@ -498,18 +498,18 @@ class PembayaranController extends Controller
         // 6. Untuk Pembayaran (Checkbox & Label)
         $kategoriStr = strtoupper(($pembayaran->kategori->kategori ?? '') . ' ' . ($pembayaran->keterangan ?? '') . ' ' . ($pembayaran->keterangan_kategori ?? ''));
         if (str_contains($kategoriStr, 'BOOKING') || str_contains($kategoriStr, 'TANDA JADI')) {
-            $drawCheck(51.8, 57.5);
+            $drawCheck(51.8, 55.8);
         } elseif (str_contains($kategoriStr, 'DP') || str_contains($kategoriStr, 'UANG MUKA') || str_contains($kategoriStr, 'DOWN PAYMENT')) {
-            $drawCheck(76.2, 57.5);
+            $drawCheck(76.2, 55.8);
         } elseif (str_contains($kategoriStr, 'KLT') || str_contains($kategoriStr, 'KELEBIHAN TANAH')) {
-            $drawCheck(92.2, 57.5);
+            $drawCheck(92.2, 55.8);
         } else {
-            $drawCheck(109.2, 57.5);
+            $drawCheck(109.2, 55.8);
             $labelLain = !empty($pembayaran->keterangan_kategori)
                 ? $pembayaran->keterangan_kategori
                 : ($pembayaran->kategori->kategori ?? $pembayaran->keterangan ?? '-');
             $pdf->SetFont('helvetica', '', 8.5);
-            $pdf->SetXY(127.0, 57.5);
+            $pdf->SetXY(127.0, 55.8);
             $pdf->Cell(73, 4.5, $labelLain, 0, 0, 'L');
         }
 
