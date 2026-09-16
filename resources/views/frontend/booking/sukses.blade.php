@@ -41,7 +41,7 @@
 
         <div class="container py-5">
             @php
-                $logo = \App\Models\PengaturanMedia::where('jenis_data', 'logo website')->first();
+                $logo = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Aplikasi')->first();
             @endphp
 
             <div class="row justify-content-center align-items-center min-vh-100">
