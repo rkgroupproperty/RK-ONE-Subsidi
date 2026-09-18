@@ -256,7 +256,7 @@
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-indigo">
-                    <h5 class="modal-title text-white font-weight-bold" id="modalDetailLabel">Detail Data Kavling</h5>
+                    <h5 class="modal-title text-white font-weight-bold" id="modalDetailLabel">Detail Blok / Unit</h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -293,7 +293,7 @@
                                             <input type="text" name="nama_kavling" id="nama_kavling"
                                                 class="form-control" readonly>
                                         </div>
-                                        <label class="col-sm-2 col-form-label">Kode Kavling</label>
+                                        <label class="col-sm-2 col-form-label">Kode Blok / Unit</label>
                                         <div class="col-sm-2">
                                             <input type="text" name="kode_kavling" id="kode_kavling"
                                                 class="form-control" readonly>
@@ -604,7 +604,7 @@
                     if (foto) {
                         let imageUrl = '/assets/foto_kavling/' + foto;
                         preview.html(
-                            `<img src="${imageUrl}" alt="Foto Kavling" style="max-height: 100%; max-width: 100%;">`
+                            `<img src="${imageUrl}" alt="Foto Unit" style="max-height: 100%; max-width: 100%;">`
                         );
                     } else {
                         preview.html(`<span style="color: #6c757d;">Tidak ada foto</span>`);

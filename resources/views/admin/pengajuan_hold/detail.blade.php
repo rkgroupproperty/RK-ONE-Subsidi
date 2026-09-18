@@ -146,7 +146,7 @@
                                         </div>
 
                                         <div class="form-group row">
-                                            <label class="col-sm-4 col-form-label">Blok Kavling</label>
+                                            <label class="col-sm-4 col-form-label">Blok / Unit</label>
                                             <div class="col-sm-8">
                                                 <input type="text" value="{{ $data->kavling->kode_kavling ?? '-' }}"
                                                     class="form-control" readonly>

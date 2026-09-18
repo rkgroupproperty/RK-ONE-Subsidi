@@ -155,8 +155,7 @@ class PembayaranController extends Controller
         $kavling         = KavlingPeta::with('perusahaan')->find($customer->id_kavling);
         $perusahaan      = $kavling->perusahaan;
         if (! $perusahaan && $lokasi) {
-            $perusahaanId = $lokasi->perusahaan->first()->id_perusahaan ?? null;
-            $perusahaan   = $perusahaanId ? Perusahaan::find($perusahaanId) : null;
+            $perusahaan = $lokasi->perusahaan;
         }
 
         $namaPerusahaan   = $lokasi->nama_kavling ?? 'Nama Perusahaan Belum diisi';
@@ -378,7 +377,8 @@ class PembayaranController extends Controller
         $pdf->SetFont('helvetica', '', 10);
         $pdf->Cell(60, 6, 'Mengetahui,', 0, 0, 'C');
         $pdf->Cell(70, 6, '', 0, 0);
-        $pdf->Cell(60, 6, 'Jambi, ' . $tanggal, 0, 1, 'C');
+        $kota = $lokasi->perusahaan->kota_penandatangan ?? '-';
+        $pdf->Cell(60, 6, $kota . ', ' . $tanggal, 0, 1, 'C');
         $pdf->Cell(60, 6, 'Direktur', 0, 0, 'C');
         $pdf->Cell(70, 6, '', 0, 0);
         $pdf->Cell(60, 6, 'Admin', 0, 1, 'C');
@@ -408,7 +408,7 @@ class PembayaranController extends Controller
             $perusahaan = Perusahaan::find($kavling->id_perusahaan);
         }
         if (!$perusahaan && $lokasi) {
-            $perusahaan = $lokasi->perusahaan->first() ?? null;
+            $perusahaan = $lokasi->perusahaan ?? null;
         }
         if (!$perusahaan) {
             $perusahaan = Perusahaan::first();
@@ -427,13 +427,10 @@ class PembayaranController extends Controller
         $sppr = SPPR::where('id_customer', $nasabah->id)->latest()->first();
         $hargaDasar = $sppr->harga_jual ?? ($nasabah->hrg_jual ?: ($kavling->hrg_jual ?: 0));
         $klt = $sppr->biaya_kelebihan_tanah ?? 0;
-        $totalDp = $sppr->nominal_dp ?? ($nasabah->piutangs ? $nasabah->piutangs->filter(fn($p) => str_contains(strtoupper($p->kategori->kategori ?? ''), 'DP'))->sum('nominal') : 0);
-        $potongan = $sppr->biaya_lain_lain ?? 0;
+        $totalDp = (int) ($nasabah->besaran_dp ?? 0);
+        $potongan = (int) ($nasabah->diskon ?? 0);
 
-        $dpTerbayar = Pemasukan::where('id_customer', $nasabah->id)
-            ->whereHas('kategori', function ($q) {
-                $q->where('kategori', 'LIKE', '%DP%')->orWhere('kategori', 'LIKE', '%UANG MUKA%');
-            })->sum('nominal');
+        $dpTerbayar = Pemasukan::where('id_customer', $nasabah->id)->sum('nominal');
         $sisaDp = max(0, $totalDp - $dpTerbayar);
         $promo = $sppr->promo ?? '-';
 
@@ -567,8 +564,9 @@ class PembayaranController extends Controller
         // 11. Palembang, Tanggal
         $tglCarbon = Carbon::parse($pembayaran->tanggal)->locale('id');
         $pdf->SetFont('helvetica', '', 7);
-        $pdf->SetXY(169.0, 110.0);
-        $pdf->Cell(40, 4.5, $tglCarbon->isoFormat('D MMMM Y'), 0, 0, 'L');
+        $pdf->SetXY(147.0, 110.0);
+        $kota = $lokasi->perusahaan->kota_penandatangan ?? '-';
+        $pdf->Cell(40, 4.5, $kota . ', ' . $tglCarbon->isoFormat('D MMMM Y'), 0, 0, 'L');
 
         $filename = 'Kwitansi-' . ($pembayaran->no_kwitansi ?? 'draft') . '.pdf';
         $pdf->Output($filename, 'I');

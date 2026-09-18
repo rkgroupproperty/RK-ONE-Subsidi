@@ -37,6 +37,8 @@ class PengajuanHold extends Model
         'foto_pemohon',
         'foto_ktp_p',
         'booking_fee',
+        'besaran_dp',
+        'diskon',
         'file_bukti',
         'file_sppr',
         'id_marketing',

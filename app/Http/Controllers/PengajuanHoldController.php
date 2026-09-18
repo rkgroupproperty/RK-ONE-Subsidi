@@ -241,6 +241,8 @@ class PengajuanHoldController extends Controller
 
         $request->merge([
             'booking_fee' => $request->booking_fee ? str_replace('.', '', $request->booking_fee) : 0,
+            'besaran_dp'  => $request->besaran_dp ? str_replace('.', '', $request->besaran_dp) : null,
+            'diskon'      => $request->diskon ? str_replace('.', '', $request->diskon) : null,
             'total_harga' => $request->total_harga ? str_replace('.', '', $request->total_harga) : 0,
         ]);
 
@@ -259,6 +261,7 @@ class PengajuanHoldController extends Controller
             'total_harga'     => 'required',
             'id_marketing'    => 'required',
             'booking_fee'     => 'required|gt:0',
+            'besaran_dp'      => 'required|gt:0',
             'jenis_perumahan' => 'required',
             'jenis_pembelian' => 'required',
             'sumber_prospek'  => 'required',
@@ -279,12 +282,12 @@ class PengajuanHoldController extends Controller
             'id_marketing.required'    => 'Marketing wajib dipilih.',
             'booking_fee.required'     => 'Booking fee wajib diisi.',
             'booking_fee.gt'           => 'Booking fee harus lebih dari 0.',
+            'besaran_dp.required'      => 'Besaran DP wajib diisi.',
+            'besaran_dp.gt'            => 'Besaran DP harus lebih dari 0.',
             'jenis_perumahan.required' => 'Jenis Perumahan wajib dipilih.',
             'jenis_pembelian.required' => 'Jenis Pembelian wajib dipilih.',
             'sumber_prospek.required'  => 'Sumber Prospek wajib dipilih.',
         ]);
-
-        DB::beginTransaction();
         try {
             $user = Auth::user();
 
@@ -309,6 +312,8 @@ class PengajuanHoldController extends Controller
                 'id_lokasi'         => $request->id_lokasi,
                 'id_kavling'        => $request->id_kavling,
                 'booking_fee'       => $request->booking_fee,
+                'besaran_dp'        => $request->besaran_dp ? str_replace('.', '', $request->besaran_dp) : null,
+                'diskon'            => $request->diskon ? str_replace('.', '', $request->diskon) : null,
                 'total_harga'       => $request->total_harga,
                 'id_marketing'      => $request->id_marketing,
                 'jenis_perumahan'   => $request->jenis_perumahan,
@@ -545,6 +550,8 @@ class PengajuanHoldController extends Controller
     {
         $request->merge([
             'booking_fee' => $request->booking_fee ? str_replace('.', '', $request->booking_fee) : 0,
+            'besaran_dp'  => $request->besaran_dp ? str_replace('.', '', $request->besaran_dp) : null,
+            'diskon'      => $request->diskon ? str_replace('.', '', $request->diskon) : null,
             'total_harga' => $request->total_harga ? str_replace('.', '', $request->total_harga) : 0,
         ]);
 
@@ -565,6 +572,7 @@ class PengajuanHoldController extends Controller
             'id_marketing'      => 'required',
             'status_pernikahan' => 'required',
             'booking_fee'       => 'required|gt:0',
+            'besaran_dp'        => 'required|gt:0',
             'jenis_perumahan'   => 'required',
             'jenis_pembelian'   => 'required',
             'sumber_prospek'    => 'required',
@@ -596,6 +604,8 @@ class PengajuanHoldController extends Controller
             'id_marketing.required'      => 'Marketing wajib dipilih.',
             'booking_fee.required'       => 'Booking fee wajib diisi.',
             'booking_fee.gt'             => 'Booking fee harus lebih dari 0.',
+            'besaran_dp.required'        => 'Besaran DP wajib diisi.',
+            'besaran_dp.gt'              => 'Besaran DP harus lebih dari 0.',
             'jenis_perumahan.required'   => 'Jenis Perumahan wajib dipilih.',
             'jenis_pembelian.required'   => 'Jenis Pembelian wajib dipilih.',
             'sumber_prospek.required'    => 'Sumber Prospek wajib dipilih.',
@@ -678,6 +688,8 @@ class PengajuanHoldController extends Controller
                 'id_kavling'        => $request->id_kavling,
                 'total_harga'       => $request->total_harga,
                 'booking_fee'       => $request->booking_fee ?? 0,
+                'besaran_dp'        => $request->besaran_dp ?? null,
+                'diskon'            => $request->diskon ?? null,
                 'id_marketing'      => $request->id_marketing ?? 0,
                 'jenis_perumahan'   => $request->jenis_perumahan ?? '',
                 'jenis_pembelian'   => $request->jenis_pembelian ?? '',
@@ -802,19 +814,26 @@ class PengajuanHoldController extends Controller
 
             if ($data->$field && File::exists($oldPath)) {
                 $customerPath = public_path('assets/customer/' . $data->$field);
+                File::ensureDirectoryExists(dirname($customerPath));
 
                 File::copy($oldPath, $customerPath);
 
                 if ($field === 'file_bukti') {
                     $keuanganPath = public_path('assets/keuangan/pemasukan/' . $data->$field);
+                    File::ensureDirectoryExists(dirname($keuanganPath));
                     File::copy($oldPath, $keuanganPath);
                 }
-
-                File::delete($oldPath);
 
                 $customerFiles[$field] = $data->$field;
             } else {
                 $customerFiles[$field] = null;
+            }
+        }
+
+        foreach ($files as $field => $label) {
+            $oldPath = public_path('assets/booking/' . $data->$field);
+            if ($data->$field && File::exists($oldPath)) {
+                File::delete($oldPath);
             }
         }
 
@@ -850,6 +869,8 @@ class PengajuanHoldController extends Controller
             'pekerjaan'            => $data->pekerjaan,
             'id_bank'              => $request->id_bank,
             'id_status_progres'    => 2,
+            'besaran_dp'           => $data->besaran_dp,
+            'diskon'               => $data->diskon,
             'an_surat_cash'        => $request->an_surat_cash,
             'termin_x_cash_b'      => $request->termin_x_cash_b ?? 0,
             'id_admin_pemberkasan' => $data->id_admin_pemberkasan,
@@ -971,13 +992,17 @@ class PengajuanHoldController extends Controller
 
                 $rincian    = $data->rincian_biaya ?? [];
                 $bookingFee = (int) ($data->booking_fee ?? 0);
-                $sisaBayar  = $data->total_harga - $bookingFee;
+                $diskon     = (int) ($data->diskon ?? 0);
 
                 foreach ($rincian as $item) {
                     $nama  = $item['nama'] ?? '';
                     $nilai = (int) ($item['nilai'] ?? 0);
                     if ($nilai <= 0) {
                         continue;
+                    }
+
+                    if ($nama === 'Harga Rumah' && $diskon > 0) {
+                        $nilai = $nilai - $diskon;
                     }
 
                     $terbayar = 0;

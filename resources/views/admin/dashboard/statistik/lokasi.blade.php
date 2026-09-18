@@ -15,7 +15,7 @@
                         <div class="card">
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
-                                    <h3 class="font-weight-bold text-lg">Data Penjualan Lokasi Kavling {{ $nama }}
+                                    <h3 class="font-weight-bold text-lg">Data Penjualan Lokasi {{ $nama }}
                                     </h3>
                                     <div class="d-flex align-items-center">
                                     </div>
@@ -26,7 +26,7 @@
                                     <thead>
                                         <tr>
                                             <th width="5%">No</th>
-                                            <th>Blok/Kavling</th>
+                                            <th>Blok / Unit</th>
                                             <th>Status Penjualan</th>
                                             <th>Nama Customer</th>
                                             <th>Marketing</th>

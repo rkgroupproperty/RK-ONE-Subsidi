@@ -92,16 +92,24 @@ class BerandaController extends Controller
         $marketingStats = MarketingOffline::where('status', 1)
             ->orderBy('nama_marketing')
             ->get()
-            ->map(function (MarketingOffline $marketing) {
+            ->map(function (MarketingOffline $marketing) use ($request) {
+                $query = Customer::where('id_marketing', $marketing->id)
+                    ->where('stt_arsip', 0);
+
+                if ($request->has('id_lokasi') && $request->id_lokasi !== 'semua' && $request->id_lokasi) {
+                    $query->where('id_lokasi', $request->id_lokasi);
+                }
+
                 return [
                     'id' => $marketing->id,
                     'nama' => $marketing->nama_marketing,
                     'kode' => $marketing->kode_marketing,
                     'inisial' => mb_substr($marketing->nama_marketing, 0, 1),
-                    'jumlah' => Customer::where('id_marketing', $marketing->id)
-                        ->where('stt_arsip', 0)
-                        ->count(),
+                    'jumlah' => $query->count(),
                 ];
+            })
+            ->filter(function ($marketing) {
+                return $marketing['jumlah'] > 0;
             })
             ->sortByDesc('jumlah')
             ->values();
@@ -145,6 +153,36 @@ class BerandaController extends Controller
             'availableYears',
             'currentYear'
         ));
+    }
+
+    public function getMarketingStats(Request $request)
+    {
+        $marketingStats = MarketingOffline::where('status', 1)
+            ->orderBy('nama_marketing')
+            ->get()
+            ->map(function (MarketingOffline $marketing) use ($request) {
+                $query = Customer::where('id_marketing', $marketing->id)
+                    ->where('stt_arsip', 0);
+
+                if ($request->has('id_lokasi') && $request->id_lokasi !== 'semua' && $request->id_lokasi) {
+                    $query->where('id_lokasi', $request->id_lokasi);
+                }
+
+                return [
+                    'id' => $marketing->id,
+                    'nama' => $marketing->nama_marketing,
+                    'kode' => $marketing->kode_marketing,
+                    'inisial' => mb_substr($marketing->nama_marketing, 0, 1),
+                    'jumlah' => $query->count(),
+                ];
+            })
+            ->filter(function ($marketing) {
+                return $marketing['jumlah'] > 0;
+            })
+            ->sortByDesc('jumlah')
+            ->values();
+
+        return response()->json($marketingStats);
     }
 
     public function getChartData(Request $request)
@@ -269,6 +307,7 @@ class BerandaController extends Controller
     public function getSumberProspekData(Request $request)
     {
         $filter = $request->input('filter', 'semua');
+        $bulan = $request->input('bulan', 'semua');
 
         $options = [
             'Iklan Kantor',
@@ -285,16 +324,19 @@ class BerandaController extends Controller
         $customerData = [];
 
         foreach ($options as $option) {
-            $bookingCount = PengajuanHold::where('sumber_prospek', $option)
-                ->where('stt_reg', '!=', 2)
-                ->count();
+            $bookingQuery = PengajuanHold::where('sumber_prospek', $option)
+                ->where('stt_reg', '!=', 2);
 
-            $customerCount = Customer::where('sumber_prospek', $option)
-                ->where('stt_arsip', 0)
-                ->count();
+            $customerQuery = Customer::where('sumber_prospek', $option)
+                ->where('stt_arsip', 0);
 
-            $bookingData[] = $bookingCount;
-            $customerData[] = $customerCount;
+            if ($bulan !== 'semua' && is_numeric($bulan)) {
+                $bookingQuery->whereMonth('tgl_booking', $bulan);
+                $customerQuery->whereMonth('tanggal_verif', $bulan);
+            }
+
+            $bookingData[] = $bookingQuery->count();
+            $customerData[] = $customerQuery->count();
         }
 
         if ($filter === 'booking') {
@@ -313,6 +355,94 @@ class BerandaController extends Controller
             'customer' => $customerData,
             'combined' => $combined,
         ]);
+    }
+
+    public function exportSumberProspek(Request $request)
+    {
+        $filter = $request->input('filter', 'semua');
+        $bulan = $request->input('bulan', 'semua');
+
+        $options = [
+            'Iklan Kantor',
+            'Market Place FB',
+            'Freelance',
+            'Kanvasing',
+            'Sosmed Pribadi',
+            'Sosmed Kantor',
+            'Referensi',
+            'WIC',
+        ];
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 11],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+        ];
+
+        $cellStyle = [
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+            'alignment' => ['vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+        ];
+
+        $sheet->fromArray(['No', 'Sumber Prospek', 'Booking', 'Customer', 'Total'], null, 'A1');
+        $sheet->getStyle('A1:E1')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        $row = 2;
+        $no = 1;
+        foreach ($options as $option) {
+            $bookingQuery = PengajuanHold::where('sumber_prospek', $option)->where('stt_reg', '!=', 2);
+            $customerQuery = Customer::where('sumber_prospek', $option)->where('stt_arsip', 0);
+
+            if ($bulan !== 'semua' && is_numeric($bulan)) {
+                $bookingQuery->whereMonth('tgl_booking', $bulan);
+                $customerQuery->whereMonth('tanggal_verif', $bulan);
+            }
+
+            $bCount = $bookingQuery->count();
+            $cCount = $customerQuery->count();
+
+            if ($filter === 'booking') {
+                $total = $bCount;
+            } elseif ($filter === 'customer') {
+                $total = $cCount;
+            } else {
+                $total = $bCount + $cCount;
+            }
+
+            $sheet->fromArray([$no++, $option, $bCount, $cCount, $total], null, "A{$row}");
+            $row++;
+        }
+
+        if ($row > 2) {
+            $sheet->getStyle("A2:E" . ($row - 1))->applyFromArray($cellStyle);
+        }
+
+        for ($i = 1; $i <= 5; $i++) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
+            $maxLen = 0;
+            for ($r = 1; $r < $row; $r++) {
+                $val = $sheet->getCell("{$colLetter}{$r}")->getFormattedValue();
+                $len = mb_strlen(trim((string) $val));
+                if ($len > $maxLen) $maxLen = $len;
+            }
+            $sheet->getColumnDimension($colLetter)->setWidth(min($maxLen + 3, 50));
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $tempFile = tempnam(sys_get_temp_dir(), 'excel_');
+        $writer->save($tempFile);
+        $contents = file_get_contents($tempFile);
+        @unlink($tempFile);
+
+        return response($contents)
+            ->header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->header('Content-Disposition', 'attachment; filename="data_sumber_prospek.xlsx"')
+            ->header('Cache-Control', 'max-age=0');
     }
 
     public function adminPemberkasanData(Request $request)

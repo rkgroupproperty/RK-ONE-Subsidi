@@ -611,7 +611,7 @@
                             <div class="stage-section">
                                 <div class="stage-header">
                                     <div class="stage-number">2</div>
-                                    <h5 class="stage-title">Data Kavling</h5>
+                                    <h5 class="stage-title">Data Blok / Unit</h5>
                                 </div>
 
                                <div class="form-group row mb-3">
@@ -624,7 +624,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <label class="col-sm-2 col-form-label">Blok/Kav <span style="color: red;">*</span></label>
+                                    <label class="col-sm-2 col-form-label">Blok / Unit <span style="color: red;">*</span></label>
                                     <div class="col-sm-4">
                                         <select name="id_kavling" id="id_kavling" class="form-control select-kavling"></select>
                                     </div>
@@ -638,7 +638,7 @@
                                                 <span class="input-group-text">Rp.</span>
                                             </div>
                                             <input type="text" name="total_harga" id="total_harga"
-                                                class="form-control" readonly disabled placeholder="Pilih kavling terlebih dahulu">
+                                                class="form-control" readonly disabled placeholder="Pilih blok / unit terlebih dahulu">
                                         </div>
                                     </div>
                                 </div>
@@ -707,6 +707,29 @@
                                                 <span class="input-group-text">Rp.</span>
                                             </div>
                                             <input name="booking_fee" id="booking_fee" class="form-control format-number"
+                                                type="text">
+                                        </div>
+                                    </div>
+                                     <label class="col-sm-2 col-form-label">Besaran DP <span class="text-danger">*</span></label>
+                                    <div class="col-sm-4">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Rp.</span>
+                                            </div>
+                                            <input name="besaran_dp" id="besaran_dp" class="form-control format-number"
+                                                type="text">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group row">
+                                     <label class="col-sm-2 col-form-label">Diskon</label>
+                                    <div class="col-sm-4">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Rp.</span>
+                                            </div>
+                                            <input name="diskon" id="diskon" class="form-control format-number"
                                                 type="text">
                                         </div>
                                     </div>
@@ -922,8 +945,7 @@
             });
             $('.select-kavling').select2({
                 theme: "bootstrap4",
-                allowClear: true,
-                placeholder: "Pilih Kavling",
+                placeholder: "Pilih Blok / Unit",
             });
             $('.select-marketing').select2({
                 theme: "bootstrap4",
@@ -959,7 +981,7 @@
             $('#id_lokasi').on('change', function() {
                 let idLokasi = $(this).val();
                 $('#id_kavling').html('<option value="">Loading...</option>').val('').trigger('change.select2');
-                $('#total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
+                $('#total_harga').val('').attr('placeholder', 'Pilih blok / unit terlebih dahulu');
 
                 if (idLokasi) {
                     const urlKavling = routeGetKavling.replace(':id', idLokasi);
@@ -991,7 +1013,7 @@
                         $('#total_harga').val(hargaJual ? hargaJual.toLocaleString('id-ID') : '').attr('placeholder', '0');
                     });
                 } else {
-                    $('#total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
+                    $('#total_harga').val('').attr('placeholder', 'Pilih blok / unit terlebih dahulu');
                 }
             });
 

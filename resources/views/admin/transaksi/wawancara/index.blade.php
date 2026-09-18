@@ -17,6 +17,7 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Proses Bank</h3>
                                     <div class="d-flex align-items-center" style="gap: 3px">
+                                        <a href="{{ route('export.transaksi.wawancara') }}" target="_blank" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
                                         <button class="btn btn-primary btn-sm" data-toggle="modal"
                                             data-target="#modalForm"><i class="fas fa-plus" id="btnTambah"></i>
                                             Tambah Data Proses Bank</button>

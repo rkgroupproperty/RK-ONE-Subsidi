@@ -55,6 +55,7 @@ use App\Http\Controllers\Transaksi\PembelianCancelController;
 use App\Http\Controllers\Transaksi\PindahUnitController;
 use App\Http\Controllers\Transaksi\PPJBController;
 use App\Http\Controllers\Transaksi\WawancaraController;
+use App\Http\Controllers\Transaksi\ExportTransaksiController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -126,7 +127,9 @@ Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar'
 Route::middleware(['auth'])->group(function () {
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
     Route::get('admin/beranda/chart-data', [BerandaController::class, 'getChartData'])->name('beranda.chart-data');
+    Route::get('admin/beranda/marketing-stats', [BerandaController::class, 'getMarketingStats'])->name('beranda.marketing-stats');
     Route::get('admin/beranda/sumber-prospek-data', [BerandaController::class, 'getSumberProspekData'])->name('beranda.sumber-prospek-data');
+    Route::get('admin/beranda/export-sumber-prospek', [BerandaController::class, 'exportSumberProspek'])->name('beranda.export-sumber-prospek');
     Route::get('admin/beranda/admin-pemberkasan-data', [BerandaController::class, 'adminPemberkasanData'])->name('beranda.admin-pemberkasan-data');
     Route::get('admin/detail-grafik-penjualan-bulanan', [BerandaController::class, 'detailGrafik'])->name('beranda.detail-grafik');
     Route::get('admin/detail-grafik-penjualan-bulanan/data', [BerandaController::class, 'detailGrafikData'])->name('beranda.detail-grafik.data');
@@ -258,6 +261,19 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('sppr', SPPRController::class)->names('proses-admin');
         Route::get('sppr/{id}/cetak', [SPPRController::class, 'cetak'])->name('proses-admin.cetak');
         Route::get('sppr/get-customer-detail/{id}', [SPPRController::class, 'getCustomerDetail'])->name('proses-admin.get-customer-detail');
+
+        Route::prefix('export/transaksi')->group(function () {
+            Route::get('booking', [ExportTransaksiController::class, 'booking'])->name('export.transaksi.booking');
+            Route::get('sppr', [ExportTransaksiController::class, 'sppr'])->name('export.transaksi.sppr');
+            Route::get('wawancara', [ExportTransaksiController::class, 'wawancara'])->name('export.transaksi.wawancara');
+            Route::get('acc-bank', [ExportTransaksiController::class, 'accBank'])->name('export.transaksi.acc-bank');
+            Route::get('ppjb', [ExportTransaksiController::class, 'ppjb'])->name('export.transaksi.ppjb');
+            Route::get('akad', [ExportTransaksiController::class, 'akad'])->name('export.transaksi.akad');
+            Route::get('bast', [ExportTransaksiController::class, 'bast'])->name('export.transaksi.bast');
+            Route::get('pindah-unit', [ExportTransaksiController::class, 'pindahUnit'])->name('export.transaksi.pindah-unit');
+            Route::get('ganti-nama', [ExportTransaksiController::class, 'gantiNama'])->name('export.transaksi.ganti-nama');
+            Route::get('pembelian-cancel', [ExportTransaksiController::class, 'pembelianCancel'])->name('export.transaksi.pembelian-cancel');
+        });
     });
 
     Route::prefix('admin/customer')->group(function () {

@@ -15,6 +15,7 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Proses Admin</h3>
                                     <div class="d-flex align-items-center">
+                                        <a href="{{ route('export.transaksi.sppr') }}" target="_blank" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
                                         @if ($permissions['tambah'])
                                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                                 data-target="#modalForm">
@@ -112,8 +113,27 @@
                                     <input type="text" name="agama" id="agama" class="form-control">
                                 </div>
                                 <label for="pekerjaan" class="col-sm-2 col-form-label">Pekerjaan</label>
-                                <div class="col-sm-3">
-                                    <input type="text" name="pekerjaan" id="pekerjaan" class="form-control">
+                                <div class="col-sm-4">
+                                    <select class="form-control select-pekerjaan" name="pekerjaan" id="pekerjaan">
+                                        <option value=""></option>
+                                        <option value="Wiraswasta">Wiraswasta</option>
+                                        <option value="Pegawai Swasta">Pegawai Swasta</option>
+                                        <option value="ASN">ASN</option>
+                                        <option value="TNI atau Polri">TNI atau Polri</option>
+                                        <option value="Karyawan BUMN">Karyawan BUMN</option>
+                                        <option value="Karyawan">Karyawan</option>
+                                        <option value="Buruh">Buruh</option>
+                                        <option value="Petani">Petani</option>
+                                        <option value="Pedagang">Pedagang</option>
+                                        <option value="Sopir">Sopir</option>
+                                        <option value="Guru/Dosen">Guru/Dosen</option>
+                                        <option value="Dokter">Dokter</option>
+                                        <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
+                                        <option value="Pensiunan">Pensiunan</option>
+                                        <option value="Pelajar/Mahasiswa">Pelajar/Mahasiswa</option>
+                                        <option value="Freelancer">Freelancer</option>
+                                        <option value="Lain-lain">Lain-lain</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -408,6 +428,11 @@
         var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
 
         $(function() {
+            $('.select-pekerjaan').select2({
+                theme: "bootstrap4",
+                width: '100%',
+                placeholder: "Pilih Pekerjaan",
+            });
             $('.select-customer').select2({
                 theme: "bootstrap4",
                 width: '100%',
@@ -475,7 +500,8 @@
             if (!id) {
                 $('#nama, #alamat, #nik, #no_telp, #luas_bangunan, #luas_tanah, #blok, #no, #harga_jual, #biaya_surat_surat, #peningkatan_mutu').val('');
                 $('#total_yang_harus_dibayar, #cicilan_per_bulan, #asumsi_plafon_kpr, #biaya_kelebihan_tanah, #biaya_sudut, #biaya_lain_lain').val('');
-                $('#agama, #pekerjaan').val('');
+                $('#agama, #promo').val('');
+                $('#pekerjaan').val('').trigger('change');
                 $('#id_marketing').val('').trigger('change');
                 return;
             }
@@ -496,7 +522,7 @@
                     $('#biaya_surat_surat').val(formatNumber(d.biaya_surat_surat) || '');
                     $('#peningkatan_mutu').val(formatNumber(d.peningkatan_mutu) || '');
                     $('#jumlah_booking_fee').val(formatNumber(d.jumlah_booking_fee) || '');
-                    $('#pekerjaan').val(d.pekerjaan || '');
+                    $('#pekerjaan').val(d.pekerjaan || '').trigger('change');
                     $('#agama').val(d.agama || '');
                     if (!$('#primary_id').val()) {
                         if (d.id_marketing) {
@@ -576,7 +602,7 @@
                     $('#jumlah_booking_fee').val(formatNumber(d.jumlah_booking_fee));
                     $('#cicilan_per_bulan').val(formatNumber(d.cicilan_per_bulan));
                     $('#agama').val(d.agama || '');
-                    $('#pekerjaan').val(d.pekerjaan || '');
+                    $('#pekerjaan').val(d.pekerjaan || '').trigger('change');
                     $('#promo').val(d.promo || '');
                     $('#perubahan_posisi').val(d.perubahan_posisi || '');
                     $('#keterangan_booking').val(d.keterangan_booking || '');
@@ -615,7 +641,9 @@
             $('#id_marketing').val('').trigger('change');
             $('#penandatangan').val('');
             $('#keterangan').val('');
-            $('#agama, #pekerjaan, #promo').val('');
+            $('#agama').val('');
+            $('#pekerjaan').val('').trigger('change');
+            $('#promo').val('');
             $('#perubahan_posisi, #keterangan_booking').val('');
             $('#nominal_dp, #keterangan_dp').val('');
             $('#nominal_biaya_posisi_unit, #keterangan_posisi_unit').val('');

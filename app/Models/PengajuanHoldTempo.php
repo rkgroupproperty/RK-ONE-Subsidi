@@ -37,6 +37,8 @@ class PengajuanHoldTempo extends Model
         'foto_pemohon',
         'foto_ktp_p',
         'booking_fee',
+        'besaran_dp',
+        'diskon',
         'file_bukti',
         'id_marketing',
         'id_lokasi',

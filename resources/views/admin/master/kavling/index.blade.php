@@ -13,7 +13,7 @@
                         <div class="card">
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
-                                    <h3 class="font-weight-bold text-lg">Data Kavling</h3>
+                                    <h3 class="font-weight-bold text-lg">Data Blok / Unit</h3>
                                     <div class="d-flex align-items-center">
                                         <a id="btnPdf" href="{{ route('kavling.cetakPdf', ['id_lokasi' => '__ID__']) }}"
                                             target="_blank" class="btn btn-danger btn-sm mr-1">
@@ -66,7 +66,7 @@
                                     <thead>
                                         <tr>
                                             <th width="5%">No</th>
-                                            <th>Lokasi / Kavling</th>
+                                            <th>Lokasi / Blok / Unit</th>
                                             <th width="130px">Panjang</th>
                                             <th width="130px">Lebar</th>
                                             <th width="130px">Luas</th>
@@ -105,7 +105,7 @@
                             <div class="col-sm-4">
                                 <input type="text" name="nama_kavling" id="nama_kavling" class="form-control" readonly>
                             </div>
-                            <label class="col-sm-2 col-form-label">Kode Kavling</label>
+                            <label class="col-sm-2 col-form-label">Kode Blok / Unit</label>
                             <div class="col-sm-3">
                                 <input type="text" name="kode_kavling" id="kode_kavling" class="form-control" readonly>
                             </div>
@@ -268,7 +268,7 @@
                             <input type="file" name="foto" id="foto" accept="image/*" capture="environment" hidden>
                             <div id="previewFoto" class="dropzone-content">
                                 <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                                <p class="text-muted font-weight-bold mb-1">Upload Foto Kavling</p>
+                                <p class="text-muted font-weight-bold mb-1">Upload Foto Unit</p>
                                 <p class="text-muted small mb-0">Klik, ambil foto, atau seret foto ke sini</p>
                             </div>
                         </div>
@@ -292,7 +292,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-warning">
-                    <h5 class="modal-title text-dark font-weight-bold" id="modalImportLabel">Import Excel Kavling</h5>
+                    <h5 class="modal-title text-dark font-weight-bold" id="modalImportLabel">Import Excel Unit</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -379,7 +379,7 @@
         function resetDropzone() {
             $('#previewFoto').html(`
                 <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                <p class="text-muted font-weight-bold mb-1">Upload Foto Kavling</p>
+                <p class="text-muted font-weight-bold mb-1">Upload Foto Unit</p>
                 <p class="text-muted small mb-0">Klik, ambil foto, atau seret foto ke sini</p>
             `);
         }
@@ -562,12 +562,12 @@
             $.get(url, function(response) {
                 if (response.status === 'success') {
                     let data = response.data;
-                    $('#modalUploadLabel').text('Foto Kavling');
+                    $('#modalUploadLabel').text('Foto Unit');
                     $('#primary_upload').val(data.id);
                     let foto = response.data.foto;
                     if (foto) {
                         let imageUrl = '/assets/foto_kavling/' + foto;
-                        renderPreviewWithRemoveBtn(`<img src="${imageUrl}" alt="Foto Kavling">`);
+                        renderPreviewWithRemoveBtn(`<img src="${imageUrl}" alt="Foto Unit">`);
                     } else {
                         resetDropzone();
                     }
@@ -660,7 +660,7 @@
                         return isNaN(num) ? '' : num.toLocaleString('id-ID');
                     };
 
-                    $('#modalFormLabel').text('Edit Kavling');
+                    $('#modalFormLabel').text('Edit Unit');
                     $('#primary_id').val(data.id);
                     $('#nama_kavling').val(data.lokasi.nama_kavling);
                     $('#kode_kavling').val(data.kode_kavling);
@@ -820,8 +820,8 @@
                 success: function(response) {
                     $('#modalForm').modal('hide');
                     audio.play();
-                    let msg = id ? "Kavling berhasil diupdate!" :
-                        "Kavling berhasil ditambahkan!";
+                    let msg = id ? "Unit berhasil diupdate!" :
+                        "Unit berhasil ditambahkan!";
                     toastr.success(msg, "BERHASIL", {
                         progressBar: true,
                         timeOut: 3500,
@@ -887,7 +887,7 @@
                 success: function(response) {
                     $('#modalUpload').modal('hide');
                     audio.play();
-                    let msg = "Foto Kavling berhasil diupload!";
+                    let msg = "Foto Unit berhasil diupload!";
                     toastr.success(msg, "BERHASIL", {
                         progressBar: true,
                         timeOut: 3500,

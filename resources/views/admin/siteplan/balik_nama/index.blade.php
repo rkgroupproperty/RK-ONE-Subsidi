@@ -79,7 +79,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <label for="id_kavling" class="col-sm-2 col-form-label">Blok/Kav</label>
+                            <label for="id_kavling" class="col-sm-2 col-form-label">Blok / Unit</label>
                             <div class="col-sm-2">
                                 <select name="id_kavling" id="id_kavling" class="form-control select-kavling"></select>
                             </div>
@@ -140,7 +140,7 @@
             });
             $('.select-kavling').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Kavling",
+                placeholder: "Pilih Blok / Unit",
             });
            $('.select-stt').select2({
                 theme: "bootstrap4",

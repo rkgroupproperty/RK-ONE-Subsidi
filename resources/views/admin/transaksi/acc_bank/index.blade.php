@@ -16,6 +16,9 @@
                             <div class="card-header p-3">
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data SP3K</h3>
+                                    <div class="d-flex align-items-center">
+                                        <a href="{{ route('export.transaksi.acc-bank') }}" target="_blank" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
+                                    </div>
                                 </div>
                             </div>
                             <div class="card-body">

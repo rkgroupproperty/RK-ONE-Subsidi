@@ -546,7 +546,7 @@
       .kpi-card:last-child { grid-column: auto; }
       .panel-body { padding: 15px; }
     }
-  
+
       body.dark-mode .dashboard-shell {
         background: #111827;
         color: #e5e7eb;
@@ -783,6 +783,15 @@
           <div class="panel-body">
             <div class="section-head">
               <h2>Penjualan Marketing</h2>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Lokasi</label>
+                <select id="filterLokasiMarketing" class="form-control" style="width:200px">
+                  <option value="semua">Semua Lokasi</option>
+                  @foreach(\App\Models\LokasiKavling::all() as $lokasi)
+                    <option value="{{ $lokasi->id }}">{{ $lokasi->nama_kavling }}</option>
+                  @endforeach
+                </select>
+              </div>
             </div>
 
             <div class="marketing-list">
@@ -863,12 +872,35 @@
             <h2>Grafik Sumber Prospek</h2>
             <div style="display:flex;gap:10px;align-items:center">
               <div>
-                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Filter</label>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Sumber</label>
                 <select id="filterSumberProspek" class="form-control" style="width:150px">
                   <option value="semua" selected>Semua</option>
                   <option value="booking">Booking</option>
                   <option value="customer">Customer</option>
                 </select>
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Bulan</label>
+                <select id="filterBulanSumberProspek" class="form-control" style="width:150px">
+                  <option value="semua" selected>Semua Bulan</option>
+                  <option value="1">Januari</option>
+                  <option value="2">Februari</option>
+                  <option value="3">Maret</option>
+                  <option value="4">April</option>
+                  <option value="5">Mei</option>
+                  <option value="6">Juni</option>
+                  <option value="7">Juli</option>
+                  <option value="8">Agustus</option>
+                  <option value="9">September</option>
+                  <option value="10">Oktober</option>
+                  <option value="11">November</option>
+                  <option value="12">Desember</option>
+                </select>
+              </div>
+              <div style="align-self:flex-end">
+                <a href="#" id="btnExportSumberProspek" target="_blank" class="btn btn-success btn-sm" style="display:inline-flex;align-items:center;gap:6px">
+                  <i class="fas fa-file-excel"></i> Excel
+                </a>
               </div>
             </div>
           </div>
@@ -948,6 +980,39 @@
             });
         }
 
+        function loadMarketingStats() {
+            const idLokasi = $('#filterLokasiMarketing').val();
+            $.ajax({
+                url: '{{ route("beranda.marketing-stats") }}',
+                type: 'GET',
+                data: { id_lokasi: idLokasi },
+                success: function(response) {
+                    renderMarketingList(response);
+                }
+            });
+        }
+
+        function renderMarketingList(data) {
+            let html = '';
+            if (data.length === 0) {
+                html = '<div class="item-sub">Belum ada data marketing.</div>';
+            } else {
+                data.forEach(function(item, index) {
+                    html += '<a href="{{ route("beranda.detail-customer-marketing", "__ID__") }}" class="marketing-item" style="text-decoration:none;color:inherit">'
+                        .replace('__ID__', item.id);
+                    html += '<span class="rank">' + (index + 1) + '</span>';
+                    html += '<span class="avatar">' + item.inisial + '</span>';
+                    html += '<div class="item-main">';
+                    html += '<div class="item-title">' + item.nama + '</div>';
+                    html += '<div class="item-sub">' + item.kode + ' · Marketing</div>';
+                    html += '</div>';
+                    html += '<div class="item-value">' + item.jumlah + ' Unit</div>';
+                    html += '</a>';
+                });
+            }
+            $('.marketing-list').html(html);
+        }
+
         function loadChartData() {
             const tahun = $('#filterTahun').val();
             const status = $('#filterStatus').val();
@@ -983,8 +1048,16 @@
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
             });
+            $('#filterBulanSumberProspek').select2({
+                theme: "bootstrap4",
+                minimumResultsForSearch: Infinity,
+            });
+            $('#filterLokasiMarketing').select2({
+                theme: "bootstrap4",
+            });
 
             loadChartData();
+            loadMarketingStats();
 
             $('#filterTahun, #filterStatus').on('change', function() {
                 loadChartData();
@@ -996,10 +1069,23 @@
             });
 
             loadSumberProspekChart();
-            $('#filterSumberProspek').on('change', function() {
+            updateExportSumberProspekUrl();
+            $('#filterSumberProspek, #filterBulanSumberProspek').on('change', function() {
                 loadSumberProspekChart();
+                updateExportSumberProspekUrl();
+            });
+
+            $('#filterLokasiMarketing').on('change', function() {
+                loadMarketingStats();
             });
         });
+
+        function updateExportSumberProspekUrl() {
+            const filter = $('#filterSumberProspek').val();
+            const bulan = $('#filterBulanSumberProspek').val();
+            const url = '{{ route("beranda.export-sumber-prospek") }}?filter=' + filter + '&bulan=' + bulan;
+            $('#btnExportSumberProspek').attr('href', url);
+        }
 
         let sumberProspekChart;
         const spColors = [
@@ -1016,10 +1102,11 @@
 
         function loadSumberProspekChart() {
             const filter = $('#filterSumberProspek').val();
+            const bulan = $('#filterBulanSumberProspek').val();
             $.ajax({
                 url: '{{ route("beranda.sumber-prospek-data") }}',
                 type: 'GET',
-                data: { filter: filter },
+                data: { filter: filter, bulan: bulan },
                 success: function(response) {
                     renderSumberProspekChart(response.labels, response.combined);
                 }

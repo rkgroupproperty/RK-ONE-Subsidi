@@ -90,7 +90,7 @@
                     <div class="about-stats" style="color: #e3c37c" data-aos="fade-left" data-aos-duration="1000">
                         <div class="stat" data-aos="zoom-in" data-aos-delay="200">
                             <h2>{{ \Illuminate\Support\Facades\DB::table('kavling_peta')->count() }} </h2>
-                            <p style="font-size: 16px; color: #4b4b4b; max-width: 500px; "> Total Kavling</p>
+                            <p style="font-size: 16px; color: #4b4b4b; max-width: 500px; "> Total Unit</p>
                         </div>
                         {{-- <div class="stat" data-aos="zoom-in" data-aos-delay="400">
                             <h2>1,100 <span>Ha</span></h2>

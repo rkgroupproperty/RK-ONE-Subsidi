@@ -306,7 +306,7 @@
             {{-- Header (Matching Booking) --}}
             <div class="siteplan-header">
                 <h4>Siteplan Penjualan</h4>
-                <p>Silakan pilih lokasi perumahan dan klik pada kavling untuk melihat detail informasi.</p>
+                <p>Silakan pilih lokasi perumahan dan klik pada unit untuk melihat detail informasi.</p>
             </div>
 
             <div class="siteplan-body">
@@ -408,14 +408,14 @@
             <button id="popupClose" onclick="closePopup()">&times;</button>
             <div class="popup-arrow"></div>
 
-            <div class="popup-title">Detail Kavling</div>
+            <div class="popup-title">Detail Blok / Unit</div>
 
             <div class="popup-row">
                 <span class="popup-label">Perumahan</span>
                 <span class="popup-value" id="p_nama_kavling">-</span>
             </div>
             <div class="popup-row">
-                <span class="popup-label">Kode Kavling</span>
+                <span class="popup-label">Kode Blok / Unit</span>
                 <span class="popup-value" id="p_kode_kavling">-</span>
             </div>
             <div class="popup-row">

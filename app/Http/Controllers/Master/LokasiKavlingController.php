@@ -6,7 +6,6 @@ use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\BAST;
 use App\Models\KavlingPeta;
 use App\Models\LokasiKavling;
-use App\Models\LokasiKavlingPerusahaan;
 use App\Models\Pemasukan;
 use App\Models\Perusahaan;
 use App\Models\PPJB;
@@ -33,8 +32,8 @@ class LokasiKavlingController extends Controller
                 ->editColumn('nama_kavling', function ($row) {
                     $field = '<strong>' . $row->nama_kavling . '</strong>';
 
-                    foreach ($row->perusahaan as $p) {
-                        $field .= '<br><span>' . $p->nama_perusahaan . '</span>';
+                    if ($row->perusahaan) {
+                        $field .= '<br><span>' . $row->perusahaan->nama_perusahaan . '</span>';
                     }
 
                     return $field;
@@ -46,7 +45,7 @@ class LokasiKavlingController extends Controller
                     $btn = '<div class="d-flex justify-content-center">';
                     $btn .= '<a href="' . route('kavling.index', ['id_lokasi' => $row->id]) . '"
                             class="btn btn-xs btn-info mr-1">
-                            Detail Kavling
+                            Detail Blok / Unit
                             </a>';
 
                     if ($permissions['edit']) {
@@ -85,8 +84,7 @@ class LokasiKavlingController extends Controller
             'urutan'          => 'required',
             'stt_tampil'      => 'required',
             'is_cluster'      => 'required',
-            'id_perusahaan'   => 'required|array',
-            'id_perusahaan.*' => 'required',
+            'id_perusahaan'   => 'required',
             'no_kwitansi'     => 'required',
             'no_bast'         => 'required',
             'no_ppjb'         => 'required',
@@ -114,26 +112,20 @@ class LokasiKavlingController extends Controller
         try {
 
             $lokasi = LokasiKavling::create([
-                'nama_kavling' => $request->nama_kavling,
-                'nama_singkat' => $request->nama_singkat,
-                'alamat'       => $request->alamat,
-                'urutan'       => $request->urutan,
-                'header'       => $request->header,
-                'stt_tampil'   => $request->stt_tampil,
-                'is_cluster'   => $request->is_cluster,
-                'no_kwitansi'  => $request->no_kwitansi,
-                'no_bast'      => $request->no_bast,
-                'no_ppjb'      => $request->no_ppjb,
-                'reset_nomor'  => $request->reset_nomor,
+                'nama_kavling'  => $request->nama_kavling,
+                'nama_singkat'  => $request->nama_singkat,
+                'alamat'        => $request->alamat,
+                'urutan'        => $request->urutan,
+                'header'        => $request->header,
+                'stt_tampil'    => $request->stt_tampil,
+                'is_cluster'    => $request->is_cluster,
+                'no_kwitansi'   => $request->no_kwitansi,
+                'no_bast'       => $request->no_bast,
+                'no_ppjb'       => $request->no_ppjb,
+                'reset_nomor'   => $request->reset_nomor,
+                'id_perusahaan' => $request->id_perusahaan,
             ]);
             $this->logCreate('Lokasi Perumahan', $lokasi->id);
-
-            foreach ($request->id_perusahaan as $perusahaan) {
-                LokasiKavlingPerusahaan::create([
-                    'id_lokasi'     => $lokasi->id,
-                    'id_perusahaan' => $perusahaan,
-                ]);
-            }
 
             DB::commit();
 
@@ -169,8 +161,7 @@ class LokasiKavlingController extends Controller
             'urutan'          => 'required',
             'stt_tampil'      => 'required',
             'is_cluster'      => 'required',
-            'id_perusahaan'   => 'required|array',
-            'id_perusahaan.*' => 'required',
+            'id_perusahaan'   => 'required',
             'no_kwitansi'     => 'required',
             'no_bast'         => 'required',
             'no_ppjb'         => 'required',
@@ -204,17 +195,18 @@ class LokasiKavlingController extends Controller
             $oldNoPpjb     = $lokasi->no_ppjb;
 
             $lokasi->update([
-                'nama_kavling' => $request->nama_kavling,
-                'nama_singkat' => $request->nama_singkat,
-                'alamat'       => $request->alamat,
-                'urutan'       => $request->urutan,
-                'header'       => $request->header,
-                'stt_tampil'   => $request->stt_tampil,
-                'is_cluster'   => $request->is_cluster,
-                'no_kwitansi'  => $request->no_kwitansi,
-                'no_bast'      => $request->no_bast,
-                'no_ppjb'      => $request->no_ppjb,
-                'reset_nomor'  => $request->reset_nomor,
+                'nama_kavling'  => $request->nama_kavling,
+                'nama_singkat'  => $request->nama_singkat,
+                'alamat'        => $request->alamat,
+                'urutan'        => $request->urutan,
+                'header'        => $request->header,
+                'stt_tampil'    => $request->stt_tampil,
+                'is_cluster'    => $request->is_cluster,
+                'no_kwitansi'   => $request->no_kwitansi,
+                'no_bast'       => $request->no_bast,
+                'no_ppjb'       => $request->no_ppjb,
+                'reset_nomor'   => $request->reset_nomor,
+                'id_perusahaan' => $request->id_perusahaan,
             ]);
 
             $this->logEdit('Lokasi Perumahan', $lokasi->id);
@@ -253,15 +245,6 @@ class LokasiKavlingController extends Controller
                 ]);
             }
 
-            LokasiKavlingPerusahaan::where('id_lokasi', $lokasi->id)->delete();
-
-            foreach ($request->id_perusahaan as $perusahaan) {
-                LokasiKavlingPerusahaan::create([
-                    'id_lokasi'     => $lokasi->id,
-                    'id_perusahaan' => $perusahaan,
-                ]);
-            }
-
             DB::commit();
 
             return response()->json([
@@ -284,8 +267,6 @@ class LokasiKavlingController extends Controller
             DB::beginTransaction();
 
             $lokasi = LokasiKavling::find($id_lokasi);
-
-            LokasiKavlingPerusahaan::where('id_lokasi', $id_lokasi)->delete();
 
             $this->logDelete('Lokasi Perumahan', $lokasi->id);
             $lokasi->delete();

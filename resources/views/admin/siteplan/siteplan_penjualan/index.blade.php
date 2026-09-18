@@ -213,7 +213,7 @@
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-indigo">
-                    <h5 class="modal-title text-white font-weight-bold" id="modalDetailLabel">Detail Data Kavling</h5>
+                    <h5 class="modal-title text-white font-weight-bold" id="modalDetailLabel">Detail Blok / Unit</h5>
                     <div class="ml-auto d-flex align-items-center">
                         <button type="button" class="btn btn-primary btn-sm mr-2" id="btn-cetak">
                             <i class="fas fa-print"></i> Cetak Data
@@ -257,7 +257,7 @@
                                             <input type="text" name="nama_kavling" id="nama_kavling"
                                                 class="form-control" readonly>
                                         </div>
-                                        <label class="col-sm-2 col-form-label">Kode Kavling</label>
+                                        <label class="col-sm-2 col-form-label">Kode Blok / Unit</label>
                                         <div class="col-sm-2">
                                             <input type="text" name="kode_kavling" id="kode_kavling"
                                                 class="form-control" readonly>
@@ -588,7 +588,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal',
-                    text: 'Data tidak lengkap. Pastikan detail kavling sudah dimuat.',
+                    text: 'Data tidak lengkap. Pastikan detail unit sudah dimuat.',
                 });
                 return;
             }

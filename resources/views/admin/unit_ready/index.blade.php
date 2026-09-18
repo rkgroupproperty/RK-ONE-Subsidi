@@ -54,7 +54,7 @@
                                         <tr>
                                             <th width="30px">No</th>
                                             <th>Perumahan</th>
-                                            <th>Kode Kavling</th>
+                                            <th>Kode Blok / Unit</th>
                                             <th>Status Ready</th>
                                             <th>Keterangan</th>
                                             <th width="100px">Action</th>
@@ -168,7 +168,7 @@
                                 <div class="col-sm-4">
                                     <input type="text" name="perumahan" id="perumahan" class="form-control" disabled>
                                 </div>
-                                <label class="col-sm-2 col-form-label">Blok/Kav</label>
+                                <label class="col-sm-2 col-form-label">Blok / Unit</label>
                                 <div class="col-sm-3">
                                     <input type="text" name="blok_kav" id="blok_kav" class="form-control" disabled>
                                 </div>

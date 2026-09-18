@@ -177,7 +177,26 @@
                             <div class="form-group row">
                                 <label class="control-label col-sm-3">Pekerjaan</label>
                                 <div class="col-sm-4">
-                                    <input name="pekerjaan" id="pekerjaan" class="form-control" type="text">
+                                    <select class="form-control select-pekerjaan" name="pekerjaan" id="pekerjaan">
+                                        <option value=""></option>
+                                        <option value="Wiraswasta">Wiraswasta</option>
+                                        <option value="Pegawai Swasta">Pegawai Swasta</option>
+                                        <option value="ASN">ASN</option>
+                                        <option value="TNI atau Polri">TNI atau Polri</option>
+                                        <option value="Karyawan BUMN">Karyawan BUMN</option>
+                                        <option value="Karyawan">Karyawan</option>
+                                        <option value="Buruh">Buruh</option>
+                                        <option value="Petani">Petani</option>
+                                        <option value="Pedagang">Pedagang</option>
+                                        <option value="Sopir">Sopir</option>
+                                        <option value="Guru/Dosen">Guru/Dosen</option>
+                                        <option value="Dokter">Dokter</option>
+                                        <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
+                                        <option value="Pensiunan">Pensiunan</option>
+                                        <option value="Pelajar/Mahasiswa">Pelajar/Mahasiswa</option>
+                                        <option value="Freelancer">Freelancer</option>
+                                        <option value="Lain-lain">Lain-lain</option>
+                                    </select>
                                 </div>
                                 <label class="control-label col-sm-2">No. BPJS Kes</label>
                                 <div class="col-sm-3">
@@ -249,7 +268,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <label class="control-label col-sm-2">Blok/Kav</label>
+                                <label class="control-label col-sm-2">Blok / Unit</label>
                                 <div class="col-sm-3">
                                     <select name="id_kavling" id="id_kavling" disabled
                                         class="form-control select-kavling"></select>
@@ -557,8 +576,8 @@
 
                         <hr>
 
-                        <!-- Data Kavling -->
-                        <h6 class="text-danger font-weight-bold mb-3"><i class="fas fa-home mr-1"></i> Data Kavling</h6>
+                        <!-- Data Blok / Unit -->
+                        <h6 class="text-danger font-weight-bold mb-3"><i class="fas fa-home mr-1"></i> Data Blok / Unit</h6>
 
                         <div class="form-group row">
                             <label class="control-label col-sm-3">Lokasi Perumahan <span style="color: red;">*</span></label>
@@ -570,7 +589,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <label class="control-label col-sm-2">Blok/Kav <span style="color: red;">*</span></label>
+                            <label class="control-label col-sm-2">Blok / Unit <span style="color: red;">*</span></label>
                             <div class="col-sm-3">
                                 <select name="id_kavling" id="usl_id_kavling"
                                     class="form-control select-kavling-usl"></select>
@@ -585,7 +604,7 @@
                                         <span class="input-group-text">Rp.</span>
                                     </div>
                                     <input type="text" name="total_harga" id="usl_total_harga"
-                                        class="form-control" readonly disabled placeholder="Pilih kavling terlebih dahulu">
+                                        class="form-control" readonly disabled placeholder="Pilih blok / unit terlebih dahulu">
                                 </div>
                             </div>
                         </div>
@@ -705,6 +724,10 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
+            $('.select-pekerjaan').select2({
+                theme: "bootstrap4",
+                placeholder: "Pilih Pekerjaan",
+            });
             $('.select-lokasi').select2({
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
@@ -845,7 +868,7 @@
 
             $('.select-kavling').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Kavling",
+                placeholder: "Pilih Blok / Unit",
             });
 
             const routeGetKavling = "{{ route('customer.getKavling', ':id') }}";
@@ -1122,7 +1145,7 @@
             });
             $('.select-kavling-usl').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Kavling",
+                placeholder: "Pilih Blok / Unit",
             });
             $('.select-jk-usl').select2({
                 theme: "bootstrap4",
@@ -1165,7 +1188,7 @@
         $(document).on('change', '#usl_id_lokasi', function() {
             let idLokasi = $(this).val();
             $('#usl_id_kavling').html('<option value="">Loading...</option>').trigger('change');
-            $('#usl_total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
+            $('#usl_total_harga').val('').attr('placeholder', 'Pilih blok / unit terlebih dahulu');
 
             if (idLokasi) {
                 const urlKavling = routeGetKavlingUSL.replace(':id', idLokasi);
@@ -1194,7 +1217,7 @@
                     $('#usl_total_harga').val(hargaJual ? hargaJual.toLocaleString('id-ID') : '').attr('placeholder', '0');
                 });
             } else {
-                $('#usl_total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
+                $('#usl_total_harga').val('').attr('placeholder', 'Pilih blok / unit terlebih dahulu');
             }
         });
 
@@ -1232,7 +1255,7 @@
             $('#usl_pekerjaan').val('').trigger('change');
             $('#usl_pasangan').hide();
             $('#usl_row-pekerjaan-lain').hide();
-            $('#usl_total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
+            $('#usl_total_harga').val('').attr('placeholder', 'Pilih blok / unit terlebih dahulu');
 
             let submitBtn = $('#submitBtnUnitSudahLaku');
             submitBtn.find('.spinner-border').addClass('d-none');

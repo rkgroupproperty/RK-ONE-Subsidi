@@ -189,7 +189,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <label class="control-label col-sm-2">Blok/Kav</label>
+                                <label class="control-label col-sm-2">Blok / Unit</label>
                                 <div class="col-sm-3">
                                     <select name="id_kavling" id="id_kavling" disabled
                                         class="form-control select-kavling"></select>
@@ -472,7 +472,7 @@
 
             $('.select-kavling').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Kavling",
+                placeholder: "Pilih Blok / Unit",
             });
 
             const routeGetKavling = "{{ route('customer.getKavling', ':id') }}";

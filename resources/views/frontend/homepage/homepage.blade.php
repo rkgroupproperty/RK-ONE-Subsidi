@@ -157,7 +157,7 @@
                         <div class="about-stats" data-aos="fade-left" data-aos-duration="1000">
                             <div class="stat" data-aos="zoom-in" data-aos-delay="200">
                                 <h2>{{ \Illuminate\Support\Facades\DB::table('kavling_peta')->count() }}</h2>
-                                <p>Total Kavling</p>
+                                <p>Total Unit</p>
                             </div>
                             <div class="stat" data-aos="zoom-in" data-aos-delay="600">
                                 <h2>{{ \Illuminate\Support\Facades\DB::table('lokasi_kavling')->count() }}</h2>

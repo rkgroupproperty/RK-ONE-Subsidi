@@ -25,6 +25,7 @@ class LokasiKavling extends Model
         'no_bast',
         'no_ppjb',
         'reset_nomor',
+        'id_perusahaan',
     ];
 
     public function kavlingPeta()
@@ -39,11 +40,11 @@ class LokasiKavling extends Model
 
     public function perusahaan()
     {
-        return $this->hasMany(LokasiKavlingPerusahaan::class, 'id_lokasi');
+        return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
     }
 
     public function getKotaPenandatanganAttribute()
     {
-        return optional($this->perusahaan->first())->kota_penandatangan ?? '-';
+        return $this->perusahaan->kota_penandatangan ?? '-';
     }
 }

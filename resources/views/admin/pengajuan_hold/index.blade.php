@@ -15,6 +15,8 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Pengajuan Hold</h3>
                                     <div class="d-flex align-items-center">
+                                        <a href="{{ route('export.transaksi.booking') }}" target="_blank" class="btn btn-sm btn-success mr-2"><i
+                                                class="fas fa-file-excel mr-1"></i> Excel</a>
                                         <a href="{{ route('pengajuan-hold.arsip') }}" class="btn btn-sm btn-primary"><i
                                                 class="fas fa-archive mr-1"></i> Arsip Pengajuan Hold</a>
                                     </div>
@@ -116,7 +118,26 @@
                         <div class="form-group row">
                             <label class="control-label col-sm-3">Pekerjaan</label>
                             <div class="col-sm-4">
-                                <input name="pekerjaan" id="pekerjaan" class="form-control" type="text">
+                                <select class="form-control select-pekerjaan" name="pekerjaan" id="pekerjaan">
+                                    <option value=""></option>
+                                    <option value="Wiraswasta">Wiraswasta</option>
+                                    <option value="Pegawai Swasta">Pegawai Swasta</option>
+                                    <option value="ASN">ASN</option>
+                                    <option value="TNI atau Polri">TNI atau Polri</option>
+                                    <option value="Karyawan BUMN">Karyawan BUMN</option>
+                                    <option value="Karyawan">Karyawan</option>
+                                    <option value="Buruh">Buruh</option>
+                                    <option value="Petani">Petani</option>
+                                    <option value="Pedagang">Pedagang</option>
+                                    <option value="Sopir">Sopir</option>
+                                    <option value="Guru/Dosen">Guru/Dosen</option>
+                                    <option value="Dokter">Dokter</option>
+                                    <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
+                                    <option value="Pensiunan">Pensiunan</option>
+                                    <option value="Pelajar/Mahasiswa">Pelajar/Mahasiswa</option>
+                                    <option value="Freelancer">Freelancer</option>
+                                    <option value="Lain-lain">Lain-lain</option>
+                                </select>
                             </div>
                             <label class="control-label col-sm-2">No. BPJS Kes</label>
                             <div class="col-sm-3">
@@ -187,14 +208,14 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <label class="control-label col-sm-2">Blok/Kav <span style="color: red;">*</span></label>
+                            <label class="control-label col-sm-2">Blok / Unit <span style="color: red;">*</span></label>
                             <div class="col-sm-3">
                                 <select name="id_kavling" id="id_kavling" class="form-control select-kavling"></select>
                             </div>
                         </div>
 
                         <div id="rincian-harga-container">
-                            <div class="text-muted">Pilih kavling terlebih dahulu untuk menampilkan rincian harga.</div>
+                            <div class="text-muted">Pilih blok / unit terlebih dahulu untuk menampilkan rincian harga.</div>
                         </div>
                         <input type="hidden" name="total_harga" id="total_harga" value="">
 
@@ -264,6 +285,29 @@
                                         type="text">
                                 </div>
                             </div>
+                            <label class="control-label col-sm-2">Besaran DP <span class="text-danger">*</span></label>
+                            <div class="col-sm-3">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Rp.</span>
+                                    </div>
+                                    <input name="besaran_dp" id="besaran_dp" class="form-control format-number"
+                                        type="text">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="control-label col-sm-3">Diskon</label>
+                            <div class="col-sm-4">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Rp.</span>
+                                    </div>
+                                    <input name="diskon" id="diskon" class="form-control format-number"
+                                        type="text">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -297,6 +341,10 @@
         });
 
         $(document).ready(function() {
+            $('.select-pekerjaan').select2({
+                theme: "bootstrap4",
+                placeholder: "Pilih Pekerjaan",
+            });
             $('.select-lokasi').select2({
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
@@ -435,9 +483,11 @@
                     $('#npwp').val(data.npwp);
                     $('#no_bpjs_kes').val(data.no_bpjs_kes);
                     $('#booking_fee').val(formatNumber(data.booking_fee));
+                    $('#besaran_dp').val(formatNumber(data.besaran_dp));
+                    $('#diskon').val(formatNumber(data.diskon));
                     $('#alamat_ktp').val(data.alamat_ktp);
                     $('#alamat_domisili').val(data.alamat_domisili);
-                    $('#pekerjaan').val(data.pekerjaan);
+                    $('#pekerjaan').val(data.pekerjaan).trigger('change');
                     $('#status_pernikahan').val(data.status_pernikahan).trigger('change');
                     $('#nama_p').val(data.nama_p);
                     $('#nama_saudara').val(data.nama_saudara);
@@ -472,7 +522,7 @@
 
             $('.select-kavling').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Kavling",
+                placeholder: "Pilih Blok / Unit",
             });
 
             const routeGetKavling = "{{ route('pengajuan-hold.getKavling', ':id') }}";
@@ -556,9 +606,10 @@
             isEditMode = false;
             $('#formData')[0].reset();
             $('#primary_id').val('');
-            $('#rincian-harga-container').html('<div class="text-muted">Pilih kavling terlebih dahulu untuk menampilkan rincian harga.</div>');
+            $('#rincian-harga-container').html('<div class="text-muted">Pilih blok / unit terlebih dahulu untuk menampilkan rincian harga.</div>');
             $('.jenis_kelamin').val('').trigger('change');
             $('.status').val('').trigger('change');
+            $('#pekerjaan').val('').trigger('change');
             $('.id_lokasi').val('').trigger('change');
             $('.id_kavling').val('').trigger('change');
             $('.id_marketing').val('').trigger('change');

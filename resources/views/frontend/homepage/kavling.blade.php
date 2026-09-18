@@ -77,7 +77,7 @@
                         <p class="card-text text-muted mb-2">{{ $item->alamat }}</p>
                         
                         <p class="fw-bold mb-4">
-                            Jumlah Kavling: {{ $item->kavling_peta_count }}
+                            Jumlah Unit: {{ $item->kavling_peta_count }}
                         </p>
 
                         <div class="text-start">
