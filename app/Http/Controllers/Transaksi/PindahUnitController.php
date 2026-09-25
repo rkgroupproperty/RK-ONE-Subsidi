@@ -106,7 +106,7 @@ class PindahUnitController extends Controller
         }
 
         $customers = Customer::select(['id', 'nama_lengkap'])
-            ->whereIn('id_status_progres', [2, 4, 7])->where('stt_arsip', 0)
+            ->whereIn('id_status_progres', [2, 4, 7, 10, 11])->where('stt_arsip', 0)
             ->get();
 
         $tanggalSekarang = Carbon::now('Asia/Jakarta')->format('Y-m-d');

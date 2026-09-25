@@ -806,6 +806,7 @@ class PengajuanHoldController extends Controller
             'foto_bpjs'    => 'Foto BPJS',
             'foto_ktp_p'   => 'Foto KTP Pasangan',
             'foto_pemohon' => 'Foto Pemohon',
+            'file_sppr'    => 'Bukti Proses Admin',
         ];
 
         $customerFiles = [];

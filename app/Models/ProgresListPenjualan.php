@@ -11,7 +11,7 @@ class ProgresListPenjualan extends Model
 
     protected $table = 'progres_list_penjualan';
 
-        protected $fillable = [
+    protected $fillable = [
         'status_progres',
         'urutan',
         'keterangan',

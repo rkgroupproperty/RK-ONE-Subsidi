@@ -73,7 +73,7 @@ class PPJBController extends Controller
                 ->make(true);
         }
 
-        $customerList = Customer::whereNotIn('id_status_progres', [1, 2, 6, 7])->get();
+        $customerList = Customer::whereNotIn('id_status_progres', [1, 2, 6, 7, 10, 11])->get();
 
         return view('admin.transaksi.ppjb.index', compact('permissions', 'customerList'));
     }

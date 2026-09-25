@@ -50,6 +50,7 @@ use App\Http\Controllers\Transaksi\AccBankController;
 use App\Http\Controllers\Transaksi\AkadController;
 use App\Http\Controllers\Transaksi\BastController;
 use App\Http\Controllers\Transaksi\GantiNamaController;
+use App\Http\Controllers\Transaksi\ProsesMarketingController;
 use App\Http\Controllers\Transaksi\SPPRController;
 use App\Http\Controllers\Transaksi\PembelianCancelController;
 use App\Http\Controllers\Transaksi\PindahUnitController;
@@ -262,9 +263,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('sppr/{id}/cetak', [SPPRController::class, 'cetak'])->name('proses-admin.cetak');
         Route::get('sppr/get-customer-detail/{id}', [SPPRController::class, 'getCustomerDetail'])->name('proses-admin.get-customer-detail');
 
+        Route::resource('proses-marketing', ProsesMarketingController::class);
+        Route::get('proses-marketing/get-customer-detail/{id}', [ProsesMarketingController::class, 'getCustomerDetail'])->name('proses-marketing.get-customer-detail');
+
         Route::prefix('export/transaksi')->group(function () {
             Route::get('booking', [ExportTransaksiController::class, 'booking'])->name('export.transaksi.booking');
             Route::get('sppr', [ExportTransaksiController::class, 'sppr'])->name('export.transaksi.sppr');
+            Route::get('proses-marketing', [ExportTransaksiController::class, 'prosesMarketing'])->name('export.transaksi.proses-marketing');
             Route::get('wawancara', [ExportTransaksiController::class, 'wawancara'])->name('export.transaksi.wawancara');
             Route::get('acc-bank', [ExportTransaksiController::class, 'accBank'])->name('export.transaksi.acc-bank');
             Route::get('ppjb', [ExportTransaksiController::class, 'ppjb'])->name('export.transaksi.ppjb');

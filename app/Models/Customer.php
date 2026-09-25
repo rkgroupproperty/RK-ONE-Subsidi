@@ -104,6 +104,11 @@ class Customer extends Model
         return $this->hasMany(Pemasukan::class, 'id_customer');
     }
 
+    public function berkas()
+    {
+        return $this->hasMany(UploudFile::class, 'id_customer');
+    }
+
     public function wawancara()
     {
         return $this->hasMany(Wawancara::class, 'id_customer');

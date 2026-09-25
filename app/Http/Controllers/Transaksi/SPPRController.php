@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\Customer;
 use App\Models\MarketingOffline;
+use App\Models\ProgresListPenjualan;
 use App\Models\SPPR;
 use App\Traits\LogAktivitasTrait;
 use Illuminate\Http\Request;
@@ -231,6 +232,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
         ]);
 
         $this->logCreate('Proses Admin', $sppr->id);
+        $this->ubahStatusProgres($sppr->id_customer);
 
         return response()->json(['status' => 'success']);
     }
@@ -339,6 +341,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
         ]);
 
         $this->logEdit('Proses Admin', $sppr->id);
+        $this->ubahStatusProgres($sppr->id_customer);
 
         return response()->json(['status' => 'success']);
     }
@@ -349,6 +352,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
 
         $this->logDelete('Proses Admin', $sppr->id);
         $sppr->delete();
+        $this->kembalikanStatusProgres($sppr->id_customer);
 
         return response()->json(['status' => 'success']);
     }
@@ -429,6 +433,30 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
     }
 
+
+
+    private function ubahStatusProgres($idCustomer)
+    {
+        $customer = Customer::with('progres')->find($idCustomer);
+        $status   = ProgresListPenjualan::find(10);
+
+        if (! $customer || ! $status) {
+            return;
+        }
+
+        if (! $customer->progres || $customer->progres->urutan <= $status->urutan) {
+            $customer->update(['id_status_progres' => $status->id]);
+        }
+    }
+
+    private function kembalikanStatusProgres($idCustomer)
+    {
+        $customer = Customer::with('progres')->find($idCustomer);
+
+        if ($customer && $customer->progres && $customer->progres->status_progres === 'Proses Admin') {
+            $customer->update(['id_status_progres' => 2]);
+        }
+    }
 
     private function hitungTotal(Request $request)
     {

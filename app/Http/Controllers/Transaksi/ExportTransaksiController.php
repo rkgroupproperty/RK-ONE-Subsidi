@@ -24,6 +24,11 @@ class ExportTransaksiController extends Controller
         return $this->exportService->exportSPPR();
     }
 
+    public function prosesMarketing()
+    {
+        return $this->exportService->exportProsesMarketing();
+    }
+
     public function wawancara()
     {
         return $this->exportService->exportWawancara();

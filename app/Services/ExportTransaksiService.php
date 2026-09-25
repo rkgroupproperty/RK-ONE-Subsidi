@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Akad;
 use App\Models\AkadDetail;
 use App\Models\BAST;
+use App\Models\Customer;
 use App\Models\GantiNama;
 use App\Models\PembelianCancel;
 use App\Models\PengajuanHold;
@@ -202,6 +203,40 @@ class ExportTransaksiService
         $this->autoWidth($colCount);
 
         return $this->output('data_proses_admin.xlsx');
+    }
+
+    public function exportProsesMarketing()
+    {
+        $data = Customer::with(['lokasi', 'kavling', 'progres'])
+            ->where('stt_arsip', 0)
+            ->orderByDesc('id')
+            ->get();
+
+        $headers = ['No', 'Nama', 'Telp', 'Blok / Unit', 'Lokasi', 'Status'];
+        $this->sheet->fromArray($headers, null, 'A1');
+
+        $row = 2;
+        $no = 1;
+        foreach ($data as $item) {
+            $this->sheet->fromArray([
+                $no++,
+                $item->nama_lengkap ?? '-',
+                $item->no_telp ?? '-',
+                $item->kavling->kode_kavling ?? '-',
+                $item->lokasi->nama_kavling ?? '-',
+                $item->progres->status_progres ?? '-',
+            ], null, "A{$row}");
+            $row++;
+        }
+
+        $colCount = count($headers);
+        $this->styleHeader($colCount);
+        if ($row > 2) {
+            $this->styleCells($colCount, $row - 1);
+        }
+        $this->autoWidth($colCount);
+
+        return $this->output('data_proses_marketing.xlsx');
     }
 
     public function exportWawancara()
