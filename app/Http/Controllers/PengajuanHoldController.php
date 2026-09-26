@@ -869,7 +869,7 @@ class PengajuanHoldController extends Controller
             'no_bpjs_kes'          => $data->no_bpjs_kes,
             'pekerjaan'            => $data->pekerjaan,
             'id_bank'              => $request->id_bank,
-            'id_status_progres'    => 2,
+            'id_status_progres'    => 10,
             'besaran_dp'           => $data->besaran_dp,
             'diskon'               => $data->diskon,
             'an_surat_cash'        => $request->an_surat_cash,

@@ -352,7 +352,6 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
 
         $this->logDelete('Proses Admin', $sppr->id);
         $sppr->delete();
-        $this->kembalikanStatusProgres($sppr->id_customer);
 
         return response()->json(['status' => 'success']);
     }
@@ -449,14 +448,6 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
         }
     }
 
-    private function kembalikanStatusProgres($idCustomer)
-    {
-        $customer = Customer::with('progres')->find($idCustomer);
-
-        if ($customer && $customer->progres && $customer->progres->status_progres === 'Proses Admin') {
-            $customer->update(['id_status_progres' => 2]);
-        }
-    }
 
     private function hitungTotal(Request $request)
     {

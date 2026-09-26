@@ -327,7 +327,7 @@ class WawancaraController extends Controller
         $data = Wawancara::with('customer')->findOrFail($id);
 
         $data->customer->update([
-            'id_status_progres' => 2,
+            'id_status_progres' => 10,
         ]);
 
         $this->logDelete('Proses Bank', $id);
