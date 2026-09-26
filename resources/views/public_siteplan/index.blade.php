@@ -339,29 +339,34 @@
 
                                         @foreach ($kav->kavlingPeta as $pt)
                                             @php
-                                                $allowedStatus = ['Ready', 'Booking Fee', 'Serah Terima'];
-
                                                 $warna = '#ffffff';
 
-                                                if ($pt->customer && $pt->customer->progres) {
-                                                    $status = $pt->customer->progres->status_progres;
-
-                                                    if (in_array($status, $allowedStatus)) {
-                                                        $warna = $pt->customer->progres->warna ?? '#ffffff';
-                                                    }
+                                                if ($pt->customer) {
+                                                    $warna = $pt->customer->progres->warna ?? '#ffffff';
                                                 } elseif ($pt->status == 1) {
                                                     $warna = '#42f202';
                                                 }
                                             @endphp
 
-                                            <a href="javascript:void(0);" class="detail-button {{ $pt->siteplan_text_color === '#ffffff' ? 'text-white-svg' : '' }}"
-                                                data-url="{{ route('public.siteplan.show', $pt->id) }}">
-                                                {!! str_replace(
-                                                    ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
-                                                    [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
-                                                    $pt->jenis_map == 'polygon' ? $kav->masterSvg->polygon_svg : $kav->masterSvg->path_svg,
-                                                ) !!}
-                                            </a>
+                                            @if ($pt->jenis_map == 'polygon')
+                                                <a href="javascript:void(0);" class="detail-button {{ $pt->siteplan_text_color === '#ffffff' ? 'text-white-svg' : '' }}"
+                                                    data-url="{{ route('public.siteplan.show', $pt->id) }}">
+                                                    {!! str_replace(
+                                                        ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
+                                                        [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
+                                                        $kav->masterSvg->polygon_svg,
+                                                    ) !!}
+                                                </a>
+                                            @elseif ($pt->jenis_map == 'path')
+                                                <a href="javascript:void(0);" class="detail-button {{ $pt->siteplan_text_color === '#ffffff' ? 'text-white-svg' : '' }}"
+                                                    data-url="{{ route('public.siteplan.show', $pt->id) }}">
+                                                    {!! str_replace(
+                                                        ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
+                                                        [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
+                                                        $kav->masterSvg->path_svg,
+                                                    ) !!}
+                                                </a>
+                                            @endif
                                         @endforeach
 
                                         {!! $kav->masterSvg->footer_svg !!}
@@ -383,19 +388,9 @@
     <div class="legend-title">Keterangan Status</div>
 
         @foreach ($legend as $item)
-            @php
-                $label = $item->status_progres;
-
-                if ($label == 'Booking Fee') {
-                    $label = 'Booking';
-                } elseif ($label == 'Serah Terima') {
-                    $label = 'Terjual';
-                }
-            @endphp
-
             <div class="legend-item">
                 <div class="legend-color" style="background-color: {{ $item->warna }}"></div>
-                <div class="legend-label">{{ $label }}</div>
+                <div class="legend-label">{{ $item->status_progres }}</div>
             </div>
         @endforeach
 

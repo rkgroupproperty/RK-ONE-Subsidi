@@ -18,18 +18,26 @@ class PublicSiteplanController extends Controller
      */
      public function index()
     {
-        $lokasiKavling = LokasiKavling::with(['kavlingPeta.customer.progres', 'kavlingPeta.progres'])
+        $lokasiKavling = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres'])
             ->orderBy('urutan', 'asc')
             ->get();
 
         $legend = ProgresListPenjualan::whereNotNull('warna')
             ->where('warna', '!=', '')
             ->where('stt_tampil', 1)
-            ->whereIn('status_progres', ['Ready', 'Booking Fee', 'Serah Terima'])
             ->orderBy('urutan', 'asc')
             ->get();
 
-            $bg        = PengaturanMedia::where('jenis_data', 'Background booking')->first();
+        $manual = collect([
+            (object) [
+                'status_progres' => 'Booking',
+                'warna'          => '#42f202',
+            ],
+        ]);
+
+        $legend = $manual->merge($legend);
+
+        $bg = PengaturanMedia::where('jenis_data', 'Background booking')->first();
 
         return view('public_siteplan.index', compact('lokasiKavling', 'legend', 'bg'));
     }
