@@ -26,12 +26,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use setasign\Fpdi\Tcpdf\Fpdi;
 use TCPDF;
+use App\Traits\KopSuratPdfTrait;
 use Yajra\DataTables\Facades\DataTables;
 
 Carbon::setLocale('id');
 class PembayaranController extends Controller
 {
     use LogAktivitasTrait;
+    use KopSuratPdfTrait;
 
     protected GenerateNumberController $generator;
 
@@ -172,54 +174,62 @@ class PembayaranController extends Controller
         }
 
         $pdf = new TCPDF('P', 'mm', 'A4');
+        $pdf->setPrintHeader(false);
         $pdf->SetTitle('Rekap Pembayaran' . ' - ' . $customer->nama_lengkap);
         $pdf->AddPage();
 
-        if (file_exists($kopPath)) {
-            $pdf->Image($kopPath, 5, 5, 200, 0, 'JPG', '', '', false, 100);
+        $kopSurat = $this->kopSuratLokasi($customer->id_lokasi);
 
-            $pdf->SetFont('helvetica', 'B', 18);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->SetXY(60, 16);
-            $pdf->Cell(140, 5, strtoupper($namaPerusahaan), 0, 1, 'C');
-
-            $pdf->SetFont('helvetica', '', 9);
-            $pdf->SetX(60);
-            $pdf->Cell(140, 4, $alamatPerusahaan, 0, 1, 'C');
-            $pdf->SetX(60);
-            $pdf->Cell(140, 4, 'Telp: ' . $telpPerusahaan, 0, 1, 'C');
-
-            $lineY1 = 33.5;
-            $pdf->SetLineWidth(0.3);
-            $pdf->SetDrawColor(0, 0, 0);
-            $pdf->Line(9, $lineY1, 200, $lineY1);
-
-            $pdf->SetY(48);
+        if ($kopSurat) {
+            $this->gambarKopSurat($pdf, $kopSurat);
+            $pdf->Ln(4);
         } else {
-            if ($logoPath && file_exists($logoPath)) {
-                $pdf->Image($logoPath, 15, 15, 25);
+            if (file_exists($kopPath)) {
+                $pdf->Image($kopPath, 5, 5, 200, 0, 'JPG', '', '', false, 100);
+
+                $pdf->SetFont('helvetica', 'B', 18);
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->SetXY(60, 16);
+                $pdf->Cell(140, 5, strtoupper($namaPerusahaan), 0, 1, 'C');
+
+                $pdf->SetFont('helvetica', '', 9);
+                $pdf->SetX(60);
+                $pdf->Cell(140, 4, $alamatPerusahaan, 0, 1, 'C');
+                $pdf->SetX(60);
+                $pdf->Cell(140, 4, 'Telp: ' . $telpPerusahaan, 0, 1, 'C');
+
+                $lineY1 = 33.5;
+                $pdf->SetLineWidth(0.3);
+                $pdf->SetDrawColor(0, 0, 0);
+                $pdf->Line(9, $lineY1, 200, $lineY1);
+
+                $pdf->SetY(48);
+            } else {
+                if ($logoPath && file_exists($logoPath)) {
+                    $pdf->Image($logoPath, 15, 15, 25);
+                }
+
+                $pdf->SetXY(57, 14);
+
+                $pdf->SetFont('helvetica', 'B', 20);
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->Cell(0, 7, strtoupper($namaPerusahaan), 0, 1, 'L');
+
+                $pdf->SetFont('Times', '', 9);
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->Cell(0, 5, $alamatPerusahaan, 0, 1, 'C');
+                $pdf->Cell(0, 5, 'Telp: ' . $telpPerusahaan, 0, 1, 'C');
+
+                $pdf->SetXY(0, 32);
+                $pdf->SetDrawColor(0, 0, 0);
+                $pdf->SetLineWidth(0.7);
+                $pdf->Line(10, 42, 200, 42);
+
+                $pdf->SetLineWidth(0.3);
+                $pdf->Line(10, 41, 200, 41);
+
+                $pdf->Ln(10);
             }
-
-            $pdf->SetXY(57, 14);
-
-            $pdf->SetFont('helvetica', 'B', 20);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 7, strtoupper($namaPerusahaan), 0, 1, 'L');
-
-            $pdf->SetFont('Times', '', 9);
-            $pdf->SetTextColor(0, 0, 0);
-            $pdf->Cell(0, 5, $alamatPerusahaan, 0, 1, 'C');
-            $pdf->Cell(0, 5, 'Telp: ' . $telpPerusahaan, 0, 1, 'C');
-
-            $pdf->SetXY(0, 32);
-            $pdf->SetDrawColor(0, 0, 0);
-            $pdf->SetLineWidth(0.7);
-            $pdf->Line(10, 42, 200, 42);
-
-            $pdf->SetLineWidth(0.3);
-            $pdf->Line(10, 41, 200, 41);
-
-            $pdf->Ln(10);
         }
 
         $pdf->SetFont('Times', 'B', 10);

@@ -1,4 +1,4 @@
-﻿@extends('admin.layout_admin')
+@extends('admin.layout_admin')
 @section('content')
     <div class="content-wrapper">
         <!-- Content Header (Page header) -->
@@ -122,6 +122,13 @@
                         <input type="hidden" id="primary_id" name="primary_id">
                         <div class="modal-body">
                             <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">Tanggal</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" id="tgl_terima" name="tgl_terima" readonly>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
                                 <label class="control-label col-sm-3">Nama Lengkap <span
                                         style="color: red;">*</span></label>
                                 <div class="col-sm-4">
@@ -168,7 +175,7 @@
                                 <div class="col-sm-4">
                                     <input name="email" id="email" class="form-control" type="text">
                                 </div>
-                                <label class="control-label col-sm-2">NPWP <span style="color: red;">*</span></label>
+                                <label class="control-label col-sm-2">NPWP</label>
                                 <div class="col-sm-3">
                                     <input name="npwp" id="npwp" class="form-control" type="text">
                                 </div>
@@ -259,7 +266,7 @@
                             <hr>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-3">Lokasi Perumahan</label>
+                                <label class="control-label col-sm-3">Lokasi Perumahan <span style="color: red;">*</span></label>
                                 <div class="col-sm-4">
                                     <select class="form-control select-lokasi" disabled name="id_lokasi" id="id_lokasi">
                                         <option value=""></option>
@@ -268,64 +275,25 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <label class="control-label col-sm-2">Blok / Unit</label>
+                                <label class="control-label col-sm-2">Blok / Unit <span style="color: red;">*</span></label>
                                 <div class="col-sm-3">
                                     <select name="id_kavling" id="id_kavling" disabled
                                         class="form-control select-kavling"></select>
                                 </div>
                             </div>
 
-                            <div class="form-group row">
-                                <label class="control-label col-sm-3">Harga Rumah</label>
-                                <div class="col-sm-4">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp.</span>
-                                        </div>
-                                        <input type="text" name="hrg_jual" id="hrg_jual"
-                                            class="form-control format-number" readonly>
-                                    </div>
-                                </div>
-                                <label class="control-label col-sm-2">Biaya Surat</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp.</span>
-                                        </div>
-                                        <input type="text" name="biaya_surat" id="biaya_surat"
-                                            class="form-control format-number" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <label class="control-label col-sm-3">Peningkatan Mutu</label>
-                                <div class="col-sm-4">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp.</span>
-                                        </div>
-                                        <input type="text" name="peningkatan_mutu" id="peningkatan_mutu"
-                                            class="form-control format-number" readonly>
-                                    </div>
-                                </div>
-                                <label class="control-label col-sm-2">Total Harga</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp.</span>
-                                        </div>
-                                        <input type="text" name="total_harga" id="total_harga"
-                                            class="form-control format-number" readonly>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="rincian-harga-container">
+                            <div class="text-muted">Pilih blok / unit terlebih dahulu untuk menampilkan rincian harga.</div>
+                        </div>
+                        <input type="hidden" name="total_harga" id="total_harga" value="">
+
 
                             <hr>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-3">Marketing</label>
+                                <label class="control-label col-sm-3">Marketing <span style="color: red;">*</span></label>
                                 <div class="col-sm-4">
-                                    <select class="form-control select-marketing" disabled name="id_marketing"
+                                    <select class="form-control select-marketing" name="id_marketing"
                                         id="id_marketing">
                                         <option value=""></option>
                                         @foreach ($marketing as $m)
@@ -336,18 +304,18 @@
                             </div>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-3">Jenis Perumahan</label>
+                                <label class="control-label col-sm-3">Jenis Perumahan <span style="color: red;">*</span></label>
                                 <div class="col-sm-4">
-                                    <select class="form-control select-jp" disabled name="jenis_perumahan"
+                                    <select class="form-control select-jp" name="jenis_perumahan"
                                         id="jenis_perumahan">
                                         <option value=""></option>
                                         <option value="Subsidi">Subsidi</option>
                                         <option value="Komersil">Komersil</option>
                                     </select>
                                 </div>
-                                <label class="control-label col-sm-2">Jenis Pembelian</label>
+                                <label class="control-label col-sm-2">Jenis Pembelian <span style="color: red;">*</span></label>
                                 <div class="col-sm-3">
-                                    <select class="form-control select-pembelian" disabled name="jenis_pembelian"
+                                    <select class="form-control select-pembelian" name="jenis_pembelian"
                                         id="jenis_pembelian">
                                         <option value=""></option>
                                         <option value="Pembelian Cash">Pembelian Cash</option>
@@ -357,38 +325,50 @@
                                 </div>
                             </div>
 
-                            <div class="form-group row">
-                                <label class="control-label col-sm-3">Sumber Prospek</label>
-                                <div class="col-sm-4">
-                                    <input type="text" name="sumber_prospek" id="sumber_prospek"
-                                        class="form-control" readonly>
-                                </div>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-3">Sumber Prospek <span style="color: red;">*</span></label>
+                            <div class="col-sm-4">
+                                <select class="form-control select-sumber-prospek" name="sumber_prospek"
+                                    id="sumber_prospek">
+                                    <option value=""></option>
+                                    <option value="Iklan Kantor">Iklan Kantor</option>
+                                    <option value="Market Place FB">Market Place FB</option>
+                                    <option value="Freelance">Freelance</option>
+                                    <option value="Kanvasing">Kanvasing</option>
+                                    <option value="Sosmed Pribadi">Sosmed Pribadi</option>
+                                    <option value="Sosmed Kantor">Sosmed Kantor</option>
+                                    <option value="Referensi">Referensi</option>
+                                    <option value="WIC">WIC</option>
+                                </select>
                             </div>
+                        </div>
 
-                            <!-- CASH ==================================> -->
-                            <hr class="hr-transaksi" style="display: none;">
-                            <div id="trx_cash" style="display: none;">
-                                <div class="form-group row">
-                                    <label class="col-sm-3 col-form-label">Atas Nama Surat</label>
-                                    <div class="col-sm-3">
-                                        <input name="an_surat_cash" id="an_surat_cash" class="form-control"
-                                            type="text" readonly>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-3">Besaran DP <span style="color: red;">*</span></label>
+                            <div class="col-sm-4">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Rp.</span>
                                     </div>
+                                    <input name="besaran_dp" id="besaran_dp" class="form-control format-number"
+                                        type="text">
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- CASH BERTAHAP ==================================> -->
-                            <hr class="hr-transaksi" style="display: none;">
-                            <div id="trx_cash_bertahap" style="display: none;">
-
-                                <div class="form-group row">
-                                    <label class="col-sm-3 col-form-label">Termin (x)</label>
-                                    <div class="col-sm-3">
-                                        <input name="termin_x_cash_b" id="termin_x_cash_b"
-                                            class="form-control format-number" type="number" readonly>
+                        <div class="form-group row">
+                            <label class="control-label col-sm-3">Diskon</label>
+                            <div class="col-sm-4">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Rp.</span>
                                     </div>
+                                    <input name="diskon" id="diskon" class="form-control format-number"
+                                        type="text">
                                 </div>
                             </div>
+                        </div>
+
                         </div>
 
                         <div class="modal-footer">
@@ -763,10 +743,15 @@
                 placeholder: "Pilih Status",
                 minimumResultsForSearch: Infinity,
             });
+            $('.select-sumber-prospek').select2({
+                theme: "bootstrap4",
+                minimumResultsForSearch: Infinity,
+                placeholder: "Pilih Sumber Prospek",
+            });
         });
 
         $('#modalForm').on('hidden.bs.modal', function() {
-            hideAllTransactionForms();
+            $('#rincian-harga-container').html('<div class="text-muted">Pilih blok / unit terlebih dahulu untuk menampilkan rincian harga.</div>');
             $('#formData')[0].reset();
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
@@ -776,7 +761,9 @@
             $('#id_kavling').val('').trigger('change');
             $('#id_marketing').val('').trigger('change');
             $('#jenis_pembelian').val('').trigger('change');
-            $('#sumber_prospek').val('');
+            $('#jenis_perumahan').val('').trigger('change');
+            $('#pekerjaan').val('').trigger('change');
+            $('#sumber_prospek').val('').trigger('change');
 
             let submitBtn = $('#submitBtn');
             let spinner = submitBtn.find('.spinner-border');
@@ -803,7 +790,7 @@
                     const data = response.data;
 
                     $('#primary_id').val(data.id);
-                    $('#tgl_booking').val(response.data.tgl_booking_formatted);
+                    $('#tgl_terima').val(data.tgl_terima_formatted);
                     $('#nama_lengkap').val(data.nama_lengkap);
                     $('#nik').val(data.nik);
                     $('#nik_p').val(data.nik_p);
@@ -814,28 +801,29 @@
                     $('#email').val(data.email);
                     $('#npwp').val(data.npwp);
                     $('#no_bpjs_kes').val(data.no_bpjs_kes);
-                    $('#booking_fee').val(formatNumber(data.booking_fee));
                     $('#alamat_ktp').val(data.alamat_ktp);
                     $('#alamat_domisili').val(data.alamat_domisili);
-                    $('#pekerjaan').val(data.pekerjaan);
+                    $('#pekerjaan').val(data.pekerjaan).trigger('change');
                     $('#status_pernikahan').val(data.status_pernikahan).trigger('change');
                     $('#nama_p').val(data.nama_p);
                     $('#nama_saudara').val(data.nama_saudara);
                     $('#no_telp_saudara').val(data.no_telp_saudara);
+                    $('#besaran_dp').val(formatNumber(data.besaran_dp));
+                    $('#diskon').val(formatNumber(data.diskon));
 
                     $('#id_lokasi').val(data.id_lokasi).trigger('change');
                     setTimeout(function() {
                         $('#id_kavling').val(data.id_kavling).trigger('change');
+                        var urlHarga = "{{ route('customer.getHargaKavling', ':id') }}".replace(':id', data.id_kavling);
+                        $.get(urlHarga, function(harga) {
+                            renderRincianHarga(harga.rincian_biaya, data.total_harga);
+                        });
                     }, 500);
 
-                    $('#hrg_jual').val(formatNumber(data.hrg_jual));
-                    $('#biaya_surat').val(formatNumber(data.biaya_surat));
-                    $('#peningkatan_mutu').val(formatNumber(data.peningkatan_mutu));
-                    $('#total_harga').val(formatNumber(data.total_harga));
                     $('#id_marketing').val(data.id_marketing).trigger('change');
                     $('#jenis_pembelian').val(data.jenis_pembelian).trigger('change');
                     $('#jenis_perumahan').val(data.jenis_perumahan).trigger('change');
-                    $('#sumber_prospek').val(data.sumber_prospek);
+                    $('#sumber_prospek').val(data.sumber_prospek).trigger('change');
 
                     $('#modalForm').modal('show');
 
@@ -843,21 +831,6 @@
             });
         });
 
-        $(document).on('change', '#jenis_pembelian', function() {
-            const val = $(this).val();
-
-            $('#trx_cash, #trx_cash_bertahap, .hr-transaksi').hide();
-
-            if (val === 'Pembelian Cash') {
-                $('#trx_cash').show();
-                $('#trx_cash').prev('.hr-transaksi').show();
-            }
-
-            if (val === 'Cash Bertahap') {
-                $('#trx_cash_bertahap').show();
-                $('#trx_cash_bertahap').prev('.hr-transaksi').show();
-            }
-        });
 
 
         $(document).ready(function() {
@@ -874,11 +847,60 @@
             const routeGetKavling = "{{ route('customer.getKavling', ':id') }}";
             const routeGetHarga = "{{ route('customer.getHargaKavling', ':id') }}";
 
+            function renderRincianHarga(rincian, total) {
+                let container = $('#rincian-harga-container');
+                container.empty();
+
+                if (!rincian || rincian.length === 0) {
+                    container.html('<div class="text-muted">Tidak ada rincian biaya.</div>');
+                    $('#total_harga').val('');
+                    return;
+                }
+
+                let html = '';
+                rincian.forEach(function(item) {
+                    if ((item.nilai || 0) <= 0) return;
+                    html += '<div class="form-group row">';
+                    html += '<label class="control-label col-sm-3">' + item.nama + '</label>';
+                    html += '<div class="col-sm-4">';
+                    html += '<div class="input-group">';
+                    html += '<div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>';
+                    html += '<input type="text" class="form-control" readonly value="' + item.nilai.toLocaleString('id-ID') + '">';
+                    html += '</div></div></div>';
+                });
+
+                html += '<div class="form-group row">';
+                html += '<label class="control-label col-sm-3"><strong>Total Harga</strong></label>';
+                html += '<div class="col-sm-4">';
+                html += '<div class="input-group">';
+                html += '<div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>';
+                html += '<input type="text" class="form-control" readonly value="' + (total || 0).toLocaleString('id-ID') + '">';
+                html += '</div></div></div>';
+
+                container.html(html);
+                $('#total_harga').val(total || 0);
+            }
+
+            $('#id_kavling').on('change', function() {
+                if (isEditMode) return;
+
+                let idKavling = $(this).val();
+
+                if (idKavling) {
+                    const urlHarga = routeGetHarga.replace(':id', idKavling);
+                    $.get(urlHarga, function(data) {
+                        renderRincianHarga(data.rincian_biaya, data.total_harga);
+                    });
+                } else {
+                    renderRincianHarga([], 0);
+                }
+            });
+
             $('#id_lokasi').on('change', function() {
                 let idLokasi = $(this).val();
 
                 if (!isEditMode) {
-                    $('#hrg_jual, #biaya_surat, #peningkatan_mutu, #total_harga').val('');
+                    renderRincianHarga([], 0);
                 }
 
                 if (idLokasi) {
@@ -1400,4 +1422,3 @@
     </script>
     @include('admin.partials.js-cetak')
 @endpush
-

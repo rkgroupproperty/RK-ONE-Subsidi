@@ -11,6 +11,7 @@ use App\Models\ProgresListPenjualan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use TCPDF;
+use App\Traits\KopSuratPdfTrait;
 use App\Models\ListrikAir;
 use Illuminate\Http\Request;
 use App\Models\Customer;
@@ -18,6 +19,7 @@ use App\Models\PengaturanMedia;
 
 class SiteplanPenjualanController extends Controller
 {
+    use KopSuratPdfTrait;
     public function index()
     {
          $lokasiKavling = LokasiKavling::with([
@@ -184,24 +186,25 @@ class SiteplanPenjualanController extends Controller
         file_put_contents($jpgPath, $jpgContent);
 
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->setPrintHeader(false);
         $pdf->SetCreator(PDF_CREATOR);
         $pdf->SetAuthor($namaPerusahaan);
         $pdf->SetTitle("Site Plan Penjualan - {$namaKavling}");
         $pdf->SetMargins(10, 10, 10);
         $pdf->AddPage();
 
-        $pdf->SetFont('helvetica', 'B', 14);
-        $pdf->Cell(0, 7, strtoupper($namaPerusahaan), 0, 1, 'C');
-        $pdf->SetFont('helvetica', '', 12);
-        $pdf->Cell(0, 6, 'SITE PLAN PENJUALAN ' . strtoupper($namaKavling), 0, 1, 'C');
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(0, 6, 'Periode Cetak : ' . $periodeCetak, 0, 1, 'C');
+        $kopPath = $this->kopSuratLokasi($id_lokasi);
 
-        $pdf->SetDrawColor(0, 0, 0);
-        $pdf->SetLineWidth(0.7);
-        $pdf->Line(10, $pdf->GetY() + 2, 200, $pdf->GetY() + 2);
-        $pdf->SetLineWidth(0.3);
-        $pdf->Line(10, $pdf->GetY() + 3, 200, $pdf->GetY() + 3);
+        if ($kopPath) {
+            $this->gambarKopSurat($pdf, $kopPath);
+        } else {
+            $pdf->SetFont('helvetica', 'B', 14);
+            $pdf->Cell(0, 7, strtoupper($namaPerusahaan), 0, 1, 'C');
+            $pdf->SetFont('helvetica', '', 12);
+            $pdf->Cell(0, 6, 'SITE PLAN PENJUALAN ' . strtoupper($namaKavling), 0, 1, 'C');
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->Cell(0, 6, 'Periode Cetak : ' . $periodeCetak, 0, 1, 'C');
+        }
 
         $pdf->Ln(10);
 

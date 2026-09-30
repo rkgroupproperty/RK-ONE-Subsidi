@@ -36,8 +36,13 @@ class ProsesMarketingController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
+            $idMarketing = $request->input('id_marketing');
+
             $data = Customer::with(['lokasi', 'kavling', 'progres'])
                 ->where('stt_arsip', 0)
+                ->when($idMarketing !== null && $idMarketing !== '', function ($query) use ($idMarketing) {
+                    $query->where('id_marketing', $idMarketing);
+                })
                 ->orderBy('id', 'desc');
 
             return DataTables::of($data)

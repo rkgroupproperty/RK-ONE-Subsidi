@@ -26,6 +26,18 @@
                                 </div>
                             </div>
                             <div class="card-body">
+                                <div class="form-group row mb-3">
+                                    <label for="filter_marketing" class="col-sm-2 col-md-1 col-form-label">Marketing</label>
+                                    <div class="col-sm-6 col-md-4">
+                                        <select id="filter_marketing" class="form-control select-filter-marketing">
+                                            <option value="">Semua Marketing</option>
+                                            <option value="0">Non Marketing</option>
+                                            @foreach ($marketingList as $m)
+                                                <option value="{{ $m->id }}">{{ $m->nama_marketing }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
                                 <table class="table table-bordered table-striped data-table">
                                     <thead>
                                         <tr>
@@ -474,12 +486,24 @@
                 dropdownParent: $('#modalForm'),
             });
 
+            $('.select-filter-marketing').select2({
+                theme: "bootstrap4",
+                width: '100%',
+                placeholder: "Semua Marketing",
+                allowClear: true,
+            });
+
             var table = $('.data-table').DataTable({
                 processing: false,
                 serverSide: false,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('proses-marketing.index') }}",
+                ajax: {
+                    url: "{{ route('proses-marketing.index') }}",
+                    data: function(d) {
+                        d.id_marketing = $('#filter_marketing').val();
+                    }
+                },
                 columns: [{
                     data: 'DT_RowIndex',
                     name: 'DT_RowIndex',
@@ -519,6 +543,9 @@
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 }]
+            });
+            $('#filter_marketing').on('change', function() {
+                table.ajax.reload();
             });
         });
 

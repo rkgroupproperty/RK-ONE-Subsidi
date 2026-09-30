@@ -40,6 +40,7 @@ use App\Http\Controllers\Pengaturan\PengaturanPenggunaController;
 use App\Http\Controllers\Pengaturan\PengaturanProfilController;
 use App\Http\Controllers\Pengaturan\RoleUserController;
 use App\Http\Controllers\Siteplan\SiteplanPenjualanController;
+use App\Http\Controllers\Siteplan\SiteplanUnitReadyController;
 use App\Http\Controllers\Siteplan\SiteplanListrikController;
 use App\Http\Controllers\Siteplan\SiteplanBphtbSSPController;
 use App\Http\Controllers\Siteplan\SiteplanAirController;
@@ -173,6 +174,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('siteplan-penjualan/cetak/pdf/{id_lokasi}', [SiteplanPenjualanController::class, 'cetakPDF'])->name('siteplan-penjualan.cetak.pdf');
             Route::get('siteplan-penjualan/cetak/jpg/{id_lokasi}', [SiteplanPenjualanController::class, 'cetakJPG'])->name('siteplan-penjualan.cetak.jpg');
             Route::post('siteplan-penjualan/cetak', [SiteplanPenjualanController::class, 'cetak'])->name('penjualan.cetak');
+
+            Route::get('siteplan-unit-ready/cetak/pdf/{id_lokasi}', [SiteplanUnitReadyController::class, 'cetakPDF'])->name('siteplan-unit-ready.cetak.pdf');
+            Route::get('siteplan-unit-ready/cetak/jpg/{id_lokasi}', [SiteplanUnitReadyController::class, 'cetakJPG'])->name('siteplan-unit-ready.cetak.jpg');
 
         });
     });

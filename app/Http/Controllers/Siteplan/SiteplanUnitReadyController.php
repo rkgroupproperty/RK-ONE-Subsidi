@@ -9,9 +9,11 @@ use App\Models\ProgresUnitReady;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use TCPDF;
+use App\Traits\KopSuratPdfTrait;
 
 class SiteplanUnitReadyController extends Controller
 {
+    use KopSuratPdfTrait;
     public function index()
     {
         $lokasiKavling = LokasiKavling::orderBy('urutan', 'asc')->get();
@@ -159,12 +161,18 @@ class SiteplanUnitReadyController extends Controller
         $pdf->SetMargins(10, 10, 10);
         $pdf->AddPage();
 
-        $pdf->SetFont('helvetica', 'B', 14);
-        $pdf->Cell(0, 7, strtoupper($namaPerusahaan), 0, 1, 'C');
-        $pdf->SetFont('helvetica', '', 12);
-        $pdf->Cell(0, 6, 'SITE PLAN UNIT READY ' . strtoupper($namaKavling), 0, 1, 'C');
-        $pdf->SetFont('helvetica', '', 10);
-        $pdf->Cell(0, 6, 'Periode Cetak : ' . $periodeCetak, 0, 1, 'C');
+        $kopPath = $this->kopSuratLokasi($id_lokasi);
+
+        if ($kopPath) {
+            $this->gambarKopSurat($pdf, $kopPath);
+        } else {
+            $pdf->SetFont('helvetica', 'B', 14);
+            $pdf->Cell(0, 7, strtoupper($namaPerusahaan), 0, 1, 'C');
+            $pdf->SetFont('helvetica', '', 12);
+            $pdf->Cell(0, 6, 'SITE PLAN UNIT READY ' . strtoupper($namaKavling), 0, 1, 'C');
+            $pdf->SetFont('helvetica', '', 10);
+            $pdf->Cell(0, 6, 'Periode Cetak : ' . $periodeCetak, 0, 1, 'C');
+        }
 
         $pdf->SetDrawColor(0, 0, 0);
         $pdf->SetLineWidth(0.7);

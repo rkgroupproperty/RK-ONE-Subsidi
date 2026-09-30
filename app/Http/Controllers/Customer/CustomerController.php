@@ -460,6 +460,12 @@ class CustomerController extends Controller
     public function edit($id)
     {
         $list = Customer::findOrFail($id);
+        if (! empty($list->tanggal_verif)) {
+            $list->tgl_terima_formatted = Carbon::parse($list->tanggal_verif)->locale('id')->translatedFormat('j F Y');
+        } else {
+            $list->tgl_terima_formatted = null;
+        }
+
 
         return response()->json([
             'status' => 'success',
@@ -474,7 +480,7 @@ class CustomerController extends Controller
         $rules = [
             'nama_lengkap'    => 'required',
             'nik'             => 'required',
-            'npwp'            => 'required',
+            'npwp'            => 'nullable',
             'tempat_lahir'    => 'required',
             'tgl_lahir'       => 'required|date',
             'no_telp'         => 'required',
@@ -486,14 +492,23 @@ class CustomerController extends Controller
         $messages = [
             'nama_lengkap.required'    => 'Nama lengkap wajib diisi!',
             'nik.required'             => 'NIK wajib diisi!',
-            'npwp.required'            => 'NPWP wajib diisi!',
             'tempat_lahir.required'    => 'Tempat lahir wajib diisi!',
             'tgl_lahir.required'       => 'Tanggal lahir wajib diisi!',
             'no_telp.required'         => 'No. Telp / WA wajib diisi!',
             'jenis_kelamin.required'   => 'Jenis kelamin wajib diisi!',
             'alamat_ktp.required'      => 'Alamat KTP wajib diisi!',
             'alamat_domisili.required' => 'Alamat Domisili wajib diisi!',
+            'id_marketing.required' => 'Marketing wajib dipilih!',
+            'jenis_perumahan.required' => 'Jenis perumahan wajib dipilih!',
+            'jenis_pembelian.required' => 'Jenis pembelian wajib dipilih!',
+            'sumber_prospek.required' => 'Sumber prospek wajib dipilih!',
+            'besaran_dp.required' => 'Besaran DP wajib diisi!',
         ];
+
+        $request->merge([
+            'besaran_dp' => $request->besaran_dp ? str_replace('.', '', $request->besaran_dp) : null,
+            'diskon' => $request->diskon ? str_replace('.', '', $request->diskon) : null,
+        ]);
 
         $request->validate($rules, $messages);
 
@@ -519,6 +534,12 @@ class CustomerController extends Controller
                 'nik_p'             => $request->nik_p ?? null,
                 'nama_saudara'      => $request->nama_saudara ?? null,
                 'no_telp_saudara'   => $request->no_telp_saudara ?? null,
+                'id_marketing'      => $request->id_marketing,
+                'jenis_perumahan'   => $request->jenis_perumahan,
+                'jenis_pembelian'   => $request->jenis_pembelian,
+                'sumber_prospek'    => $request->sumber_prospek ?? null,
+                'besaran_dp'        => $request->besaran_dp ?? null,
+                'diskon'            => $request->diskon ?? null,
             ];
 
             if ($user->id_role == 2) {
@@ -530,6 +551,7 @@ class CustomerController extends Controller
                     'id_user'     => $user->id,
                 ]);
 
+                unset($tempoData['sumber_prospek'], $tempoData['besaran_dp'], $tempoData['diskon']);
                 CustomerTempo::create($tempoData);
 
                 DB::commit();
@@ -549,7 +571,7 @@ class CustomerController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::info($e->getMessage());
+            Log::error($e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'error'  => $e->getMessage(),
@@ -995,7 +1017,7 @@ class CustomerController extends Controller
         $rules = [
             'nama_lengkap'    => 'required',
             'nik'             => 'required',
-            'npwp'            => 'required',
+            'npwp'            => 'nullable',
             'tempat_lahir'    => 'required',
             'tgl_lahir'       => 'required|date',
             'no_telp'         => 'required',
@@ -1007,7 +1029,6 @@ class CustomerController extends Controller
         $messages = [
             'nama_lengkap.required'    => 'Nama lengkap wajib diisi!',
             'nik.required'             => 'NIK wajib diisi!',
-            'npwp.required'            => 'NPWP wajib diisi!',
             'tempat_lahir.required'    => 'Tempat lahir wajib diisi!',
             'tgl_lahir.required'       => 'Tanggal lahir wajib diisi!',
             'no_telp.required'         => 'No. Telp / WA wajib diisi!',
@@ -1043,6 +1064,9 @@ class CustomerController extends Controller
                 'nik_p'             => $data->nik_p,
                 'nama_saudara'      => $data->nama_saudara,
                 'no_telp_saudara'   => $data->no_telp_saudara,
+                'id_marketing'      => $data->id_marketing,
+                'jenis_perumahan'   => $data->jenis_perumahan,
+                'jenis_pembelian'   => $data->jenis_pembelian,
             ];
 
             $customer->update($updateData);
