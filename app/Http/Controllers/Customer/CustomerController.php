@@ -42,7 +42,9 @@ class CustomerController extends Controller
                 'kavling',
                 'progres',
             ])
-                ->where('stt_arsip', 0);
+                ->where('stt_arsip', 0)
+                ->when($request->filled('id_lokasi'), fn($query) => $query->where('id_lokasi', $request->id_lokasi))
+                ->when($request->filled('id_status_progres'), fn($query) => $query->where('id_status_progres', $request->id_status_progres));
 
             return DataTables::of($data)
                 ->addIndexColumn()

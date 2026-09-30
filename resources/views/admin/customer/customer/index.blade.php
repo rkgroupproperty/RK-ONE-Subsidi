@@ -1102,7 +1102,14 @@
                 serverSide: false,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('customer.index') }}",
+                ajax: {
+                    url: "{{ route('customer.index') }}",
+                    data: function(d) {
+                        var q = new URLSearchParams(window.location.search);
+                        d.id_lokasi = q.get('id_lokasi');
+                        d.id_status_progres = q.get('id_status_progres');
+                    }
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',

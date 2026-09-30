@@ -1,4 +1,4 @@
-﻿@extends('admin.layout_admin')
+@extends('admin.layout_admin')
 
 @section('content')
     <style>
@@ -200,8 +200,8 @@
 
     .pipeline {
       display: grid;
-      grid-template-columns: repeat(7, minmax(145px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(8, minmax(130px, 1fr));
+      gap: 20px;
       overflow-x: auto;
       padding: 2px 5px 10px;
     }
@@ -210,7 +210,7 @@
       position: relative;
       min-height: 170px;
       border-radius: 14px;
-      padding: 16px 12px;
+      padding: 16px 10px;
       text-align: center;
       border: 1.5px solid;
       background: #fff;
@@ -225,15 +225,18 @@
       font-weight: 900;
       position: absolute;
       top: 50%;
-      right: -19px;
+      right: -17px;
       transform: translateY(-50%);
       color: #111827;
-      font-size: 15px;
+      font-size: 14px;
     }
 
     .pipeline-card h3 {
       margin: 0 0 8px;
-      font-size: 14px;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .pipeline-card .count {
@@ -267,6 +270,7 @@
     }
 
     .c-red { --pipeline-accent:#e11d48; color:#e11d48; border-color:#fb7185; background:#fff5f7; }
+    .c-teal { --pipeline-accent:#0284c7; color:#0284c7; border-color:#38bdf8; background:#f0f9ff; }
     .c-cyan { --pipeline-accent:#0891b2; color:#0891b2; border-color:#22d3ee; background:#f2fdff; }
     .c-green { --pipeline-accent:#15803d; color:#15803d; border-color:#4ade80; background:#f3fff6; }
     .c-orange { --pipeline-accent:#c56a00; color:#c56a00; border-color:#f59e0b; background:#fff9ed; }
@@ -554,11 +558,13 @@
 
       body.dark-mode .panel,
       body.dark-mode .kpi-card,
+      body.dark-mode .periode-filter-bar,
+      body.dark-mode .collapse .card,
       body.dark-mode .icon-btn,
       body.dark-mode .date-btn,
       body.dark-mode .filter-btn {
-        background: #1f2937;
-        border-color: #374151;
+        background: #1f2937 !important;
+        border-color: #374151 !important;
         color: #e5e7eb;
       }
 
@@ -571,6 +577,126 @@
       body.dark-mode .activity-time {
         color: #a8b2c7;
       }
+
+      /* Resume Proyek & Sumber Prospek Styles */
+      .resume-tab-btn {
+        padding: 7px 16px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all .2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .resume-tab-btn:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #1e293b;
+      }
+      .resume-tab-btn.active {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+      }
+      .resume-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .resume-kpi-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px;
+        transition: transform .15s ease, box-shadow .15s ease;
+      }
+      .resume-kpi-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+      .resume-proc-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+      }
+      .resume-proc-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px;
+        text-align: center;
+      }
+      .table-sumber-matrix {
+        width: 100%;
+        font-size: 12px;
+        border-collapse: collapse;
+      }
+      .table-sumber-matrix th {
+        background: #f8fafc;
+        padding: 9px 8px;
+        font-weight: 700;
+        font-size: 11px;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .table-sumber-matrix td {
+        padding: 8px 8px;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        color: #334155;
+      }
+      .table-sumber-matrix tr:hover {
+        background: #f8fafc;
+      }
+      .table-sumber-matrix .total-row {
+        background: #eff6ff;
+        font-weight: 800;
+      }
+      @media (max-width: 992px) {
+        .resume-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        .resume-proc-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (max-width: 576px) {
+        .resume-kpi-grid { grid-template-columns: 1fr; }
+        .resume-proc-grid { grid-template-columns: 1fr; }
+      }
+      body.dark-mode .resume-tab-btn {
+        background: #1f2937;
+        border-color: #374151;
+        color: #94a3b8;
+      }
+      body.dark-mode .resume-tab-btn.active {
+        background: #6366f1;
+        border-color: #6366f1;
+        color: #ffffff;
+      }
+      body.dark-mode .resume-kpi-box,
+      body.dark-mode .resume-proc-card {
+        background: #1f2937 !important;
+        border-color: #374151 !important;
+        color: #e2e8f0;
+      }
+      body.dark-mode .table-sumber-matrix th {
+        background: #111827 !important;
+        border-color: #374151 !important;
+        color: #94a3b8;
+      }
+      body.dark-mode .table-sumber-matrix td {
+        border-color: #374151 !important;
+        color: #e2e8f0;
+      }
+      body.dark-mode .table-sumber-matrix .total-row {
+        background: #1e1b4b !important;
+      }
     </style>
 
     <div class="content-wrapper">
@@ -580,7 +706,7 @@
       <header class="topbar">
         <div class="title">
           <h1>Selamat datang, {{ $username ?? 'dev' }}</h1>
-          <p>Ringkasan penjualan dan aktivitas hari ini</p>
+          <p>Ringkasan penjualan dan aktivitas: <strong class="text-primary" id="labelPeriode">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</strong></p>
         </div>
 
         <div class="top-actions">
@@ -588,6 +714,88 @@
           <button class="date-btn"><i class="fa-regular fa-calendar-days"></i> {{ Carbon\Carbon::now('Asia/Jakarta')->translatedFormat('d F Y') }}</button>
         </div>
       </header>
+
+      <!-- Filter Bar Periode -->
+      <section class="mb-3 p-3 rounded shadow-sm" style="background:linear-gradient(135deg,#ffffff 0%,#f5f3ff 100%);border:1px solid #e5e7eb;border-left:4px solid #5b2cff;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-weight:800;font-size:14px;color:#1e293b;display:inline-flex;align-items:center;gap:8px;">
+            <span style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:inline-grid;place-items:center;color:#fff;"><i class="fa-solid fa-filter"></i></span>
+            Filter Periode
+          </span>
+
+          <div class="btn-group btn-group-sm" role="group" style="background:#eef2ff;border:1px solid #e0e7ff;border-radius:999px;padding:4px;gap:2px;">
+            <a href="{{ route('beranda.index', ['periode' => 'bulan_ini']) }}" data-periode="bulan_ini" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? 'bulan_ini') === 'bulan_ini' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;">
+              Bulan Ini
+            </a>
+            <a href="{{ route('beranda.index', ['periode' => 'bulan_kemarin']) }}" data-periode="bulan_kemarin" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? '') === 'bulan_kemarin' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;">
+              Bulan Kemarin
+            </a>
+            <button type="button" data-periode="pilih_bulan" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? '') === 'pilih_bulan' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;" data-toggle="collapse" data-target="#collapsePilihBulan">
+              <i class="fa-regular fa-calendar mr-1"></i> Pilih Bulan <i class="fa-solid fa-caret-down ml-1"></i>
+            </button>
+            <button type="button" data-periode="custom" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? '') === 'custom' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;" data-toggle="collapse" data-target="#collapseCustomTanggal">
+              <i class="fa-regular fa-calendar-days mr-1"></i> Custom Tanggal <i class="fa-solid fa-caret-down ml-1"></i>
+            </button>
+            <a href="{{ route('beranda.index', ['periode' => 'semua']) }}" data-periode="semua" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? '') === 'semua' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;">
+              Semua Waktu
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <span class="px-3 py-2" style="font-size:12px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#0ea5e9,#2563eb);box-shadow:0 4px 12px rgba(37,99,235,.25);white-space:nowrap;">
+            <i class="fa-solid fa-clock-rotate-left mr-1"></i> Aktif: <strong id="badgePeriode">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</strong>
+          </span>
+        </div>
+      </section>
+
+      <!-- Collapse Form: Pilih Bulan & Tahun -->
+      <div class="collapse {{ ($summaryMetrics['periode_filter'] ?? '') === 'pilih_bulan' ? 'show' : '' }} mb-3" id="collapsePilihBulan">
+        <div class="card card-body p-3 shadow-sm" style="background:linear-gradient(135deg,#eef2ff 0%,#f8fafc 100%);border:1px solid #e0e7ff !important;border-radius:14px;">
+          <form action="{{ route('beranda.index') }}" method="GET" id="formPeriodeBulan" class="form-inline d-flex flex-wrap align-items-center" style="gap:10px;">
+            <input type="hidden" name="periode" value="pilih_bulan">
+            <label class="font-weight-bold text-secondary" style="font-size:13px;">Bulan:</label>
+            <select name="bulan" class="form-control form-control-sm" style="width:150px;border-radius:10px;">
+              @foreach($availableMonths as $num => $nama)
+                <option value="{{ $num }}" {{ ($summaryMetrics['filter_bulan'] ?? Carbon\Carbon::now()->month) == $num ? 'selected' : '' }}>
+                  {{ $nama }}
+                </option>
+              @endforeach
+            </select>
+
+            <label class="font-weight-bold text-secondary" style="font-size:13px;">Tahun:</label>
+            <select name="tahun" class="form-control form-control-sm" style="width:110px;border-radius:10px;">
+              @foreach($availableYears as $year)
+                <option value="{{ $year }}" {{ ($summaryMetrics['filter_tahun'] ?? Carbon\Carbon::now()->year) == $year ? 'selected' : '' }}>
+                  {{ $year }}
+                </option>
+              @endforeach
+            </select>
+
+            <button type="submit" class="btn btn-sm btn-primary px-4" style="border-radius:999px;font-weight:700;">
+              <i class="fa-solid fa-magnifying-glass mr-1"></i> Terapkan
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Collapse Form: Custom Rentang Tanggal -->
+      <div class="collapse {{ ($summaryMetrics['periode_filter'] ?? '') === 'custom' ? 'show' : '' }} mb-3" id="collapseCustomTanggal">
+        <div class="card card-body p-3 shadow-sm" style="background:linear-gradient(135deg,#ecfdf5 0%,#f8fafc 100%);border:1px solid #bbf7d0 !important;border-radius:14px;">
+          <form action="{{ route('beranda.index') }}" method="GET" id="formPeriodeCustom" class="form-inline d-flex flex-wrap align-items-center" style="gap:10px;">
+            <input type="hidden" name="periode" value="custom">
+            <label class="font-weight-bold text-secondary" style="font-size:13px;">Dari Tanggal:</label>
+            <input type="date" name="start_date" value="{{ $summaryMetrics['custom_start'] ?? Carbon\Carbon::now()->startOfMonth()->toDateString() }}" class="form-control form-control-sm" style="border-radius:10px;" required>
+
+            <label class="font-weight-bold text-secondary" style="font-size:13px;">Sampai Tanggal:</label>
+            <input type="date" name="end_date" value="{{ $summaryMetrics['custom_end'] ?? Carbon\Carbon::now()->endOfMonth()->toDateString() }}" class="form-control form-control-sm" style="border-radius:10px;" required>
+
+            <button type="submit" class="btn btn-sm btn-success px-4" style="border-radius:999px;font-weight:700;">
+              <i class="fa-solid fa-magnifying-glass mr-1"></i> Terapkan
+            </button>
+          </form>
+        </div>
+      </div>
 
       <section class="kpi-grid">
         <article class="kpi-card">
@@ -603,14 +811,16 @@
           <div>
             <div class="kpi-label">Total Unit</div>
             <div class="kpi-value" style="color:#16a34a">{{ $summaryMetrics['total_unit'] ?? 0 }}</div>
+            <div class="kpi-note"><span style="color:#2563eb;font-weight:600">{{ $summaryMetrics['unit_terjual'] ?? 0 }} Terjual</span> · {{ $summaryMetrics['unit_ready'] ?? 0 }} Ready</div>
           </div>
         </article>
 
         <article class="kpi-card">
           <div class="kpi-icon orange"><i class="fa-solid fa-wallet"></i></div>
           <div>
-            <div class="kpi-label">Booking Fee Hari Ini</div>
-            <div class="kpi-value money" style="color:#f97316">Rp {{ number_format($summaryMetrics['booking_fee_hari_ini'] ?? 0, 0, ',', '.') }}</div>
+            <div class="kpi-label">Booking Fee / Bulanan</div>
+            <div class="kpi-value money" style="color:#f97316" id="kpiBookingFee">Rp {{ number_format($summaryMetrics['booking_fee_periode'] ?? 0, 0, ',', '.') }}</div>
+            <div class="kpi-note"><span id="kpiBookingCount">{{ $summaryMetrics['customer_periode'] ?? 0 }}</span> customer terdaftar (<span id="kpiBookingLabel">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</span>)</div>
           </div>
         </article>
 
@@ -646,22 +856,28 @@
               <a class="pipeline-btn" href="{{ route('pengajuan-hold.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
+            <article class="pipeline-card c-teal">
+              <h3>Pemberkasan Marketing</h3>
+              <div class="count">{{ $pipelineCounts['marketing'] ?? 0 }}</div>
+              <a class="pipeline-btn" href="{{ route('customer.index', ['id_status_progres' => 11]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+            </article>
+
             <article class="pipeline-card c-cyan">
               <h3>Proses Admin</h3>
               <div class="count">{{ $pipelineCounts['sppr'] ?? 0 }}</div>
-              <a class="pipeline-btn" href="{{ route('proses-admin.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-btn" href="{{ route('customer.index', ['id_status_progres' => 10]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-card c-green">
               <h3>Proses Bank</h3>
               <div class="count">{{ $pipelineCounts['wawancara'] ?? 0 }}</div>
-              <a class="pipeline-btn" href="{{ route('proses-bank.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-btn" href="{{ route('customer.index', ['id_status_progres' => 7]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-card c-orange">
               <h3>SP3K</h3>
               <div class="count">{{ $pipelineCounts['acc_bank'] ?? 0 }}</div>
-              <a class="pipeline-btn" href="{{ route('sp3k.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-btn" href="{{ route('customer.index', ['id_status_progres' => 4]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-card c-pink">
@@ -673,7 +889,7 @@
             <article class="pipeline-card c-purple">
               <h3>Akad</h3>
               <div class="count">{{ $pipelineCounts['akad'] ?? 0 }}</div>
-              <a class="pipeline-btn" href="{{ route('akad.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-btn" href="{{ route('customer.index', ['id_status_progres' => 3]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-card c-blue">
@@ -698,12 +914,14 @@
                 <tr>
                   <th>Project / Perumahan</th>
                   <th>Booking</th>
+                  <th>Pemberkasan Marketing</th>
                   <th>Proses Admin</th>
                   <th>Proses Bank</th>
                   <th>SP3K</th>
                   <th>PPJB</th>
                   <th>Akad</th>
                   <th>BAST</th>
+                  <th style="width:85px;background:#f3f4f6">Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -718,35 +936,152 @@
                         </div>
                       </div>
                     </td>
-                    <td><span class="metric-number" style="color:#e11d48">{{ $project['booking'] }}</span></td>
-                    <td><span class="metric-number" style="color:#0891b2">{{ $project['sppr'] }}</span></td>
-                    <td><span class="metric-number" style="color:#15803d">{{ $project['wawancara'] }}</span></td>
-                    <td><span class="metric-number" style="color:#c56a00">{{ $project['acc_bank'] }}</span></td>
-                    <td><span class="metric-number" style="color:#db2777">{{ $project['ppjb'] }}</span></td>
-                    <td><span class="metric-number" style="color:#5b21b6">{{ $project['akad'] }}</span></td>
-                    <td><span class="metric-number" style="color:#1d4ed8">{{ $project['bast'] }}</span></td>
+                    <td><a href="{{ route('customer.index', ['id_lokasi' => $project['id'], 'id_status_progres' => 2]) }}" style="text-decoration:none"><span class="metric-number" style="color:#e11d48">{{ $project['booking'] }}</span></a></td>
+                    <td><a href="{{ route('customer.index', ['id_lokasi' => $project['id'], 'id_status_progres' => 11]) }}" style="text-decoration:none"><span class="metric-number" style="color:#0284c7">{{ $project['marketing'] }}</span></a></td>
+                    <td><a href="{{ route('customer.index', ['id_lokasi' => $project['id'], 'id_status_progres' => 10]) }}" style="text-decoration:none"><span class="metric-number" style="color:#0891b2">{{ $project['sppr'] }}</span></a></td>
+                    <td><a href="{{ route('customer.index', ['id_lokasi' => $project['id'], 'id_status_progres' => 7]) }}" style="text-decoration:none"><span class="metric-number" style="color:#15803d">{{ $project['wawancara'] }}</span></a></td>
+                    <td><a href="{{ route('customer.index', ['id_lokasi' => $project['id'], 'id_status_progres' => 4]) }}" style="text-decoration:none"><span class="metric-number" style="color:#c56a00">{{ $project['acc_bank'] }}</span></a></td>
+                    <td><a href="{{ route('customer.index', ['id_lokasi' => $project['id'], 'id_status_progres' => 6]) }}" style="text-decoration:none"><span class="metric-number" style="color:#db2777">{{ $project['ppjb'] }}</span></a></td>
+                    <td><a href="{{ route('customer.index', ['id_lokasi' => $project['id'], 'id_status_progres' => 3]) }}" style="text-decoration:none"><span class="metric-number" style="color:#5b21b6">{{ $project['akad'] }}</span></a></td>
+                    <td><a href="{{ route('customer.index', ['id_lokasi' => $project['id'], 'id_status_progres' => 5]) }}" style="text-decoration:none"><span class="metric-number" style="color:#1d4ed8">{{ $project['bast'] }}</span></a></td>
+                    <td style="background:#f9fafb"><a href="{{ route('customer.index', ['id_lokasi' => $project['id']]) }}" style="text-decoration:none"><span class="metric-number" style="color:#111827;font-weight:900">{{ $project['terjual'] }}</span></a></td>
                   </tr>
                 @empty
                   <tr>
-                    <td colspan="8" class="text-center text-muted">Belum ada data project.</td>
+                    <td colspan="10" class="text-center text-muted">Belum ada data project.</td>
                   </tr>
                 @endforelse
 
                 <tr class="table-total">
-                  <td>Total</td>
+                  <td>Total Keseluruhan</td>
                   <td>{{ $projectTotals['booking'] ?? 0 }}</td>
+                  <td>{{ $projectTotals['marketing'] ?? 0 }}</td>
                   <td>{{ $projectTotals['sppr'] ?? 0 }}</td>
                   <td>{{ $projectTotals['wawancara'] ?? 0 }}</td>
                   <td>{{ $projectTotals['acc_bank'] ?? 0 }}</td>
                   <td>{{ $projectTotals['ppjb'] ?? 0 }}</td>
                   <td>{{ $projectTotals['akad'] ?? 0 }}</td>
                   <td>{{ $projectTotals['bast'] ?? 0 }}</td>
+                  <td style="color:#2563eb;font-weight:900">{{ $projectTotals['terjual'] ?? 0 }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
       </section>
+
+      <!-- RESUME TIAP PROYEK (Executive Project Resume) -->
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-body">
+          <div class="section-head" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <h2 style="margin:0;font-size:18px;font-weight:800;color:#1e293b">
+                <i class="fa-solid fa-chart-pie text-primary mr-1"></i> Resume Tiap Proyek
+              </h2>
+              <span style="font-size:12px;color:#64748b">Ringkasan unit, realisasi penjualan, sisa stok, dan rincian progres fisik perumahan</span>
+            </div>
+
+            <div class="project-resume-tabs" style="display:flex;gap:8px;flex-wrap:wrap">
+              @foreach($projectResumes as $key => $res)
+                <button type="button" class="resume-tab-btn {{ $loop->first ? 'active' : '' }}" data-target="resume-pane-{{ $key }}">
+                  <i class="fa-solid {{ $key == 'all' ? 'fa-layer-group' : 'fa-city' }} mr-1"></i> {{ $res['short_name'] }}
+                </button>
+              @endforeach
+            </div>
+          </div>
+
+          @foreach($projectResumes as $key => $res)
+            <div id="resume-pane-{{ $key }}" class="resume-pane" style="{{ $loop->first ? '' : 'display:none;' }}">
+              <!-- Header info banner -->
+              <div style="background:linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+                <div>
+                  <h4 style="margin:0;font-size:15px;font-weight:800;color:#0f172a">
+                    {{ $res['nama'] }} <span class="badge bg-primary" style="font-size:11px;margin-left:6px">{{ $res['badge'] }}</span>
+                  </h4>
+                  <small style="color:#475569">{{ $res['catatan'] }}</small>
+                </div>
+                <div style="display:flex;gap:16px;align-items:center">
+                  <div style="text-align:right">
+                    <span style="font-size:11px;color:#64748b;font-weight:600;display:block">Realisasi Terjual</span>
+                    <strong style="font-size:16px;color:#16a34a">{{ $res['persentase_terjual'] }}%</strong>
+                  </div>
+                  <div style="width:120px;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+                    <div style="width:{{ $res['persentase_terjual'] }}%;height:100%;background:#16a34a;border-radius:4px"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4 Utama KPI Box -->
+              <div class="resume-kpi-grid">
+                <div class="resume-kpi-box" style="border-left:4px solid #3b82f6">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase">Total Unit</span>
+                    <i class="fa-solid fa-cubes text-primary" style="font-size:16px;opacity:0.8"></i>
+                  </div>
+                  <div style="font-size:24px;font-weight:900;color:#1e293b;margin-top:6px">{{ $res['total_unit'] }} <small style="font-size:12px;font-weight:600;color:#64748b">Unit</small></div>
+                  <span style="font-size:11px;color:#64748b">Kapasitas Peta Siteplan</span>
+                </div>
+
+                <div class="resume-kpi-box" style="border-left:4px solid #16a34a">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase">Total Terjual</span>
+                    <span class="badge bg-success" style="font-size:10px">{{ $res['persentase_terjual'] }}%</span>
+                  </div>
+                  <div style="font-size:24px;font-weight:900;color:#16a34a;margin-top:6px">{{ $res['total_terjual'] }} <small style="font-size:12px;font-weight:600;color:#64748b">Unit</small></div>
+                  <span style="font-size:11px;color:#64748b">KPR Akad ({{ $res['kpr_akad'] }}) · Cash ({{ $res['terjual_cash'] }})</span>
+                </div>
+
+                <div class="resume-kpi-box" style="border-left:4px solid #eab308">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase">Sedang On Proses</span>
+                    <span class="badge bg-warning text-dark" style="font-size:10px">{{ $res['persentase_proses'] }}%</span>
+                  </div>
+                  <div style="font-size:24px;font-weight:900;color:#ca8a04;margin-top:6px">{{ $res['on_proses'] }} <small style="font-size:12px;font-weight:600;color:#64748b">Unit</small></div>
+                  <span style="font-size:11px;color:#64748b">Fisik 80%-100%: <strong>{{ $res['total_fisik_proses'] }} Unit</strong></span>
+                </div>
+
+                <div class="resume-kpi-box" style="border-left:4px solid #ef4444">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase">Sisa Unit Tersedia</span>
+                    <span class="badge bg-danger" style="font-size:10px">{{ $res['persentase_sisa'] }}%</span>
+                  </div>
+                  <div style="font-size:24px;font-weight:900;color:#dc2626;margin-top:6px">{{ $res['sisa_unit'] }} <small style="font-size:12px;font-weight:600;color:#64748b">Unit</small></div>
+                  <span style="font-size:11px;color:#64748b">Siap Dipasarkan / Booking</span>
+                </div>
+              </div>
+
+              <!-- Rincian Unit On Proses & Progres Fisik -->
+              <div style="margin-top:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:13px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:0.5px">
+                    <i class="fa-solid fa-list-check mr-1 text-primary"></i> Rincian Unit Proses & Kesiapan Bangunan (80% - 100%)
+                  </span>
+                  <span style="font-size:11px;color:#64748b">Total Unit Proses: <strong>{{ $res['total_unit_proses'] }} Unit</strong> | Fisik Siap: <strong>{{ $res['total_fisik_proses'] }} Unit</strong></span>
+                </div>
+
+                <div class="resume-proc-grid">
+                  @foreach($res['proses_items'] as $item)
+                    <div class="resume-proc-card">
+                      <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:5px">
+                        <i class="fa-solid {{ $item['icon'] }}" style="color:{{ $item['color'] }}"></i>
+                        <span>{{ $item['label'] }}</span>
+                      </div>
+                      <div style="font-size:20px;font-weight:900;color:#1e293b;margin:4px 0">
+                        {{ $item['unit'] }} <small style="font-size:11px;font-weight:600;color:#64748b">Unit</small>
+                      </div>
+                      <div style="font-size:10px;font-weight:700;color:#15803d;background:#dcfce7;border-radius:4px;padding:2px 6px;display:inline-block">
+                        Fisik 80-100%: <strong>{{ $item['fisik'] }}</strong>
+                      </div>
+                    </div>
+                  @endforeach
+                </div>
+              </div>
+
+            </div>
+          @endforeach
+        </div>
+      </section>
+
       <section class="bottom-grid" style="grid-template-columns: 1fr 1fr">
         <article class="panel">
           <div class="panel-body">
@@ -763,11 +1098,14 @@
                 </div>
                 <div>
                   <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Status</label>
-                  <select id="filterStatus" class="form-control" style="width:150px">
-                    <option value="semua" selected>Semua</option>
+                  <select id="filterStatus" class="form-control" style="width:170px">
+                    <option value="semua" selected>Semua Status</option>
+                    <option value="marketing">Pemberkasan Marketing</option>
+                    <option value="sppr">Proses Admin</option>
                     <option value="wawancara">Proses Bank</option>
                     <option value="sp3k">SP3K</option>
                     <option value="akad">Akad</option>
+                    <option value="bast">BAST</option>
                   </select>
                 </div>
               </div>
@@ -783,15 +1121,6 @@
           <div class="panel-body">
             <div class="section-head">
               <h2>Penjualan Marketing</h2>
-              <div>
-                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Lokasi</label>
-                <select id="filterLokasiMarketing" class="form-control" style="width:200px">
-                  <option value="semua">Semua Lokasi</option>
-                  @foreach(\App\Models\LokasiKavling::all() as $lokasi)
-                    <option value="{{ $lokasi->id }}">{{ $lokasi->nama_kavling }}</option>
-                  @endforeach
-                </select>
-              </div>
             </div>
 
             <div class="marketing-list">
@@ -852,6 +1181,8 @@
                 <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Status</label>
                 <select id="filterStatusAdmin" class="form-control" style="width:150px">
                   <option value="semua" selected>Semua</option>
+                  <option value="marketing">Pemberkasan Marketing</option>
+                  <option value="sppr">Proses Admin</option>
                   <option value="wawancara">Proses Bank</option>
                   <option value="sp3k">SP3K</option>
                   <option value="akad">Akad</option>
@@ -866,23 +1197,23 @@
         </div>
       </section>
 
+      <!-- REKAP DP & GRAFIK SUMBER PROSPEK (Sesuai Gambar 2 + Interaktif & Filter Bulan) -->
       <section class="panel" style="margin-top:16px">
         <div class="panel-body">
-          <div class="section-head">
-            <h2>Grafik Sumber Prospek</h2>
-            <div style="display:flex;gap:10px;align-items:center">
-              <div>
-                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Sumber</label>
-                <select id="filterSumberProspek" class="form-control" style="width:150px">
-                  <option value="semua" selected>Semua</option>
-                  <option value="booking">Booking</option>
-                  <option value="customer">Customer</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Bulan</label>
-                <select id="filterBulanSumberProspek" class="form-control" style="width:150px">
-                  <option value="semua" selected>Semua Bulan</option>
+          <div class="section-head" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <h2 style="margin:0;font-size:18px;font-weight:800;color:#1e293b">
+                <i class="fa-solid fa-bullhorn text-primary mr-1"></i> Rekap DP & Grafik Sumber Prospek (Tahun {{ $tahunAktif }})
+              </h2>
+              <span style="font-size:12px;color:#64748b">Analisis efektivitas kanal promosi dan performa sumber prospek tahun {{ $tahunAktif }}</span>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <!-- Filter Bulan -->
+              <div style="display:flex;align-items:center;gap:6px">
+                <label style="font-size:12px;font-weight:700;color:#475569;margin:0">Bulan:</label>
+                <select id="filterBulanSumber" class="form-control" style="width:170px;height:36px;font-size:13px;border-radius:8px">
+                  <option value="semua" selected>Semua Bulan (YTD)</option>
                   <option value="1">Januari</option>
                   <option value="2">Februari</option>
                   <option value="3">Maret</option>
@@ -897,16 +1228,117 @@
                   <option value="12">Desember</option>
                 </select>
               </div>
-              <div style="align-self:flex-end">
-                <a href="#" id="btnExportSumberProspek" target="_blank" class="btn btn-success btn-sm" style="display:inline-flex;align-items:center;gap:6px">
-                  <i class="fas fa-file-excel"></i> Excel
-                </a>
+
+              <!-- View Switcher Toggle -->
+              <div class="btn-group" role="group" style="box-shadow:0 1px 3px rgba(0,0,0,0.08);border-radius:8px;overflow:hidden">
+                <button type="button" class="btn btn-sm btn-primary" id="btnToggleChart" style="padding:6px 14px;font-size:12px;font-weight:700">
+                  <i class="fa-solid fa-chart-column mr-1"></i> Grafik Batang
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnToggleTable" style="padding:6px 14px;font-size:12px;font-weight:700">
+                  <i class="fa-solid fa-table-cells mr-1"></i> Tabel Rekap
+                </button>
               </div>
             </div>
           </div>
 
-          <div class="chart-box" style="height:350px">
+          <!-- Highlight Metric Badges -->
+          <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;margin-bottom:16px">
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px">
+              <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Total Prospek (Periode)</span>
+              <div style="font-size:20px;font-weight:900;color:#1e293b" id="spBadgeTotal">{{ $yoySummary['total_aktif'] ?? 0 }} <small style="font-size:11px;font-weight:600;color:#64748b">Unit</small></div>
+              <span style="font-size:10px;color:#16a34a;font-weight:600" id="spBadgeLabel">Tahun {{ $tahunAktif ?? date('Y') }} (Semua Bulan)</span>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px">
+              <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Sumber Tertinggi</span>
+              <div style="font-size:17px;font-weight:900;color:#2563eb" id="spBadgeTop">{{ $spTopSumber ?? '-' }}</div>
+              <span style="font-size:10px;color:#64748b">Penyumbang Terbesar</span>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px">
+              <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Rata-rata per Bulan</span>
+              <div style="font-size:20px;font-weight:900;color:#059669">{{ $yoySummary['rata_aktif'] ?? 0 }} <small style="font-size:11px;font-weight:600;color:#64748b">Unit/Bln</small></div>
+              <span style="font-size:10px;color:#64748b">Rata-rata per bulan berjalan</span>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px">
+              <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Pertumbuhan YoY (vs {{ $tahunLalu ?? '' }})</span>
+              @php $spGrowth = $yoySummary['growth'] ?? 0; $spGrowthPct = $yoySummary['growth_pct'] ?? 0; @endphp
+              <div style="font-size:20px;font-weight:900;color:{{ $spGrowth >= 0 ? '#16a34a' : '#dc2626' }}">{{ $spGrowth >= 0 ? '+' : '' }}{{ $spGrowth }} <small style="font-size:11px;font-weight:600;color:inherit">({{ $spGrowth >= 0 ? '+' : '' }}{{ $spGrowthPct }}%)</small></div>
+              <span style="font-size:10px;font-weight:600;color:{{ $spGrowth >= 0 ? '#16a34a' : '#dc2626' }}"><i class="fa-solid {{ $spGrowth >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} mr-1"></i> {{ $yoySummary['total_lalu'] ?? 0 }} ({{ $tahunLalu ?? '' }}) &rarr; {{ $yoySummary['total_aktif'] ?? 0 }} ({{ $tahunAktif ?? '' }})</span>
+            </div>
+          </div>
+
+          <!-- Chart View Container -->
+          <div id="wrapperChartSumber" class="chart-box" style="height:350px">
             <canvas id="sumberProspekChart"></canvas>
+          </div>
+
+          <!-- Table View Container (Persis seperti Gambar 2, Modern & Responsif) -->
+          <div id="wrapperTableSumber" style="display:none;overflow-x:auto;margin-top:10px">
+            <table class="table-sumber-matrix">
+              <thead>
+                <tr style="background:#e0f2fe">
+                  <th rowspan="2" style="width:36px">NO</th>
+                  <th rowspan="2" style="text-align:left;min-width:160px">MARKETING / SUMBER</th>
+                  <th colspan="12" style="background:#bae6fd;color:#0369a1">BULAN TAHUN {{ $tahunAktif }}</th>
+                  <th rowspan="2" style="background:#fed7aa;color:#9a3412">TOTAL</th>
+                  <th rowspan="2" style="background:#fef08a;color:#854d0e">RATA-RATA</th>
+                  <th colspan="4" style="background:#fbcfe8;color:#9d174d">YEAR ON YEAR ({{ $tahunLalu }} vs {{ $tahunAktif }})</th>
+                </tr>
+                <tr>
+                  <th>JAN</th><th>FEB</th><th>MAR</th><th>APR</th><th>MEI</th><th>JUN</th>
+                  <th>JUL</th><th>AUG</th><th>SEP</th><th>OKT</th><th>NOV</th><th>DES</th>
+                  <th style="background:#fdf2f8">{{ $tahunLalu }}</th>
+                  <th style="background:#fdf2f8">{{ $tahunAktif }}</th>
+                  <th style="background:#fdf2f8">GROWTH</th>
+                  <th style="background:#fdf2f8">RATA-RATA</th>
+                </tr>
+              </thead>
+              <tbody>
+                @php $no = 1; @endphp
+                @foreach($sumberMatrix as $srcName => $data)
+                  <tr>
+                    <td>{{ $no++ }}</td>
+                    <td style="text-align:left;font-weight:700">
+                      {{ $srcName }}
+                    </td>
+                    <td>{{ $data['jan'] ?: '-' }}</td>
+                    <td>{{ $data['feb'] ?: '-' }}</td>
+                    <td>{{ $data['mar'] ?: '-' }}</td>
+                    <td>{{ $data['apr'] ?: '-' }}</td>
+                    <td>{{ $data['mei'] ?: '-' }}</td>
+                    <td>{{ $data['jun'] ?: '-' }}</td>
+                    <td style="{{ $data['jul'] > 0 ? 'background:#f0fdf4;font-weight:700' : '' }}">{{ $data['jul'] ?: '-' }}</td>
+                    <td>{{ $data['aug'] ?: '-' }}</td>
+                    <td>{{ $data['sep'] ?: '-' }}</td>
+                    <td>{{ $data['okt'] ?: '-' }}</td>
+                    <td>{{ $data['nov'] ?: '-' }}</td>
+                    <td>{{ $data['des'] ?: '-' }}</td>
+                    <td style="font-weight:800;color:#0f172a;background:#fff7ed">{{ $data['total_aktif'] }}</td>
+                    <td style="font-weight:700;color:#0f172a;background:#fefce8">{{ number_format($data['rata_rata'], 1) }}</td>
+                    <td>{{ $data['total_lalu'] }}</td>
+                    <td style="font-weight:700">{{ $data['total_aktif'] }}</td>
+                    <td style="font-weight:800;color:{{ $data['growth'] >= 0 ? '#16a34a' : '#dc2626' }}">
+                      {{ $data['growth'] > 0 ? '+' : '' }}{{ $data['growth'] }}
+                    </td>
+                    <td style="font-weight:700;color:{{ $data['growth_rata'] >= 0 ? '#16a34a' : '#dc2626' }}">
+                      {{ $data['growth_rata'] > 0 ? '+' : '' }}{{ number_format($data['growth_rata'], 1) }}
+                    </td>
+                  </tr>
+                @endforeach
+                <tr class="total-row">
+                  <td colspan="2" style="text-align:center;font-weight:900">TOTAL</td>
+                  @foreach(range(1, 12) as $m)
+                    <td style="font-weight:900;color:#1e40af">{{ $monthlyTotals[$m] ?? 0 }}</td>
+                  @endforeach
+                  <td style="font-weight:900;color:#c2410c;background:#fed7aa">{{ $yoySummary['total_aktif'] ?? 0 }}</td>
+                  <td style="font-weight:900;color:#854d0e;background:#fef08a">{{ $yoySummary['rata_aktif'] ?? 0 }}</td>
+                  <td style="font-weight:900">{{ $yoySummary['total_lalu'] ?? 0 }}</td>
+                  <td style="font-weight:900">{{ $yoySummary['total_aktif'] ?? 0 }}</td>
+                  @php $spTumbuh = $yoySummary['growth'] ?? 0; $spTumbuhRata = $yoySummary['growth_rata'] ?? 0; @endphp
+                  <td style="font-weight:900;color:{{ $spTumbuh >= 0 ? '#16a34a' : '#dc2626' }}">{{ $spTumbuh >= 0 ? '+' : '' }}{{ $spTumbuh }}</td>
+                  <td style="font-weight:900;color:{{ $spTumbuhRata >= 0 ? '#16a34a' : '#dc2626' }}">{{ $spTumbuhRata >= 0 ? '+' : '' }}{{ $spTumbuhRata }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -980,39 +1412,6 @@
             });
         }
 
-        function loadMarketingStats() {
-            const idLokasi = $('#filterLokasiMarketing').val();
-            $.ajax({
-                url: '{{ route("beranda.marketing-stats") }}',
-                type: 'GET',
-                data: { id_lokasi: idLokasi },
-                success: function(response) {
-                    renderMarketingList(response);
-                }
-            });
-        }
-
-        function renderMarketingList(data) {
-            let html = '';
-            if (data.length === 0) {
-                html = '<div class="item-sub">Belum ada data marketing.</div>';
-            } else {
-                data.forEach(function(item, index) {
-                    html += '<a href="{{ route("beranda.detail-customer-marketing", "__ID__") }}" class="marketing-item" style="text-decoration:none;color:inherit">'
-                        .replace('__ID__', item.id);
-                    html += '<span class="rank">' + (index + 1) + '</span>';
-                    html += '<span class="avatar">' + item.inisial + '</span>';
-                    html += '<div class="item-main">';
-                    html += '<div class="item-title">' + item.nama + '</div>';
-                    html += '<div class="item-sub">' + item.kode + ' · Marketing</div>';
-                    html += '</div>';
-                    html += '<div class="item-value">' + item.jumlah + ' Unit</div>';
-                    html += '</a>';
-                });
-            }
-            $('.marketing-list').html(html);
-        }
-
         function loadChartData() {
             const tahun = $('#filterTahun').val();
             const status = $('#filterStatus').val();
@@ -1044,20 +1443,36 @@
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
             });
-            $('#filterSumberProspek').select2({
+            $('#filterBulanSumber').select2({
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
             });
-            $('#filterBulanSumberProspek').select2({
-                theme: "bootstrap4",
-                minimumResultsForSearch: Infinity,
+
+            // Resume Proyek Tabs
+            $(document).on('click', '.resume-tab-btn', function() {
+                $('.resume-tab-btn').removeClass('active');
+                $(this).addClass('active');
+                var target = $(this).data('target');
+                $('.resume-pane').hide();
+                $('#' + target).fadeIn(200);
             });
-            $('#filterLokasiMarketing').select2({
-                theme: "bootstrap4",
+
+            // Sumber Prospek Toggle Chart / Table
+            $('#btnToggleChart').on('click', function() {
+                $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+                $('#btnToggleTable').removeClass('btn-primary').addClass('btn-outline-primary');
+                $('#wrapperChartSumber').show();
+                $('#wrapperTableSumber').hide();
+            });
+
+            $('#btnToggleTable').on('click', function() {
+                $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+                $('#btnToggleChart').removeClass('btn-primary').addClass('btn-outline-primary');
+                $('#wrapperChartSumber').hide();
+                $('#wrapperTableSumber').fadeIn(200);
             });
 
             loadChartData();
-            loadMarketingStats();
 
             $('#filterTahun, #filterStatus').on('change', function() {
                 loadChartData();
@@ -1069,46 +1484,112 @@
             });
 
             loadSumberProspekChart();
-            updateExportSumberProspekUrl();
-            $('#filterSumberProspek, #filterBulanSumberProspek').on('change', function() {
+            $('#filterBulanSumber').on('change', function() {
                 loadSumberProspekChart();
-                updateExportSumberProspekUrl();
-            });
-
-            $('#filterLokasiMarketing').on('change', function() {
-                loadMarketingStats();
             });
         });
 
-        function updateExportSumberProspekUrl() {
-            const filter = $('#filterSumberProspek').val();
-            const bulan = $('#filterBulanSumberProspek').val();
-            const url = '{{ route("beranda.export-sumber-prospek") }}?filter=' + filter + '&bulan=' + bulan;
-            $('#btnExportSumberProspek').attr('href', url);
+        function formatRpBeranda(nilai) {
+            return 'Rp ' + Number(nilai || 0).toLocaleString('id-ID');
         }
+
+        function setPillPeriodeAktif(periode) {
+            $('.periode-pill').each(function() {
+                var aktif = $(this).data('periode') === periode;
+                $(this).toggleClass('btn-primary', aktif).toggleClass('font-weight-bold', aktif).toggleClass('shadow-sm', aktif);
+                $(this).toggleClass('btn-light', !aktif).toggleClass('text-secondary', !aktif);
+            });
+            if (periode === 'pilih_bulan') {
+                $('#collapsePilihBulan').collapse('show');
+                $('#collapseCustomTanggal').collapse('hide');
+            } else if (periode === 'custom') {
+                $('#collapseCustomTanggal').collapse('show');
+                $('#collapsePilihBulan').collapse('hide');
+            } else {
+                $('#collapsePilihBulan').collapse('hide');
+                $('#collapseCustomTanggal').collapse('hide');
+            }
+        }
+
+        function terapkanPeriode(d) {
+            $('#kpiBookingFee').text(formatRpBeranda(d.booking_fee_periode));
+            $('#kpiBookingCount').text(d.customer_periode);
+            $('#kpiBookingLabel').text(d.label_periode);
+            $('#labelPeriode').text(d.label_periode);
+            $('#badgePeriode').text(d.label_periode);
+            $('select[name="bulan"]').val(d.filter_bulan);
+            $('select[name="tahun"]').val(d.filter_tahun);
+            if (d.custom_start) { $('input[name="start_date"]').val(d.custom_start); }
+            if (d.custom_end) { $('input[name="end_date"]').val(d.custom_end); }
+            setPillPeriodeAktif(d.periode_filter);
+        }
+
+        function muatPeriode(params, tombol) {
+            var $tombol = tombol ? $(tombol) : $();
+            $.ajax({
+                url: '{{ route("beranda.periode-data") }}',
+                type: 'GET',
+                data: params,
+                beforeSend: function() { $tombol.prop('disabled', true); },
+                success: function(d) { terapkanPeriode(d); },
+                error: function() {
+                    if (window.toastr) { toastr.error("Gagal memuat data periode.", "GAGAL!", { progressBar: true, timeOut: 3500, positionClass: "toast-bottom-right" }); }
+                },
+                complete: function() { $tombol.prop('disabled', false); }
+            });
+        }
+
+        $(document).on('click', '.periode-pill', function(e) {
+            e.preventDefault();
+            var mode = $(this).data('periode');
+            if (mode === 'pilih_bulan' || mode === 'custom') {
+                setPillPeriodeAktif(mode);
+                return;
+            }
+            muatPeriode({ periode: mode }, this);
+        });
+
+        $('#formPeriodeBulan').on('submit', function(e) {
+            e.preventDefault();
+            muatPeriode($(this).serialize(), this);
+        });
+
+        $('#formPeriodeCustom').on('submit', function(e) {
+            e.preventDefault();
+            muatPeriode($(this).serialize(), this);
+        });
 
         let sumberProspekChart;
         const spColors = [
-            'rgba(59, 130, 246, 0.7)',
-            'rgba(239, 68, 68, 0.7)',
-            'rgba(34, 197, 94, 0.7)',
-            'rgba(249, 115, 22, 0.7)',
-            'rgba(168, 85, 247, 0.7)',
-            'rgba(236, 72, 153, 0.7)',
-            'rgba(20, 184, 166, 0.7)',
-            'rgba(234, 179, 8, 0.7)',
+            'rgba(59, 130, 246, 0.75)',
+            'rgba(239, 68, 68, 0.75)',
+            'rgba(34, 197, 94, 0.75)',
+            'rgba(249, 115, 22, 0.75)',
+            'rgba(168, 85, 247, 0.75)',
+            'rgba(236, 72, 153, 0.75)',
+            'rgba(20, 184, 166, 0.75)',
+            'rgba(234, 179, 8, 0.75)',
+            'rgba(99, 102, 241, 0.75)',
         ];
-        const spBorders = spColors.map(c => c.replace('0.7', '1'));
+        const spBorders = spColors.map(c => c.replace('0.75', '1'));
 
         function loadSumberProspekChart() {
-            const filter = $('#filterSumberProspek').val();
-            const bulan = $('#filterBulanSumberProspek').val();
+            const bulan = $('#filterBulanSumber').val();
             $.ajax({
                 url: '{{ route("beranda.sumber-prospek-data") }}',
                 type: 'GET',
-                data: { filter: filter, bulan: bulan },
+                data: { bulan: bulan },
                 success: function(response) {
-                    renderSumberProspekChart(response.labels, response.combined);
+                    renderSumberProspekChart(response.labels, response.data);
+                    if (response.total !== undefined) {
+                        $('#spBadgeTotal').html(response.total + ' <small style="font-size:11px;font-weight:600;color:#64748b">Unit</small>');
+                    }
+                    if (response.top_source !== undefined) {
+                        $('#spBadgeTop').text(response.top_source);
+                    }
+                    if (response.periode_label !== undefined) {
+                        $('#spBadgeLabel').text(response.periode_label);
+                    }
                 }
             });
         }
@@ -1256,6 +1737,3 @@
     </script>
     @endpush
 @endsection
-
-
-
