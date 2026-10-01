@@ -29,8 +29,13 @@ class AkadController extends Controller
     {
         $today = Carbon::now('Asia/Jakarta')->startOfDay();
 
-        $expired = WawancaraSp3k::where('status', 1)
-            ->whereDate('tgl_expired', '<', $today)
+        // SP3K milik customer yang akadnya sudah hadir tidak ikut kedaluwarsa.
+        $hadirCustomerIds = AkadDetail::where("status", 2)->pluck("id_customer")->toArray();
+        $expired = WawancaraSp3k::where("status", 1)
+            ->whereDate("tgl_expired", "<", $today)
+            ->whereHas("wawancara", function ($q) use ($hadirCustomerIds) {
+                $q->whereNotIn("id_customer", $hadirCustomerIds);
+            })
             ->get();
 
         if ($expired->isEmpty()) {
@@ -129,6 +134,17 @@ class AkadController extends Controller
                 return in_array($customer->id, $customerHadirAkadLain);
             });
 
+            // Tampilkan juga customer yang sudah masuk akad ini walau SP3K-nya
+            // sudah tidak aktif (expired), agar tetap ter-checked sebagai hadir.
+            $detailIds = AkadDetail::where("id_akad", $id)->pluck("id_customer");
+            $sudahAda = $customers->pluck("id")->all();
+            $tambahan = Customer::with(["kavling", "lokasi", "persyaratan"])
+                ->whereIn("id", $detailIds)
+                ->whereNotIn("id", $sudahAda)
+                ->where("stt_arsip", 0)
+                ->get();
+            $customers = $customers->concat($tambahan)->unique("id");
+
             $akadDetails = AkadDetail::where('id_akad', $id)
                 ->get()
                 ->keyBy('id_customer');
@@ -139,6 +155,19 @@ class AkadController extends Controller
                 });
             }
 
+
+            if ($filter == 3) {
+                $customers = $customers->filter(function ($customer) use ($sudahAda) {
+                    return in_array($customer->id, $sudahAda);
+                });
+            }
+
+            if ($filter == 4) {
+                $customers = $customers->filter(function ($customer) use ($akadDetails) {
+                    return $akadDetails->has($customer->id)
+                        && $akadDetails[$customer->id]->status == 2;
+                });
+            }
             return DataTables::of($customers->values())
                 ->addIndexColumn()
 

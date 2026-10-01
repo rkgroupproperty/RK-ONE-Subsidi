@@ -42,6 +42,8 @@
                                             <select name="filter" id="filter" class="form-control select-filter">
                                                 <option value="1">Semua</option>
                                                 <option value="2">Dipilih</option>
+                                                 <option value="3">SP3K Aktif</option>
+                                                 <option value="4">Hadir</option>
                                             </select>
                                         </div>
                                     </div>
