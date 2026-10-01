@@ -25,7 +25,11 @@ class SPPRController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = SPPR::with('customer')->orderBy('id', 'desc');
+            $data = SPPR::with('customer')
+                ->whereHas('customer', function ($query) {
+                    $query->where('id_status_progres', 10)->where('stt_arsip', 0);
+                })
+                ->orderBy('id', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -66,7 +70,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
                 ->make(true);
         }
 
-        $customerList = Customer::orderBy('nama_lengkap')->get();
+        $customerList = Customer::where('stt_arsip', 0)->where('id_status_progres', 11)->orderBy('nama_lengkap')->get();
         $marketingList = MarketingOffline::orderBy('nama_marketing')->get();
 
         $lastId = SPPR::max('id') ?? 0;
@@ -443,7 +447,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
             return;
         }
 
-        if (! $customer->progres || $customer->progres->urutan <= $status->urutan) {
+        if (! $customer->progres || in_array($customer->id_status_progres, [1, 2, 11])) {
             $customer->update(['id_status_progres' => $status->id]);
         }
     }

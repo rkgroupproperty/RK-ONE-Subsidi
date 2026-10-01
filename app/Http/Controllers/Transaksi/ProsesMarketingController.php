@@ -40,6 +40,7 @@ class ProsesMarketingController extends Controller
 
             $data = Customer::with(['lokasi', 'kavling', 'progres'])
                 ->where('stt_arsip', 0)
+                ->where('id_status_progres', 11)
                 ->when($idMarketing !== null && $idMarketing !== '', function ($query) use ($idMarketing) {
                     $query->where('id_marketing', $idMarketing);
                 })
@@ -52,14 +53,6 @@ class ProsesMarketingController extends Controller
                 })
                 ->addColumn('lokasi_nama', function ($row) {
                     return $row->lokasi->nama_kavling ?? '-';
-                })
-                ->addColumn('status_progres', function ($row) {
-                    $status = $row->progres->status_progres ?? '-';
-                    $warna  = $row->progres->warna ?? '#6c757d';
-                    $rgb    = sscanf($warna, '#%02x%02x%02x') ?: [108, 117, 125];
-                    $terang = ($rgb[0] * 0.299 + $rgb[1] * 0.587 + $rgb[2] * 0.114) > 150;
-
-                    return '<span class="badge" style="background-color:' . e($warna) . ';color:' . ($terang ? '#1f2937' : '#ffffff') . '">' . e($status) . '</span>';
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
                     $editUrl = route('proses-marketing.edit', $row->id);
@@ -74,7 +67,7 @@ class ProsesMarketingController extends Controller
 
                     return $btn;
                 })
-                ->rawColumns(['action', 'status_progres'])
+                ->rawColumns(['action'])
                 ->make(true);
         }
 

@@ -46,7 +46,6 @@
                                             <th>Telp</th>
                                             <th>Blok / Unit</th>
                                             <th>Lokasi</th>
-                                            <th>Status</th>
                                             <th width="120px">Action</th>
                                         </tr>
                                     </thead>
@@ -525,10 +524,6 @@
                     data: 'lokasi_nama',
                     name: 'lokasi_nama',
                     searchable: true
-                }, {
-                    data: 'status_progres',
-                    name: 'status_progres',
-                    searchable: false
                 }, {
                     data: 'action',
                     name: 'action',
