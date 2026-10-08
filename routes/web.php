@@ -399,3 +399,11 @@ Route::get('/paksa-logout', function () {
 
     return redirect('/')->with('success', 'Anda telah logout.');
 });
+
+Route::get('/system/auto-sync-trigger/{secret}', function ($secret, \App\Services\ExcelSyncService $syncService) {
+    if ($secret !== 'rk_sync_secret_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+    $result = $syncService->syncFromFile();
+    return response()->json($result);
+})->name('system.auto-sync-trigger');

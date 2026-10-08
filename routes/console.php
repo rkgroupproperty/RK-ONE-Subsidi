@@ -48,3 +48,16 @@ Artisan::command('db:reset-app', function () {
 
     $this->info('Selesai! Semua tabel berhasil di-reset.');
 })->purpose('Reset semua tabel aplikasi (kecuali users, konfigurasi, permission)');
+
+Artisan::command('sync:excel', function (\App\Services\ExcelSyncService $syncService) {
+    $this->info("Menjalankan sinkronisasi data spreadsheet ke database...");
+    $result = $syncService->syncFromFile();
+    if ($result['status'] === 'success') {
+        $this->info("SINKRONISASI BERHASIL!");
+        foreach ($result['logs'] as $log) {
+            $this->line("  " . $log);
+        }
+    } else {
+        $this->error("TERJADI ERROR: " . ($result['message'] ?? 'Unknown error'));
+    }
+})->purpose('Sinkronisasi data Excel ke database');
