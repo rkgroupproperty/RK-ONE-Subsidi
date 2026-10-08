@@ -143,6 +143,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('admin/detail-customer-admin-pemberkasan/{id}', [BerandaController::class, 'detailCustomerAdminPemberkasan'])->name('beranda.detail-customer-admin-pemberkasan');
     Route::get('admin/detail-customer-admin-pemberkasan/{id}/data', [BerandaController::class, 'detailCustomerAdminPemberkasanData'])->name('beranda.detail-customer-admin-pemberkasan.data');
     Route::get('admin/sync-excel-data', [SyncExcelController::class, 'index'])->name('admin.sync-excel');
+    Route::post('admin/sync-excel-data/process', [SyncExcelController::class, 'process'])->name('admin.sync-excel.process');
 
     Route::prefix('admin')->controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard.index');
