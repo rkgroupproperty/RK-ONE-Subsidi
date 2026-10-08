@@ -57,6 +57,7 @@ use App\Http\Controllers\Transaksi\PindahUnitController;
 use App\Http\Controllers\Transaksi\PPJBController;
 use App\Http\Controllers\Transaksi\WawancaraController;
 use App\Http\Controllers\Transaksi\ExportTransaksiController;
+use App\Http\Controllers\SyncExcelController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -141,6 +142,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('admin/detail-customer-marketing/{id}/data', [BerandaController::class, 'detailCustomerMarketingData'])->name('beranda.detail-customer-marketing.data');
     Route::get('admin/detail-customer-admin-pemberkasan/{id}', [BerandaController::class, 'detailCustomerAdminPemberkasan'])->name('beranda.detail-customer-admin-pemberkasan');
     Route::get('admin/detail-customer-admin-pemberkasan/{id}/data', [BerandaController::class, 'detailCustomerAdminPemberkasanData'])->name('beranda.detail-customer-admin-pemberkasan.data');
+    Route::get('admin/sync-excel-data', [SyncExcelController::class, 'index'])->name('admin.sync-excel');
 
     Route::prefix('admin')->controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard.index');

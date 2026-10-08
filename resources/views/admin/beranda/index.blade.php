@@ -710,6 +710,9 @@
         </div>
 
         <div class="top-actions">
+          <a href="{{ route('admin.sync-excel') }}" class="btn btn-sm btn-success font-weight-bold d-inline-flex align-items-center mr-2 shadow-sm" style="border-radius:12px;padding:8px 14px" onclick="return confirm('Jalankan proses sinkronisasi data dari Excel ke database?')">
+            <i class="fa-solid fa-file-excel mr-1"></i> Sinkronkan Data Excel
+          </a>
           <button class="icon-btn" onclick="Swal.fire('Notifikasi', 'Tidak ada notifikasi baru', 'info')"><i class="fa-regular fa-bell"></i></button>
           <button class="date-btn"><i class="fa-regular fa-calendar-days"></i> {{ Carbon\Carbon::now('Asia/Jakarta')->translatedFormat('d F Y') }}</button>
         </div>
