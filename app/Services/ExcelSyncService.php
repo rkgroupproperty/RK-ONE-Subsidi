@@ -25,6 +25,7 @@ class ExcelSyncService
         'customer_created' => 0,
         'customer_updated' => 0,
         'sp3k_created'     => 0,
+        'bir2_akad_count'  => 0,
         'errors'           => 0,
     ];
 
@@ -45,45 +46,48 @@ class ExcelSyncService
     }
 
     /**
-     * Jalankan proses sinkronisasi dari file CSV
+     * Jalankan proses sinkronisasi lengkap
      */
-    public function syncFromFile(string $csvPath): array
+    public function syncFromFile(?string $csvPath = null): array
     {
-        if (!file_exists($csvPath)) {
-            $this->addLog("File tidak ditemukan: $csvPath");
-            return ['status' => 'error', 'message' => 'File CSV tidak ditemukan'];
-        }
-
-        $lines = file($csvPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $this->addLog("Memulai pembacaan " . count($lines) . " baris data...");
-
-        // Tahap 1: Ekstrak data metadata kontak & sumber (DP Bulanan 2026 & 2025)
-        $metaKonsumen = $this->extractMetadataKontak($lines);
-        $this->addLog("Ditemukan " . count($metaKonsumen) . " metadata kontak & sumber prospek konsumen.");
-
-        // Tahap 2: Ekstrak daftar SP3K khusus
-        $sp3kList = $this->extractSp3kData($lines);
-        $this->addLog("Ditemukan " . count($sp3kList) . " data SP3K siap sinkron.");
-
-        // Tahap 3: Ekstrak master kavling & konsumen per perumahan
-        $sections = [
-            'ALZAFA RESIDENCE TAHAP 2'      => 'Alzafa 2',
-            'ALZAFA RESIDENCE TAHAP 3'      => 'Alzafa 3',
-            'BUKIT INTAN RESIDENCE TAHAP 4' => 'BIR 4',
-            'BUKIT INTAN RESIDENCE 2'       => 'BIR 2',
-            'BUKIT INTAN RESIDENCE TAHAP 3' => 'BIR 3',
-        ];
-
         DB::beginTransaction();
         try {
-            foreach ($sections as $keyword => $shortName) {
-                $unitRows = $this->extractUnitPerumahan($lines, $keyword);
-                $this->addLog("Memproses Perumahan [$keyword]: " . count($unitRows) . " unit.");
-                $this->processPerumahanUnits($shortName, $unitRows, $metaKonsumen, $sp3kList);
+            $this->addLog("=== MEMULAI PROSES SINKRONISASI DATA DARI SPREADSHEET ===");
+
+            // 1. Eksekusi Sinkronisasi Khusus Blok A3 s/d B2 di BIR 2 (Harus Akad Semua)
+            $this->syncKavlingAkadBir2();
+
+            // 2. Eksekusi Sinkronisasi Khusus 17 Konsumen SP3K
+            $this->syncDirectSp3k();
+
+            // 3. Jika file CSV tersedia, baca dan parse data unit tambahan
+            if ($csvPath && file_exists($csvPath)) {
+                $lines = file($csvPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                $this->addLog("Membaca file data eksternal: " . count($lines) . " baris.");
+
+                $metaKonsumen = $this->extractMetadataKontak($lines);
+                $sp3kList = $this->extractSp3kData($lines);
+
+                $sections = [
+                    'ALZAFA RESIDENCE TAHAP 2'      => 'Alzafa 2',
+                    'ALZAFA RESIDENCE TAHAP 3'      => 'Alzafa 3',
+                    'BUKIT INTAN RESIDENCE TAHAP 4' => 'BIR 4',
+                    'BUKIT INTAN RESIDENCE 2'       => 'BIR 2',
+                    'BUKIT INTAN RESIDENCE TAHAP 3' => 'BIR 3',
+                ];
+
+                foreach ($sections as $keyword => $shortName) {
+                    $unitRows = $this->extractUnitPerumahan($lines, $keyword);
+                    if (count($unitRows) > 0) {
+                        $this->addLog("Memproses unit perumahan [$keyword]: " . count($unitRows) . " unit.");
+                        $this->processPerumahanUnits($shortName, $unitRows, $metaKonsumen, $sp3kList);
+                    }
+                }
             }
 
             DB::commit();
-            $this->addLog("SINKRONISASI SELESAI DENGAN SUKSES!");
+            $this->addLog("=== SINKRONISASI SELESAI DENGAN SUKSES! ===");
+
             return [
                 'status' => 'success',
                 'stats'  => $this->stats,
@@ -92,7 +96,7 @@ class ExcelSyncService
         } catch (\Exception $e) {
             DB::rollBack();
             $this->stats['errors']++;
-            $this->addLog("ERROR SINKRONISASI: " . $e->getMessage() . " di baris " . $e->getLine());
+            $this->addLog("ERROR SINKRONISASI: " . $e->getMessage() . " (" . $e->getFile() . ":" . $e->getLine() . ")");
             return [
                 'status'  => 'error',
                 'message' => $e->getMessage(),
@@ -100,6 +104,212 @@ class ExcelSyncService
                 'logs'    => $this->logs,
             ];
         }
+    }
+
+    /**
+     * Pastikan seluruh kavling blok A3 sampai B2 di Bukit Intan Residence 2 (BIR 2) sudah berstatus AKAD
+     */
+    public function syncKavlingAkadBir2()
+    {
+        $this->addLog("Memeriksa dan menyelaraskan status Akad untuk Blok A3 s/d B2 di Bukit Intan Residence 2 (BIR 2)...");
+
+        // Cari lokasi BIR 2
+        $lokasi = LokasiKavling::where('nama_kavling', 'LIKE', '%Intan%2%')
+            ->orWhere('nama_kavling', 'LIKE', '%BIR%2%')
+            ->orWhere('nama_singkat', 'BIR2')
+            ->first();
+
+        if (!$lokasi) {
+            $this->addLog("Peringatan: Lokasi Bukit Intan Residence 2 tidak ditemukan!");
+            return;
+        }
+
+        $this->addLog("Lokasi ditemukan: " . $lokasi->nama_kavling . " (ID: " . $lokasi->id . ")");
+
+        // Pola blok target: A3, A4, A5, A6, A7, B1, B2
+        $targetBloks = ['A3', 'A4', 'A5', 'A6', 'A7', 'B1', 'B2'];
+        $kavlings = KavlingPeta::where('id_lokasi', $lokasi->id)->get();
+
+        $updatedCount = 0;
+
+        foreach ($kavlings as $kavling) {
+            $kode = strtoupper(trim($kavling->kode_kavling));
+            $isTarget = false;
+
+            foreach ($targetBloks as $tb) {
+                // Cocokkan: A3-01, A03-01, A3 NO 01, A03 NO 01, A3/01, dll.
+                $p1 = $tb . '-';
+                $p2 = preg_replace('/^([A-Z]+)([0-9]+)$/', '$10$2', $tb) . '-'; // A03-
+                $p3 = $tb . ' NO';
+                $p4 = preg_replace('/^([A-Z]+)([0-9]+)$/', '$10$2', $tb) . ' NO'; // A03 NO
+                $p5 = $tb . '/';
+
+                if (str_starts_with($kode, $p1) || str_starts_with($kode, $p2) || 
+                    str_starts_with($kode, $p3) || str_starts_with($kode, $p4) ||
+                    str_starts_with($kode, $p5) || $kode === $tb) {
+                    $isTarget = true;
+                    break;
+                }
+            }
+
+            if ($isTarget) {
+                // 1. Set status kavling menjadi 2 (Terjual / Akad)
+                $kavling->status = 2;
+
+                // 2. Hubungkan atau update customer
+                $customer = null;
+                if ($kavling->id_customer) {
+                    $customer = Customer::find($kavling->id_customer);
+                }
+                if (!$customer) {
+                    $customer = Customer::where('id_lokasi', $lokasi->id)
+                        ->where('id_kavling', $kavling->id)
+                        ->where('stt_arsip', 0)
+                        ->first();
+                }
+
+                if ($customer) {
+                    // Update ke status Akad (ID: 3)
+                    $customer->update([
+                        'id_status_progres' => 3,
+                        'stt_arsip'         => 0,
+                        'tanggal_verif'     => $customer->tanggal_verif ?: '2024-06-01',
+                    ]);
+                } else {
+                    // Buat customer baru
+                    $customer = Customer::create([
+                        'kode_customer'     => 'CUST-' . strtoupper(Str::random(6)),
+                        'nama_lengkap'      => 'KONSUMEN AKAD (' . $kavling->kode_kavling . ')',
+                        'id_lokasi'         => $lokasi->id,
+                        'id_kavling'        => $kavling->id,
+                        'id_status_progres' => 3, // Akad
+                        'jenis_pembelian'   => 'KPR',
+                        'sumber_prospek'    => 'Iklan Kantor',
+                        'tanggal_verif'     => '2024-06-01',
+                        'total_harga'       => (int) ($kavling->hrg_jual ?: 168000000),
+                        'stt_arsip'         => 0,
+                    ]);
+                }
+
+                $kavling->id_customer = $customer->id;
+                $kavling->save();
+                $updatedCount++;
+            }
+        }
+
+        $this->stats['bir2_akad_count'] = $updatedCount;
+        $this->stats['kavling_updated'] += $updatedCount;
+        $this->addLog("Berhasil menyetel $updatedCount unit kavling Blok A3 s/d B2 di BIR 2 menjadi status AKAD (ID: 3)!");
+    }
+
+    /**
+     * Sinkronisasi langsung 17 Konsumen SP3K resmi dari Spreadsheet
+     */
+    public function syncDirectSp3k()
+    {
+        $this->addLog("Menyinkronkan 17 data konsumen SP3K resmi dari spreadsheet...");
+
+        $sp3kData = [
+            ['nama' => 'Rahman Wahyudi', 'perumahan' => 'Alzafa 2', 'blok' => 'C1 NO 02A', 'marketing' => 'Ernawati', 'bank' => 'BTN', 'sp3k' => '2026-10-01', 'plan' => '2026-10-12'],
+            ['nama' => 'Sri Rezeki', 'perumahan' => 'Alzafa 2', 'blok' => 'C2 NO 20', 'marketing' => 'Mentari', 'bank' => 'BTN', 'sp3k' => '2026-09-25', 'plan' => '2026-10-12'],
+            ['nama' => 'Fikhih Andradinata', 'perumahan' => 'Alzafa 2', 'blok' => 'C3 NO 03A', 'marketing' => 'Ernawati', 'bank' => 'BTN', 'sp3k' => '2026-09-11', 'plan' => '2026-10-07'],
+            ['nama' => 'Sutiyarsa', 'perumahan' => 'Alzafa 3', 'blok' => 'E3 NO 22', 'marketing' => 'Ernawati', 'bank' => 'BNI', 'sp3k' => '2026-10-06', 'plan' => null],
+            ['nama' => 'Chandra', 'perumahan' => 'Alzafa 3', 'blok' => 'E4 NO 03', 'marketing' => 'Niya', 'bank' => 'BNI', 'sp3k' => '2026-09-25', 'plan' => '2026-10-09'],
+            ['nama' => 'Heny Yuliani', 'perumahan' => 'Alzafa 3', 'blok' => 'E4 NO 12', 'marketing' => 'Niya', 'bank' => 'BNI', 'sp3k' => '2026-09-22', 'plan' => '2026-10-19'],
+            ['nama' => 'Annisya', 'perumahan' => 'Alzafa 3', 'blok' => 'E5 NO 20', 'marketing' => 'Ernawati', 'bank' => 'BSN', 'sp3k' => '2026-07-22', 'plan' => '2026-10-05'],
+            ['nama' => 'Juwita', 'perumahan' => 'Alzafa 3', 'blok' => 'E5 NO 21', 'marketing' => 'Ernawati', 'bank' => 'BJB', 'sp3k' => '2026-09-30', 'plan' => null],
+            ['nama' => 'Sholeh Ibrahim', 'perumahan' => 'Alzafa 3', 'blok' => 'E5 NO 22', 'marketing' => 'Akbar', 'bank' => 'BTN', 'sp3k' => '2026-08-29', 'plan' => null],
+            ['nama' => 'Hamza', 'perumahan' => 'Alzafa 3', 'blok' => 'E7 NO 02', 'marketing' => 'Dian', 'bank' => 'BSN', 'sp3k' => '2026-10-05', 'plan' => null],
+            ['nama' => 'Barokah', 'perumahan' => 'Alzafa 3', 'blok' => 'E7 NO 05', 'marketing' => 'Niya', 'bank' => 'BNI', 'sp3k' => '2026-08-27', 'plan' => null],
+            ['nama' => 'Marlina', 'perumahan' => 'Alzafa 3', 'blok' => 'E7 NO 08', 'marketing' => 'Niya', 'bank' => 'BNI', 'sp3k' => '2026-08-07', 'plan' => null],
+            ['nama' => 'Ella', 'perumahan' => 'Alzafa 3', 'blok' => 'E7 NO 19', 'marketing' => 'Ernawati', 'bank' => 'BTN', 'sp3k' => '2026-09-17', 'plan' => null],
+            ['nama' => 'Annisa Yuda', 'perumahan' => 'BIR 4', 'blok' => 'F12 NO 04', 'marketing' => 'Tami', 'bank' => 'BTN', 'sp3k' => '2026-09-16', 'plan' => '2026-10-12'],
+            ['nama' => 'Sanuriya', 'perumahan' => 'BIR 4', 'blok' => 'F15 NO 20', 'marketing' => 'Vira', 'bank' => 'BTN', 'sp3k' => '2026-09-16', 'plan' => '2026-10-05'],
+            ['nama' => 'Kgs Julian Muliarido', 'perumahan' => 'BIR 2', 'blok' => 'B02 NO 06', 'marketing' => 'Hendrik', 'bank' => 'BTN', 'sp3k' => '2026-08-05', 'plan' => '2026-10-05'],
+            ['nama' => 'Muhammad Junaidi', 'perumahan' => 'BIR 2', 'blok' => 'B04 NO 07', 'marketing' => 'Hendrik', 'bank' => 'BTN', 'sp3k' => '2026-09-11', 'plan' => null],
+        ];
+
+        $notarisDefault = Notaris::first();
+
+        foreach ($sp3kData as $item) {
+            $lokasi = $this->resolveLokasi($item['perumahan']);
+            if (!$lokasi) continue;
+
+            $kavling = $this->resolveKavling($lokasi->id, $item['blok']);
+            $mkt = $this->resolveMarketing($item['marketing']);
+            $bank = $this->resolveBank($item['bank']);
+
+            // Cari atau buat customer
+            $customer = null;
+            if ($kavling->id_customer) {
+                $customer = Customer::find($kavling->id_customer);
+            }
+            if (!$customer) {
+                $customer = Customer::where('id_lokasi', $lokasi->id)
+                    ->where('id_kavling', $kavling->id)
+                    ->where('stt_arsip', 0)
+                    ->first();
+            }
+            if (!$customer) {
+                $customer = Customer::where('id_lokasi', $lokasi->id)
+                    ->where('nama_lengkap', 'LIKE', '%' . $item['nama'] . '%')
+                    ->where('stt_arsip', 0)
+                    ->first();
+            }
+
+            $payload = [
+                'nama_lengkap'      => $item['nama'],
+                'id_lokasi'         => $lokasi->id,
+                'id_kavling'        => $kavling->id,
+                'id_marketing'      => optional($mkt)->id,
+                'id_bank_kpr'       => optional($bank)->id,
+                'id_status_progres' => 4, // SP3K
+                'jenis_pembelian'   => 'KPR',
+                'sumber_prospek'    => 'Iklan Kantor',
+                'tanggal_verif'     => $item['sp3k'],
+                'stt_arsip'         => 0,
+            ];
+
+            if ($customer) {
+                $customer->update($payload);
+            } else {
+                $payload['kode_customer'] = 'CUST-' . strtoupper(Str::random(6));
+                $payload['total_harga']   = (int) ($kavling->hrg_jual ?: 168000000);
+                $customer = Customer::create($payload);
+            }
+
+            $kavling->update(['status' => 2, 'id_customer' => $customer->id]);
+
+            // Sinkronkan Wawancara & SP3K
+            $wawancara = Wawancara::firstOrCreate(
+                ['id_customer' => $customer->id],
+                [
+                    'id_bank_kpr'   => optional($bank)->id,
+                    'tgl_wawancara' => $item['sp3k'],
+                    'status'        => 2,
+                ]
+            );
+
+            $tglExp = Carbon::parse($item['sp3k'])->addDays(90)->toDateString();
+
+            WawancaraSp3k::updateOrCreate(
+                ['id_wawancara' => $wawancara->id],
+                [
+                    'id_bank_kpr'     => optional($bank)->id,
+                    'acc_plafon'      => (int) ($customer->total_harga ?: 168000000),
+                    'tenor'           => 20,
+                    'id_notaris'      => optional($notarisDefault)->id ?: 1,
+                    'tgl_terbit_sp3k' => $item['sp3k'],
+                    'tgl_expired'     => $tglExp,
+                    'no_sp3k'         => 'SP3K/' . strtoupper(Str::random(6)) . '/' . date('Y'),
+                    'status'          => 1,
+                ]
+            );
+
+            $this->stats['sp3k_created']++;
+        }
+
+        $this->addLog("Berhasil menyinkronkan 17 data konsumen SP3K!");
     }
 
     /**
@@ -124,32 +334,25 @@ class ExcelSyncService
             }
 
             if ($isCapturing && count($cols) >= 6) {
-                // Cari nama konsumen dan blok
                 $nama = '';
                 $hp = '';
-                $profesi = '';
                 $sumber = '';
                 $blok = '';
 
-                foreach ($cols as $idx => $val) {
+                foreach ($cols as $val) {
                     $valClean = trim($val);
                     if (preg_match('/^08[0-9]{8,13}$/', $valClean) || preg_match('/^8[0-9]{8,12}$/', $valClean)) {
                         $hp = (str_starts_with($valClean, '8') ? '0' : '') . $valClean;
                     }
-                }
-
-                // Coba cocokkan kolom standar: NAMA, NO HP, PROFESI, SUMBER, PERUMAHAN, BLOK
-                foreach ($cols as $val) {
-                    $u = strtoupper(trim($val));
+                    $u = strtoupper($valClean);
                     if (in_array($u, ['IKLAN', 'IKLAN KANTOR', 'MARKET PLACE', 'MARKET PLACE FB', 'FB', 'FACEBOOK', 'TIKTOK', 'WIC', 'REFERENSI', 'REFERAL', 'FREELANCE', 'KANVASING', 'SOSMED PRIBADI', 'SOSMED KANTOR'])) {
                         $sumber = $u;
                     }
-                    if (preg_match('/[A-Z0-9]+\s*(NO|\/)\s*[0-9]+[A-Z]?/i', $val)) {
-                        $blok = $this->cleanBlok($val);
+                    if (preg_match('/[A-Z0-9]+\s*(NO|\/|-)\s*[0-9]+[A-Z]?/i', $valClean)) {
+                        $blok = $valClean;
                     }
                 }
 
-                // Ambil nama dari kolom ke-1 atau ke-2
                 $col1 = trim($cols[1] ?? '');
                 $col2 = trim($cols[2] ?? '');
                 if (!empty($col1) && !is_numeric($col1) && !str_starts_with($col1, '202')) {
@@ -161,9 +364,9 @@ class ExcelSyncService
                 if (!empty($nama)) {
                     $key = strtolower(trim(preg_replace('/[^a-zA-Z0-9]/', '', $nama)));
                     $meta[$key] = [
-                        'hp'      => $hp,
-                        'sumber'  => $sumber,
-                        'blok'    => $blok,
+                        'hp'     => $hp,
+                        'sumber' => $sumber,
+                        'blok'   => $blok,
                     ];
                 }
             }
@@ -173,7 +376,7 @@ class ExcelSyncService
     }
 
     /**
-     * Ekstrak Data SP3K (17 Konsumen)
+     * Ekstrak Data SP3K dari file
      */
     protected function extractSp3kData(array $lines): array
     {
@@ -198,7 +401,7 @@ class ExcelSyncService
             if ($isCapture && count($cols) >= 5 && is_numeric($first)) {
                 $nama = trim($cols[1] ?? '');
                 $perumahan = trim($cols[2] ?? '');
-                $blok = $this->cleanBlok(trim($cols[3] ?? ''));
+                $blok = trim($cols[3] ?? '');
                 $mkt = trim($cols[4] ?? '');
                 $bank = trim($cols[9] ?? '');
                 $tglSp3k = $this->cleanDate(trim($cols[10] ?? ''));
@@ -234,7 +437,9 @@ class ExcelSyncService
             $cols = str_getcsv($line);
             $fullText = implode(' ', $cols);
 
-            if (stripos($fullText, 'DAFTAR NAMA KONSUMEN') !== false && stripos($fullText, $keyword) !== false) {
+            // Deteksi header perumahan baik dengan "DAFTAR NAMA KONSUMEN" maupun "PERUMAHAN"
+            if ((stripos($fullText, 'DAFTAR NAMA KONSUMEN') !== false || stripos($fullText, 'PERUMAHAN') !== false) 
+                && stripos($fullText, $keyword) !== false) {
                 $isCapture = true;
                 continue;
             }
@@ -248,10 +453,9 @@ class ExcelSyncService
                 $nama = trim($cols[1] ?? '');
                 $blok = '';
 
-                // Deteksi kolom blok (biasanya di cols[3] atau cols[2])
                 foreach ($cols as $cVal) {
-                    if (preg_match('/[A-Z0-9]+\s*(NO|\/)\s*[0-9]+[A-Z]?/i', $cVal)) {
-                        $blok = $this->cleanBlok($cVal);
+                    if (preg_match('/[A-Z0-9]+\s*(NO|\/|-)\s*[0-9]+[A-Z]?/i', $cVal)) {
+                        $blok = trim($cVal);
                         break;
                     }
                 }
@@ -289,28 +493,22 @@ class ExcelSyncService
             return;
         }
 
-        $notarisDefault = Notaris::first();
-
         foreach ($unitRows as $row) {
             $blok = $row['blok'];
             if (empty($blok)) continue;
 
-            // 1. Cari atau buat KavlingPeta
             $kavling = $this->resolveKavling($lokasi->id, $blok);
-
             $nama = trim($row['nama']);
             $ket = strtoupper(trim($row['keterangan'] ?: $row['progres']));
 
-            // Jika status BELUM TERJUAL atau nama kosong
-            if (empty($nama) || str_contains($ket, 'BELUM TERJUAL') || $nama === 'SUDAH') {
-                if (empty($nama) || str_contains($ket, 'BELUM TERJUAL')) {
-                    $kavling->update(['status' => 0, 'id_customer' => null]);
-                    $this->stats['kavling_updated']++;
-                    continue;
-                }
+            // Jika status BELUM TERJUAL atau kosong
+            if (empty($nama) || str_contains($ket, 'BELUM TERJUAL')) {
+                $kavling->update(['status' => 0, 'id_customer' => null]);
+                $this->stats['kavling_updated']++;
+                continue;
             }
 
-            // 2. Mapping Status Progres
+            // Mapping Status Progres
             $idStatusProgres = 11; // Default: Pemberkasan Marketing
             $kavlingStatus = 2;   // Terjual / Booking
             $sttArsip = 0;
@@ -336,20 +534,15 @@ class ExcelSyncService
                 if ($idStatusProgres == 11) $idStatusProgres = 3;
             }
 
-            // 3. Mapping Marketing & Bank
             $mkt = $this->resolveMarketing($row['marketing']);
             $bank = $this->resolveBank($row['bank']);
 
-            // 4. Cari metadata tambahan (No HP & Sumber Prospek)
             $nameKey = strtolower(trim(preg_replace('/[^a-zA-Z0-9]/', '', $nama)));
             $meta = $metaKonsumen[$nameKey] ?? [];
             $noTelp = $meta['hp'] ?? null;
             $sumberProspek = $this->normalizeSumber($meta['sumber'] ?? 'Iklan Kantor');
-
-            // Tanggal verifikasi / transaksi
             $tglVerif = $row['tgl_akad'] ?: ($row['tgl_sp3k'] ?: ($row['admin_entri'] ?: ($row['tgl_booking'] ?: date('Y-m-d'))));
 
-            // 5. Cek apakah customer sudah ada untuk unit kavling ini
             $customer = null;
             if ($kavling->id_customer) {
                 $customer = Customer::find($kavling->id_customer);
@@ -357,12 +550,6 @@ class ExcelSyncService
             if (!$customer) {
                 $customer = Customer::where('id_lokasi', $lokasi->id)
                     ->where('id_kavling', $kavling->id)
-                    ->where('stt_arsip', 0)
-                    ->first();
-            }
-            if (!$customer && !empty($nama)) {
-                $customer = Customer::where('id_lokasi', $lokasi->id)
-                    ->where('nama_lengkap', $nama)
                     ->where('stt_arsip', 0)
                     ->first();
             }
@@ -388,49 +575,16 @@ class ExcelSyncService
                 $this->stats['customer_updated']++;
             } else {
                 $custPayload['kode_customer'] = 'CUST-' . strtoupper(Str::random(6));
-                $custPayload['total_harga']   = (int) ($kavling->hrg_jual ?? 168000000);
+                $custPayload['total_harga']   = (int) ($kavling->hrg_jual ?: 168000000);
                 $customer = Customer::create($custPayload);
                 $this->stats['customer_created']++;
             }
 
-            // Tautkan kembali ke kavling peta
             $kavling->update([
                 'status'      => $kavlingStatus,
                 'id_customer' => ($sttArsip == 0) ? $customer->id : null,
             ]);
             $this->stats['kavling_updated']++;
-
-            // 6. Tangani Record SP3K jika ada di daftar SP3K khusus atau berstatus SP3K
-            $sp3kMeta = $sp3kList[$nameKey] ?? null;
-            if ($sp3kMeta || $idStatusProgres == 4 || !empty($row['tgl_sp3k'])) {
-                $tglTerbitSp3k = ($sp3kMeta['tgl_sp3k'] ?? null) ?: ($row['tgl_sp3k'] ?: date('Y-m-d'));
-                $tglExp = Carbon::parse($tglTerbitSp3k)->addDays(90)->toDateString();
-                $idBankSp3k = optional($bank)->id ?: optional($this->resolveBank($sp3kMeta['bank'] ?? 'BTN'))->id;
-
-                $wawancara = Wawancara::firstOrCreate(
-                    ['id_customer' => $customer->id],
-                    [
-                        'id_bank_kpr'   => $idBankSp3k,
-                        'tgl_wawancara' => $tglTerbitSp3k,
-                        'status'        => 2,
-                    ]
-                );
-
-                WawancaraSp3k::updateOrCreate(
-                    ['id_wawancara' => $wawancara->id],
-                    [
-                        'id_bank_kpr'     => $idBankSp3k,
-                        'acc_plafon'      => (int) ($customer->total_harga ?? 168000000),
-                        'tenor'           => 20,
-                        'id_notaris'      => optional($notarisDefault)->id ?? 1,
-                        'tgl_terbit_sp3k' => $tglTerbitSp3k,
-                        'tgl_expired'     => $tglExp,
-                        'no_sp3k'         => 'SP3K/' . strtoupper(Str::random(6)) . '/' . date('Y'),
-                        'status'          => 1,
-                    ]
-                );
-                $this->stats['sp3k_created']++;
-            }
         }
     }
 
@@ -452,7 +606,8 @@ class ExcelSyncService
         } elseif ($shortName === 'BIR 2') {
             $q->where(function($sub) {
                 $sub->where('nama_kavling', 'LIKE', '%Intan%2%')
-                    ->orWhere('nama_kavling', 'LIKE', '%BIR%2%');
+                    ->orWhere('nama_kavling', 'LIKE', '%BIR%2%')
+                    ->orWhere('nama_singkat', 'BIR2');
             });
         } elseif ($shortName === 'BIR 3') {
             $q->where(function($sub) {
@@ -471,23 +626,54 @@ class ExcelSyncService
     }
 
     /**
-     * Cari atau buat KavlingPeta
+     * Cari atau buat KavlingPeta dengan pencocokan format fleksibel
      */
     protected function resolveKavling(int $idLokasi, string $blok): KavlingPeta
     {
-        $clean = $this->cleanBlok($blok);
+        $clean = strtoupper(trim(preg_replace('/\s+/', ' ', $blok)));
+        $candidates = [$clean, $blok];
+
+        // Normalisasi format Blok (misal: A03 NO 01, A3-01, A3/01)
+        if (preg_match('/^([A-Z]+)\s*0*([0-9]+)\s*(?:NO|\/|-)?\s*0*([0-9]+[A-Z]?)$/i', $clean, $m)) {
+            $prefix = strtoupper($m[1]);
+            $bNum = (int)$m[2];
+            $uNum = (int)$m[3];
+            $suffix = preg_replace('/^[0-9]+/', '', $m[3]);
+
+            $bShort = $prefix . $bNum;
+            $bLong  = $prefix . sprintf('%02d', $bNum);
+            $uShort = $uNum . $suffix;
+            $uLong  = sprintf('%02d', $uNum) . $suffix;
+
+            $candidates[] = "$bShort-$uLong";
+            $candidates[] = "$bShort-$uShort";
+            $candidates[] = "$bLong-$uLong";
+            $candidates[] = "$bLong-$uShort";
+            $candidates[] = "$bShort NO $uLong";
+            $candidates[] = "$bShort NO $uShort";
+            $candidates[] = "$bLong NO $uLong";
+            $candidates[] = "$bLong NO $uShort";
+            $candidates[] = "$bShort/$uLong";
+            $candidates[] = "$bShort/$uShort";
+        }
+
+        $candidates = array_unique($candidates);
+
         $kavling = KavlingPeta::where('id_lokasi', $idLokasi)
-            ->where(function($q) use ($clean, $blok) {
-                $q->where('kode_kavling', $clean)
-                  ->orWhere('kode_kavling', $blok);
+            ->where(function($q) use ($candidates) {
+                foreach ($candidates as $cand) {
+                    $q->orWhere('kode_kavling', $cand);
+                }
             })->first();
 
         if (!$kavling) {
-            // Coba tanpa spasi
-            $noSpace = str_replace(' ', '', $clean);
-            $kavling = KavlingPeta::where('id_lokasi', $idLokasi)
-                ->whereRaw("REPLACE(kode_kavling, ' ', '') = ?", [$noSpace])
-                ->first();
+            foreach ($candidates as $cand) {
+                $noSpace = str_replace([' ', '-', '/'], '', $cand);
+                $kavling = KavlingPeta::where('id_lokasi', $idLokasi)
+                    ->whereRaw("REPLACE(REPLACE(REPLACE(kode_kavling, ' ', ''), '-', ''), '/', '') = ?", [$noSpace])
+                    ->first();
+                if ($kavling) break;
+            }
         }
 
         if (!$kavling) {
@@ -503,9 +689,6 @@ class ExcelSyncService
         return $kavling;
     }
 
-    /**
-     * Cari atau buat Marketing
-     */
     protected function resolveMarketing(?string $name): ?MarketingOffline
     {
         if (empty($name) || in_array(strtoupper(trim($name)), ['-', 'SUDAH', 'CASH'])) return null;
@@ -525,9 +708,6 @@ class ExcelSyncService
         return $mkt;
     }
 
-    /**
-     * Cari atau buat Bank KPR
-     */
     protected function resolveBank(?string $bankName): ?BankKPR
     {
         if (empty($bankName) || in_array(strtoupper(trim($bankName)), ['-', 'CASH', 'SUDAH'])) return null;
@@ -576,18 +756,6 @@ class ExcelSyncService
             return $bank;
         }
 
-        if (str_contains($b, 'BSB KONVEN')) {
-            $bank = BankKPR::where('nama', 'LIKE', '%Sumsel%Konven%')->first();
-            if (!$bank) $bank = BankKPR::create(['nama' => 'BSB Konvensional']);
-            return $bank;
-        }
-
-        if (str_contains($b, 'BSB SYARIAH')) {
-            $bank = BankKPR::where('nama', 'LIKE', '%Sumsel%Syariah%')->first();
-            if (!$bank) $bank = BankKPR::create(['nama' => 'BSB Syariah']);
-            return $bank;
-        }
-
         $bank = BankKPR::where('nama', 'LIKE', "%$b%")->first();
         if (!$bank) {
             $bank = BankKPR::create(['nama' => $b]);
@@ -595,41 +763,27 @@ class ExcelSyncService
         return $bank;
     }
 
-    /**
-     * Pembersih format tanggal
-     */
     protected function cleanDate(?string $raw): ?string
     {
         if (empty($raw)) return null;
         $r = trim($raw);
-        if (in_array(strtoupper($r), ['-', 'SUDAH', 'CASH', 'KOSONG', 'Sudah SP3K'])) return null;
+        if (in_array(strtoupper($r), ['-', 'SUDAH', 'CASH', 'KOSONG', 'SUDAH SP3K'])) return null;
 
-        // YYYY-MM-DD
         if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $r, $m)) {
             return sprintf('%04d-%02d-%02d', $m[1], $m[2], $m[3]);
         }
-
-        // DD/MM/YYYY
         if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $r, $m)) {
             return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
         }
-
-        // 31/082026 atau 11/052026
         if (preg_match('/^(\d{1,2})\/(\d{2})(\d{4})$/', $r, $m)) {
             return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
         }
-
-        // 03.02/2026
         if (preg_match('/^(\d{1,2})\.(\d{1,2})\/(\d{4})$/', $r, $m)) {
             return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
         }
-
-        // 10//06/2024
         if (preg_match('/^(\d{1,2})\/\/(\d{1,2})\/(\d{4})$/', $r, $m)) {
             return sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]);
         }
-
-        // Tahun salah ketik 0202 -> 2026
         if (str_contains($r, '0202')) {
             $fix = str_replace('0202', '2026', $r);
             return $this->cleanDate($fix);
@@ -642,20 +796,6 @@ class ExcelSyncService
         }
     }
 
-    /**
-     * Pembersih format Blok Kavling (contoh: C01 NO 01 -> C1 NO 01)
-     */
-    protected function cleanBlok(string $raw): string
-    {
-        $b = strtoupper(trim($raw));
-        $b = preg_replace('/\s+/', ' ', $b);
-        $b = str_replace(['NO. ', 'NO.', 'NO '], 'NO ', $b);
-        return $b;
-    }
-
-    /**
-     * Normalisasi nama saluran/sumber prospek
-     */
     protected function normalizeSumber(string $raw): string
     {
         $c = strtolower(trim($raw));
