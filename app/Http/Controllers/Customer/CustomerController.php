@@ -42,9 +42,17 @@ class CustomerController extends Controller
                 'kavling',
                 'progres',
             ])
-                ->where('stt_arsip', 0)
-                ->when($request->filled('id_lokasi'), fn($query) => $query->where('id_lokasi', $request->id_lokasi))
-                ->when($request->filled('id_status_progres'), fn($query) => $query->where('id_status_progres', $request->id_status_progres));
+                ->where('stt_arsip', 0);
+
+            if ($request->filled('id_status_progres')) {
+                $data->where('id_status_progres', $request->id_status_progres);
+            }
+            if ($request->filled('id_lokasi')) {
+                $data->where('id_lokasi', $request->id_lokasi);
+            }
+            if ($request->filled('id_marketing')) {
+                $data->where('id_marketing', $request->id_marketing);
+            }
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -462,12 +470,6 @@ class CustomerController extends Controller
     public function edit($id)
     {
         $list = Customer::findOrFail($id);
-        if (! empty($list->tanggal_verif)) {
-            $list->tgl_terima_formatted = Carbon::parse($list->tanggal_verif)->locale('id')->translatedFormat('j F Y');
-        } else {
-            $list->tgl_terima_formatted = null;
-        }
-
 
         return response()->json([
             'status' => 'success',
@@ -482,7 +484,7 @@ class CustomerController extends Controller
         $rules = [
             'nama_lengkap'    => 'required',
             'nik'             => 'required',
-            'npwp'            => 'nullable',
+            'npwp'            => 'required',
             'tempat_lahir'    => 'required',
             'tgl_lahir'       => 'required|date',
             'no_telp'         => 'required',
@@ -494,23 +496,14 @@ class CustomerController extends Controller
         $messages = [
             'nama_lengkap.required'    => 'Nama lengkap wajib diisi!',
             'nik.required'             => 'NIK wajib diisi!',
+            'npwp.required'            => 'NPWP wajib diisi!',
             'tempat_lahir.required'    => 'Tempat lahir wajib diisi!',
             'tgl_lahir.required'       => 'Tanggal lahir wajib diisi!',
             'no_telp.required'         => 'No. Telp / WA wajib diisi!',
             'jenis_kelamin.required'   => 'Jenis kelamin wajib diisi!',
             'alamat_ktp.required'      => 'Alamat KTP wajib diisi!',
             'alamat_domisili.required' => 'Alamat Domisili wajib diisi!',
-            'id_marketing.required' => 'Marketing wajib dipilih!',
-            'jenis_perumahan.required' => 'Jenis perumahan wajib dipilih!',
-            'jenis_pembelian.required' => 'Jenis pembelian wajib dipilih!',
-            'sumber_prospek.required' => 'Sumber prospek wajib dipilih!',
-            'besaran_dp.required' => 'Besaran DP wajib diisi!',
         ];
-
-        $request->merge([
-            'besaran_dp' => $request->besaran_dp ? str_replace('.', '', $request->besaran_dp) : null,
-            'diskon' => $request->diskon ? str_replace('.', '', $request->diskon) : null,
-        ]);
 
         $request->validate($rules, $messages);
 
@@ -536,12 +529,6 @@ class CustomerController extends Controller
                 'nik_p'             => $request->nik_p ?? null,
                 'nama_saudara'      => $request->nama_saudara ?? null,
                 'no_telp_saudara'   => $request->no_telp_saudara ?? null,
-                'id_marketing'      => $request->id_marketing,
-                'jenis_perumahan'   => $request->jenis_perumahan,
-                'jenis_pembelian'   => $request->jenis_pembelian,
-                'sumber_prospek'    => $request->sumber_prospek ?? null,
-                'besaran_dp'        => $request->besaran_dp ?? null,
-                'diskon'            => $request->diskon ?? null,
             ];
 
             if ($user->id_role == 2) {
@@ -553,7 +540,6 @@ class CustomerController extends Controller
                     'id_user'     => $user->id,
                 ]);
 
-                unset($tempoData['sumber_prospek'], $tempoData['besaran_dp'], $tempoData['diskon']);
                 CustomerTempo::create($tempoData);
 
                 DB::commit();
@@ -573,7 +559,7 @@ class CustomerController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error($e->getMessage());
+            Log::info($e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'error'  => $e->getMessage(),
@@ -645,90 +631,127 @@ class CustomerController extends Controller
 
     public function cetakData(Request $request)
     {
-        $query = Customer::with(['marketing', 'lokasi', 'kavling', 'progres', 'bank']);
+        $query = Customer::with(['marketing', 'lokasi', 'kavling', 'progres', 'bank'])
+            ->where('stt_arsip', 0);
 
-        if ($request->lokasi) {
-            $query->where('id_lokasi', $request->lokasi);
+        $idLokasi = $request->id_lokasi ?: $request->lokasi;
+        if ($idLokasi) {
+            $query->where('id_lokasi', $idLokasi);
         }
 
-        $data = $query->get();
+        $idStatus = $request->id_status_progres ?: $request->status;
+        if ($idStatus) {
+            $query->where('id_status_progres', $idStatus);
+        }
+
+        $namaLokasi = 'Semua Lokasi / Proyek';
+        if ($idLokasi) {
+            $lokasiObj = LokasiKavling::find($idLokasi);
+            if ($lokasiObj) {
+                $namaLokasi = $lokasiObj->nama_kavling;
+            }
+        }
+
+        $namaStatus = 'Semua Status / Kategori';
+        if ($idStatus) {
+            $statusObj = ProgresListPenjualan::find($idStatus);
+            if ($statusObj) {
+                $namaStatus = $statusObj->status_progres;
+            }
+        }
+
+        $data = $query->orderBy('id_lokasi')->orderBy('id', 'desc')->get();
 
         if ($request->tipe == 1) {
-            return $this->cetakExcel($data);
+            return $this->cetakExcel($data, $namaLokasi, $namaStatus);
         } else {
-            return $this->cetakPdf($data);
+            return $this->cetakPdf($data, $namaLokasi, $namaStatus);
         }
     }
 
-    private function cetakPdf($data)
+    private function cetakPdf($data, $namaLokasi = 'Semua Lokasi / Proyek', $namaStatus = 'Semua Status / Kategori')
     {
-        $pdf = new \TCPDF('P', 'mm', 'A4');
-        $pdf->SetTitle('Data Customer');
+        $pdf = new \TCPDF('L', 'mm', 'A4');
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->SetMargins(12, 10, 12);
+        $pdf->SetAutoPageBreak(TRUE, 12);
+        $pdf->SetTitle('Data Customer - ' . $namaStatus);
         $pdf->AddPage();
 
         $logoPath = public_path('assets/img/header.png');
         if (file_exists($logoPath)) {
-            $pdf->Image($logoPath, 20, 5, 30);
+            $pdf->Image($logoPath, 15, 8, 25);
         }
 
         $pdf->SetFont('Times', 'B', 16);
-        $pdf->Cell(190, 7, 'PT. HAMZAH MAJU BERSAMA', 0, 1, 'C');
+        $pdf->Cell(273, 6, 'PT. HAMZAH MAJU BERSAMA', 0, 1, 'C');
 
+        $pdf->SetFont('Times', 'B', 11);
+        $pdf->Cell(273, 5, 'developer & kontraktor', 0, 1, 'C');
+
+        $pdf->Line(12, 26, 285, 26);
+        $pdf->Line(12, 27, 285, 27);
+
+        $pdf->Ln(4);
         $pdf->SetFont('Times', 'B', 12);
-        $pdf->Cell(190, 7, 'developer & kontraktor', 0, 1, 'C');
-
-        $pdf->Line(10, 30, 200, 30);
-        $pdf->Line(10, 31, 200, 31);
-
-        $pdf->Ln(15);
-        $pdf->SetFont('Times', 'B', 10);
         $pdf->SetTextColor(218, 0, 0);
-        $pdf->Cell(190, 8, 'DATA CUSTOMER', 0, 1, 'C');
-        $pdf->Ln(3);
+        $pdf->Cell(273, 6, 'LAPORAN DATA CUSTOMER', 0, 1, 'C');
 
         $pdf->SetTextColor(0, 0, 0);
-        $pdf->SetFont('Times', '', 9);
-        $pdf->Ln(5);
         $pdf->SetFont('Times', 'B', 9);
+        $pdf->Cell(273, 5, 'KATEGORI: ' . strtoupper($namaStatus) . '  |  LOKASI: ' . strtoupper($namaLokasi), 0, 1, 'C');
+
+        $pdf->SetFont('Times', 'I', 8);
+        $pdf->Cell(273, 4, 'Tanggal Cetak: ' . date('d/m/Y H:i') . ' WIB  |  Total: ' . $data->count() . ' Customer', 0, 1, 'C');
+        $pdf->Ln(2);
+
+        $pdf->SetFont('Times', 'B', 8);
         $pdf->SetFillColor(252, 203, 53);
         $pdf->Cell(10, 7, 'NO', 1, 0, 'C', true);
         $pdf->Cell(45, 7, 'PEMOHON', 1, 0, 'L', true);
-        $pdf->Cell(15, 7, 'UNIT', 1, 0, 'C', true);
-        $pdf->Cell(25, 7, 'NO. TELP', 1, 0, 'C', true);
+        $pdf->Cell(45, 7, 'PERUMAHAN / LOKASI', 1, 0, 'L', true);
+        $pdf->Cell(20, 7, 'UNIT', 1, 0, 'C', true);
+        $pdf->Cell(28, 7, 'NO. TELP', 1, 0, 'C', true);
         $pdf->Cell(40, 7, 'MARKETING', 1, 0, 'L', true);
-        $pdf->Cell(25, 7, 'BANK', 1, 0, 'C', true);
-        $pdf->Cell(30, 7, 'STATUS', 1, 1, 'C', true);
+        $pdf->Cell(35, 7, 'BANK', 1, 0, 'C', true);
+        $pdf->Cell(50, 7, 'STATUS', 1, 1, 'C', true);
+
         $pdf->SetFont('Times', '', 8);
         $no = 1;
         if ($data->count() > 0) {
             foreach ($data as $d) {
-                $pdf->Cell(10, 7, $no++, 1, 0, 'C');
-                $pdf->Cell(45, 7, $d->nama_lengkap, 1, 0, 'L');
-                $pdf->Cell(15, 7, ($d->kavling->kode_kavling ?? '-'), 1, 0, 'C');
-                $pdf->Cell(25, 7, $d->no_telp, 1, 0, 'C');
-                $pdf->Cell(40, 7, ($d->marketing->nama_marketing ?? '-'), 1, 0, 'L');
-                $pdf->Cell(25, 7, ($d->bank->nama ?? '-'), 1, 0, 'C');
-                $pdf->Cell(30, 7, ($d->progres->status_progres ?? '-'), 1, 1, 'C');
+                $pdf->Cell(10, 6, $no++, 1, 0, 'C');
+                $pdf->Cell(45, 6, $d->nama_lengkap ?? '-', 1, 0, 'L');
+                $pdf->Cell(45, 6, $d->lokasi->nama_kavling ?? '-', 1, 0, 'L');
+                $pdf->Cell(20, 6, $d->kavling->kode_kavling ?? '-', 1, 0, 'C');
+                $pdf->Cell(28, 6, $d->no_telp ?? '-', 1, 0, 'C');
+                $pdf->Cell(40, 6, $d->marketing->nama_marketing ?? '-', 1, 0, 'L');
+                $pdf->Cell(35, 6, $d->bank->nama ?? '-', 1, 0, 'C');
+                $pdf->Cell(50, 6, $d->progres->status_progres ?? '-', 1, 1, 'C');
             }
         } else {
-            $pdf->Cell(190, 7, 'Tidak ada data ditemukan', 1, 1, 'C');
+            $pdf->Cell(273, 7, 'Tidak ada data customer yang sesuai dengan filter', 1, 1, 'C');
         }
 
-        return response($pdf->Output('data_customer.pdf', 'S'))
+        $cleanStatus = \Illuminate\Support\Str::slug($namaStatus);
+        $cleanLokasi = \Illuminate\Support\Str::slug($namaLokasi);
+        $filename = 'data_customer_' . ($cleanStatus ?: 'semua') . '_' . ($cleanLokasi ?: 'semua') . '.pdf';
+
+        return response($pdf->Output($filename, 'S'))
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="data_customer.pdf"');
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
     }
 
-    private function cetakExcel($data)
+    private function cetakExcel($data, $namaLokasi = 'Semua Lokasi / Proyek', $namaStatus = 'Semua Status / Kategori')
     {
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
 
         // Set judul dokumen
         $sheet->setCellValue('A1', 'LAPORAN DATA CUSTOMER');
-        $sheet->mergeCells('A1:G1');
+        $sheet->mergeCells('A1:H1');
 
-        // Style untuk judul
         $sheet->getStyle('A1')->applyFromArray([
             'font'      => [
                 'bold'  => true,
@@ -745,10 +768,23 @@ class CustomerController extends Controller
             ],
         ]);
 
-        // Tambahkan informasi tanggal
-        $sheet->setCellValue('A2', 'Tanggal Export: ' . date('d/m/Y H:i:s'));
-        $sheet->mergeCells('A2:G2');
+        // Informasi Filter
+        $sheet->setCellValue('A2', 'Kategori: ' . strtoupper($namaStatus) . ' | Lokasi: ' . strtoupper($namaLokasi));
+        $sheet->mergeCells('A2:H2');
         $sheet->getStyle('A2')->applyFromArray([
+            'font'      => [
+                'bold' => true,
+                'size' => 11,
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+            ],
+        ]);
+
+        // Tambahkan informasi tanggal
+        $sheet->setCellValue('A3', 'Tanggal Export: ' . date('d/m/Y H:i:s') . ' | Total: ' . $data->count() . ' Customer');
+        $sheet->mergeCells('A3:H3');
+        $sheet->getStyle('A3')->applyFromArray([
             'font'      => [
                 'italic' => true,
                 'size'   => 10,
@@ -760,13 +796,14 @@ class CustomerController extends Controller
 
         // Header kolom
         $headers = [
-            'A4' => 'NO',
-            'B4' => 'NAMA PEMOHON',
-            'C4' => 'UNIT/KAVLING',
-            'D4' => 'NO. TELEPON',
-            'E4' => 'MARKETING',
-            'F4' => 'BANK',
-            'G4' => 'STATUS',
+            'A5' => 'NO',
+            'B5' => 'NAMA PEMOHON',
+            'C5' => 'PERUMAHAN / LOKASI',
+            'D5' => 'UNIT/KAVLING',
+            'E5' => 'NO. TELEPON',
+            'F5' => 'MARKETING',
+            'G5' => 'BANK',
+            'H5' => 'STATUS',
         ];
 
         foreach ($headers as $cell => $value) {
@@ -774,7 +811,7 @@ class CustomerController extends Controller
         }
 
         // Style untuk header
-        $sheet->getStyle('A4:G4')->applyFromArray([
+        $sheet->getStyle('A5:H5')->applyFromArray([
             'font'      => [
                 'bold'  => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -796,20 +833,21 @@ class CustomerController extends Controller
         ]);
 
         // Data rows
-        $row = 5;
+        $row = 6;
         $no  = 1;
         foreach ($data as $d) {
             $sheet->setCellValue('A' . $row, $no++);
-            $sheet->setCellValue('B' . $row, $d->nama_lengkap);
-            $sheet->setCellValue('C' . $row, $d->kavling->kode_kavling ?? '-');
-            $sheet->setCellValue('D' . $row, $d->no_telp);
-            $sheet->setCellValue('E' . $row, $d->marketing->nama_marketing ?? '-');
-            $sheet->setCellValue('F' . $row, $d->bank->nama ?? '-');
-            $sheet->setCellValue('G' . $row, $d->progres->status_progres ?? '-');
+            $sheet->setCellValue('B' . $row, $d->nama_lengkap ?? '-');
+            $sheet->setCellValue('C' . $row, $d->lokasi->nama_kavling ?? '-');
+            $sheet->setCellValue('D' . $row, $d->kavling->kode_kavling ?? '-');
+            $sheet->setCellValue('E' . $row, $d->no_telp ?? '-');
+            $sheet->setCellValue('F' . $row, $d->marketing->nama_marketing ?? '-');
+            $sheet->setCellValue('G' . $row, $d->bank->nama ?? '-');
+            $sheet->setCellValue('H' . $row, $d->progres->status_progres ?? '-');
 
             // Style untuk baris data (zebra striping)
             $fillColor = ($no % 2 == 0) ? 'F9F9F9' : 'FFFFFF';
-            $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
+            $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
                 'fill'    => [
                     'fillType'   => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
                     'startColor' => ['rgb' => $fillColor],
@@ -826,26 +864,27 @@ class CustomerController extends Controller
         }
 
         // Auto-resize kolom
-        foreach (range('A', 'G') as $col) {
+        foreach (range('A', 'H') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-                                                       // Set minimum width untuk kolom tertentu
-        $sheet->getColumnDimension('B')->setWidth(25); // Nama
-        $sheet->getColumnDimension('C')->setWidth(15); // Unit
-        $sheet->getColumnDimension('D')->setWidth(15); // Telp
-        $sheet->getColumnDimension('E')->setWidth(20); // Marketing
-        $sheet->getColumnDimension('F')->setWidth(20); // Bank
-        $sheet->getColumnDimension('G')->setWidth(15); // Status
+        // Set minimum width untuk kolom tertentu
+        $sheet->getColumnDimension('B')->setWidth(28); // Nama
+        $sheet->getColumnDimension('C')->setWidth(26); // Perumahan
+        $sheet->getColumnDimension('D')->setWidth(15); // Unit
+        $sheet->getColumnDimension('E')->setWidth(18); // Telp
+        $sheet->getColumnDimension('F')->setWidth(22); // Marketing
+        $sheet->getColumnDimension('G')->setWidth(22); // Bank
+        $sheet->getColumnDimension('H')->setWidth(20); // Status
 
         // Set tinggi baris untuk header
         $sheet->getRowDimension('1')->setRowHeight(30);
-        $sheet->getRowDimension('4')->setRowHeight(25);
+        $sheet->getRowDimension('5')->setRowHeight(25);
 
         // Footer dengan total data
         $totalRow = $row;
-        $sheet->setCellValue('A' . $totalRow, 'Total Data: ' . ($no - 1) . ' record');
-        $sheet->mergeCells('A' . $totalRow . ':G' . $totalRow);
+        $sheet->setCellValue('A' . $totalRow, 'Total Data: ' . ($no - 1) . ' customer');
+        $sheet->mergeCells('A' . $totalRow . ':H' . $totalRow);
         $sheet->getStyle('A' . $totalRow)->applyFromArray([
             'font'      => [
                 'bold'   => true,
@@ -860,8 +899,10 @@ class CustomerController extends Controller
             ],
         ]);
 
-        $writer   = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $filename = 'data_customer_' . date('Y-m-d_H-i-s') . '.xlsx';
+        $writer      = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $cleanStatus = \Illuminate\Support\Str::slug($namaStatus);
+        $cleanLokasi = \Illuminate\Support\Str::slug($namaLokasi);
+        $filename    = 'data_customer_' . ($cleanStatus ?: 'semua') . '_' . ($cleanLokasi ?: 'semua') . '_' . date('Ymd_His') . '.xlsx';
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
@@ -1019,7 +1060,7 @@ class CustomerController extends Controller
         $rules = [
             'nama_lengkap'    => 'required',
             'nik'             => 'required',
-            'npwp'            => 'nullable',
+            'npwp'            => 'required',
             'tempat_lahir'    => 'required',
             'tgl_lahir'       => 'required|date',
             'no_telp'         => 'required',
@@ -1031,6 +1072,7 @@ class CustomerController extends Controller
         $messages = [
             'nama_lengkap.required'    => 'Nama lengkap wajib diisi!',
             'nik.required'             => 'NIK wajib diisi!',
+            'npwp.required'            => 'NPWP wajib diisi!',
             'tempat_lahir.required'    => 'Tempat lahir wajib diisi!',
             'tgl_lahir.required'       => 'Tanggal lahir wajib diisi!',
             'no_telp.required'         => 'No. Telp / WA wajib diisi!',
@@ -1066,9 +1108,6 @@ class CustomerController extends Controller
                 'nik_p'             => $data->nik_p,
                 'nama_saudara'      => $data->nama_saudara,
                 'no_telp_saudara'   => $data->no_telp_saudara,
-                'id_marketing'      => $data->id_marketing,
-                'jenis_perumahan'   => $data->jenis_perumahan,
-                'jenis_pembelian'   => $data->jenis_pembelian,
             ];
 
             $customer->update($updateData);

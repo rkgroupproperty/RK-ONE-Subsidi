@@ -30,7 +30,7 @@ class WawancaraController extends Controller
             $data = Wawancara::with(['customer', 'customer.lokasi', 'customer.kavling', 'bankKPR'])
                 ->where('status', 1)
                 ->whereHas('customer', function ($q) {
-                    $q->where('stt_arsip', 0)->where('id_status_progres', 7);
+                    $q->where('stt_arsip', 0);
                 })
                 ->orderByDesc('id');
 
@@ -77,7 +77,7 @@ class WawancaraController extends Controller
                 ->make(true);
         }
 
-        $customerList = Customer::where('stt_arsip', 0)->where('id_status_progres', 10)->orderBy('nama_lengkap')->get();
+        $customerList = Customer::where('stt_arsip', 0)->get();
         $bankKPRList  = BankKPR::all();
         $hari         = Carbon::now('Asia/Jakarta')->locale('id')->translatedFormat('l');
         $notarisList  = Notaris::all();
@@ -327,7 +327,7 @@ class WawancaraController extends Controller
         $data = Wawancara::with('customer')->findOrFail($id);
 
         $data->customer->update([
-            'id_status_progres' => 10,
+            'id_status_progres' => 2,
         ]);
 
         $this->logDelete('Proses Bank', $id);

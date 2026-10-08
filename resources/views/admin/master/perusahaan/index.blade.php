@@ -164,22 +164,6 @@
         previewFile('bg_kwitansi', 'previewKwitansi');
         previewFile('kop_surat', 'previewKopSurat');
 
-        var urlKwitansi = '{{ asset('assets/lokasi_perumahan/bg_kwitansi') }}';
-        var urlKopSurat = '{{ asset('assets/lokasi_perumahan/kop_surat') }}';
-
-        function tampilkanPreview(target, namaFile, urlDasar, teksKosong) {
-            if (!namaFile) {
-                $(target).html('<span style="color: #6c757d;">' + teksKosong + '</span>');
-                return;
-            }
-            var url = urlDasar + '/' + namaFile;
-            if (/\.pdf$/i.test(namaFile)) {
-                $(target).html('<a href="' + url + '" target="_blank">Lihat Berkas</a>');
-            } else {
-                $(target).html('<img src="' + url + '" style="max-width:100%; max-height:100%;">');
-            }
-        }
-
         const permissions = @json($permissions);
         const showActionColumn = permissions['edit'] == 1 || permissions['hapus'] == 1;
 
@@ -241,9 +225,6 @@
                     $('#jabatan_penandatangan').val(data.jabatan_penandatangan ?? '');
                     $('#nama_mengetahui').val(data.nama_mengetahui ?? '');
 
-                    tampilkanPreview('#previewKwitansi', data.bg_kwitansi, urlKwitansi, 'Tidak ada berkas');
-                    tampilkanPreview('#previewKopSurat', data.kop_surat, urlKopSurat, 'Tidak ada berkas');
-
                     $('#modalForm').modal('show');
                 }
             });
@@ -264,8 +245,8 @@
             btnText.text('Simpan');
             submitBtn.prop('disabled', false);
 
-            tampilkanPreview('#previewKopSurat', '', '', 'Tidak ada berkas');
-            tampilkanPreview('#previewKwitansi', '', '', 'Tidak ada berkas');
+            $('#previewKopSurat').html('<span style="color: #6c757d;">Tidak ada Kop Surat</span>');
+            $('#previewKwitansi').html('<span style="color: #6c757d;">Tidak ada Kwitansi</span>');
         });
 
         $('#formData').on('submit', function(e) {

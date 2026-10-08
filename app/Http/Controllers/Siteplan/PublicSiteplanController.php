@@ -18,7 +18,7 @@ class PublicSiteplanController extends Controller
      */
      public function index()
     {
-        $lokasiKavling = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres'])
+        $lokasiKavling = LokasiKavling::with(['kavlingPeta.customer.progres', 'kavlingPeta.progres'])
             ->orderBy('urutan', 'asc')
             ->get();
 
@@ -28,14 +28,13 @@ class PublicSiteplanController extends Controller
             ->orderBy('urutan', 'asc')
             ->get();
 
-        $manual = collect([
-            (object) [
+        if (! $legend->contains('status_progres', 'Booking')) {
+            $bookingItem = (object) [
                 'status_progres' => 'Booking',
                 'warna'          => '#42f202',
-            ],
-        ]);
-
-        $legend = $manual->merge($legend);
+            ];
+            $legend->splice(1, 0, [$bookingItem]);
+        }
 
         $bg = PengaturanMedia::where('jenis_data', 'Background booking')->first();
 
@@ -45,7 +44,7 @@ class PublicSiteplanController extends Controller
     /**
      * Fetch kavling details for the public popup.
      */
-     public function show($id)
+    public function show($id)
     {
         $data = KavlingPeta::with(['lokasi', 'customer', 'listrikAir'])->findOrFail($id);
 
@@ -56,10 +55,27 @@ class PublicSiteplanController extends Controller
             'success'         => true,
             'data'            => $data,
             'tagihan'         => $tagihanList,
-            'listrik_air' => $data->listrikAir,
+            'listrik_air'     => $data->listrikAir,
             'pemasukan'       => $pemasukanList,
             'total_tagihan'   => $tagihanList->sum('nominal'),
             'total_pemasukan' => $pemasukanList->sum('nominal'),
         ]);
     }
+
+    /**
+     * Unduh Denah Siteplan Format PDF
+     */
+    public function cetakPDF($id_lokasi)
+    {
+        return app(SiteplanPenjualanController::class)->cetakPDF($id_lokasi);
+    }
+
+    /**
+     * Unduh Denah Siteplan Format JPG
+     */
+    public function cetakJPG($id_lokasi)
+    {
+        return app(SiteplanPenjualanController::class)->cetakJPG($id_lokasi);
+    }
 }
+

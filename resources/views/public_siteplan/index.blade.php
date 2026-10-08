@@ -13,61 +13,63 @@
         }
 
         .siteplan-container {
-            max-width: 1200px;
+            max-width: 1250px;
             margin: 0 auto;
-            padding: 30px 15px 50px;
+            padding: 25px 15px 40px;
         }
 
         .siteplan-card {
             border: none;
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
             overflow: hidden;
             backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.97);
+            background: rgba(255, 255, 255, 0.98);
         }
 
         .siteplan-header {
             background: linear-gradient(135deg, #0d3b66 0%, #1e5fa8 50%, #3a86ff 100%);
             padding: 24px 30px;
             text-align: center;
+            position: relative;
         }
 
         .siteplan-header h4 {
             color: #fff;
             font-weight: 700;
             margin: 0;
-            font-size: 1.25rem;
+            font-size: 1.35rem;
             letter-spacing: 0.5px;
         }
 
         .siteplan-header p {
-            color: rgba(255, 255, 255, 0.8);
-            margin: 8px 0 0;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 6px 0 0;
             font-size: 0.85rem;
         }
 
         .siteplan-body {
-            padding: 20px 30px 30px;
+            padding: 20px 25px 25px;
         }
 
         /* Tabs Styling */
         .nav-tabs {
-            border-bottom: 2px solid #e8f5e9;
+            border-bottom: 2px solid #e2e8f0;
             gap: 5px;
         }
 
         .nav-tabs .nav-link {
             border: none;
-            color: #6b7280;
-            font-weight: 500;
-            padding: 10px 20px;
+            color: #64748b;
+            font-weight: 600;
+            padding: 10px 22px;
             border-radius: 8px 8px 0 0;
             transition: all 0.2s;
+            font-size: 0.9rem;
         }
 
         .nav-tabs .nav-link:hover {
-            background-color: #f9fafb;
+            background-color: #f1f5f9;
             color: #1e5fa8;
         }
 
@@ -78,28 +80,59 @@
             font-weight: 700;
         }
 
-        /* SVG Container */
-        .svg-card-wrapper {
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-            overflow: hidden;
-            margin-top: 20px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        /* Action Toolbar below tabs */
+        .siteplan-action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0 12px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
+        .siteplan-action-bar .btn-group-zoom {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .siteplan-action-bar button {
+            font-weight: 600;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .siteplan-action-bar .zoom-level-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: #e2e8f0;
+            color: #334155;
+            padding: 7px 10px;
+            border-radius: 6px;
+            min-width: 48px;
+            text-align: center;
+        }
+
+        /* SVG Canvas Container matching Admin */
         .svg-view-container {
             width: 100%;
-            height: 65vh;
-            min-height: 500px;
+            height: 72vh;
+            min-height: 520px;
             overflow: hidden;
             position: relative;
-            background: #f8fafc;
+            background: #ffffff;
+            border: 2px solid #d1cfcf;
+            border-radius: 8px;
         }
 
         .svg-view-container svg {
             width: 100%;
             height: 100%;
+            display: block;
             cursor: grab;
             transition: transform 0.1s ease-out;
             touch-action: none;
@@ -107,74 +140,66 @@
             -webkit-user-drag: none;
         }
 
-        /* Floating Components */
-        .legend-box {
+        /* Legend Modal / Dropdown */
+        .legend {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            padding: 15px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            width: 210px;
-            z-index: 1000;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid #e5e7eb;
-        }
-
-        .legend-box.hidden {
-            transform: translateX(250px);
-        }
-
-        .legend-toggle {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 45px;
-            height: 45px;
-            background: #1e5fa8;
-            color: #fff;
+            top: 140px;
+            right: 35px;
+            padding: 14px 16px;
+            font-size: 13px;
+            background-color: #fff;
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            cursor: pointer;
-            z-index: 999;
-            border: none;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.22);
+            width: 220px;
+            z-index: 1060;
+            border: 1px solid #e2e8f0;
+            display: none;
         }
 
         .legend-title {
             font-weight: 700;
             font-size: 0.85rem;
-            color: #111827;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f3f4f6;
+            color: #1e293b;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #334155;
         }
 
         .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
-            border: 1px solid rgba(0,0,0,0.1);
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            border-radius: 50%;
+            border: 2px solid #000;
             flex-shrink: 0;
         }
 
-        .legend-label {
-            font-size: 0.75rem;
-            color: #4b5563;
-            font-weight: 500;
+        .toggle-btn {
+            width: 100%;
+            padding: 6px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: background 0.2s;
         }
 
-        /* Popup Box */
+        .toggle-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Popup Detail Kavling */
         #popupOverlay {
             position: fixed;
             z-index: 9999;
@@ -187,7 +212,7 @@
             padding: 20px;
             border-radius: 12px;
             width: 300px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
             position: relative;
             pointer-events: all;
             border: 1px solid #e5e7eb;
@@ -249,28 +274,6 @@
             color: #16a34a;
         }
 
-        .btn-reset {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 10;
-            background: rgba(255,255,255,0.9);
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #374151;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: all 0.2s;
-        }
-
-        .btn-reset:hover {
-            background: #fff;
-            border-color: #1e5fa8;
-            color: #1e5fa8;
-        }
-
         .text-white-svg text {
             fill: #ffffff !important;
         }
@@ -280,21 +283,23 @@
                 padding: 15px 10px;
             }
             .siteplan-header {
-                padding: 20px;
+                padding: 18px 15px;
             }
             .siteplan-body {
-                padding: 15px;
+                padding: 15px 10px;
             }
             .svg-view-container {
-                height: 50vh;
+                height: 55vh;
+                min-height: 400px;
             }
-            .legend-box {
-                bottom: 80px;
-                right: 20px;
+            .legend {
+                top: 70px;
+                right: 15px;
+                width: 190px;
             }
-            .legend-toggle {
-                bottom: 20px;
-                right: 20px;
+            .show-btn {
+                top: 70px;
+                right: 15px;
             }
         }
     </style>
@@ -303,14 +308,14 @@
 @section('content')
     <div class="siteplan-container">
         <div class="siteplan-card">
-            {{-- Header (Matching Booking) --}}
+            {{-- Header --}}
             <div class="siteplan-header">
                 <h4>Siteplan Penjualan</h4>
-                <p>Silakan pilih lokasi perumahan dan klik pada unit untuk melihat detail informasi.</p>
+                <p>Silakan pilih lokasi perumahan dan klik pada kavling untuk melihat detail informasi.</p>
             </div>
 
             <div class="siteplan-body">
-                {{-- Tabs --}}
+                {{-- Tabs Perumahan --}}
                 <ul class="nav nav-tabs" id="siteplan-tabs" role="tablist">
                     @foreach ($lokasiKavling as $index => $kav)
                         <li class="nav-item">
@@ -327,74 +332,94 @@
                         <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}" id="pane-{{ $kav->id }}"
                             role="tabpanel">
 
-                            <div class="svg-card-wrapper">
-                                <div class="svg-view-container svg-container" id="svg-container-{{ $kav->id }}">
-                                    <button class="btn btn-reset reset-button">
+                            {{-- Action Toolbar: Zoom In, Zoom Out, Reset & Download Denah --}}
+                            <div class="siteplan-action-bar">
+                                <div class="btn-group-zoom flex-wrap">
+                                    <button type="button" class="btn btn-outline-primary btn-sm btn-zoom-in" title="Perbesar (Zoom In)">
+                                        <i class="fas fa-search-plus mr-1"></i> Zoom In
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm btn-zoom-out" title="Perkecil (Zoom Out)">
+                                        <i class="fas fa-search-minus mr-1"></i> Zoom Out
+                                    </button>
+                                    <div class="zoom-level-badge">100%</div>
+                                    <button type="button" class="btn btn-success btn-sm btn-zoom-reset reset-button" title="Kembalikan Tampilan Awal">
                                         <i class="fas fa-sync-alt mr-1"></i> Reset Siteplan
                                     </button>
+                                    <button type="button" class="btn btn-outline-info btn-sm btn-show-legend font-weight-bold ml-1" onclick="toggleLegend()" title="Lihat Keterangan Status Kavling">
+                                        <i class="fas fa-palette mr-1"></i> Keterangan Status
+                                    </button>
+                                    <a href="{{ route('public.siteplan.cetak.pdf', $kav->id) }}" target="_blank" class="btn btn-danger btn-sm ml-1" title="Unduh Denah dalam Format PDF">
+                                        <i class="fas fa-file-pdf mr-1"></i> Download Denah PDF
+                                    </a>
+                                    <a href="{{ route('public.siteplan.cetak.jpg', $kav->id) }}" target="_blank" class="btn btn-primary btn-sm ml-1" title="Unduh Denah dalam Format JPG">
+                                        <i class="fas fa-file-image mr-1"></i> Download Denah JPG
+                                    </a>
+                                </div>
+                                <div class="text-muted small d-flex align-items-center flex-wrap">
+                                    <span class="badge badge-light border text-dark py-1 px-2 mr-2" style="font-size: 0.8rem;">
+                                        <i class="fas fa-calendar-alt text-primary mr-1"></i> Tanggal Unduh: <strong>{{ now()->translatedFormat('d/m/Y H:i') }} WIB</strong>
+                                    </span>
+                                    <span><i class="fas fa-info-circle mr-1 text-primary"></i> Klik kavling untuk info detail</span>
+                                </div>
+                            </div>
 
-                                    {{-- SVG Render --}}
-                                    @if ($kav->masterSvg)
-                                        {!! str_replace(['[[lebar]]', '[[tinggi]]'], ['100%', '100%'], $kav->masterSvg->header_svg) !!}
+                            {{-- SVG View Container matching Admin --}}
+                            <div class="svg-view-container svg-container" id="svg-container-{{ $kav->id }}">
+                                {{-- SVG Render --}}
+                                @if ($kav->masterSvg)
+                                    {!! str_replace(['[[lebar]]', '[[tinggi]]'], ['100%', '100%'], $kav->masterSvg->header_svg) !!}
 
-                                        @foreach ($kav->kavlingPeta as $pt)
-                                            @php
-                                                $warna = '#ffffff';
+                                    @foreach ($kav->kavlingPeta as $pt)
+                                        @php
+                                            $warna = '#ffffff';
 
-                                                if ($pt->customer) {
-                                                    $warna = $pt->customer->progres->warna ?? '#ffffff';
-                                                } elseif ($pt->status == 1) {
+                                            if ($pt->customer) {
+                                                $warna = $pt->customer->progres->warna ?? '#ffffff';
+                                            } else {
+                                                if ($pt->status == 1) {
                                                     $warna = '#42f202';
                                                 }
-                                            @endphp
+                                            }
+                                        @endphp
 
-                                            @if ($pt->jenis_map == 'polygon')
-                                                <a href="javascript:void(0);" class="detail-button {{ $pt->siteplan_text_color === '#ffffff' ? 'text-white-svg' : '' }}"
-                                                    data-url="{{ route('public.siteplan.show', $pt->id) }}">
-                                                    {!! str_replace(
-                                                        ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
-                                                        [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
-                                                        $kav->masterSvg->polygon_svg,
-                                                    ) !!}
-                                                </a>
-                                            @elseif ($pt->jenis_map == 'path')
-                                                <a href="javascript:void(0);" class="detail-button {{ $pt->siteplan_text_color === '#ffffff' ? 'text-white-svg' : '' }}"
-                                                    data-url="{{ route('public.siteplan.show', $pt->id) }}">
-                                                    {!! str_replace(
-                                                        ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
-                                                        [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
-                                                        $kav->masterSvg->path_svg,
-                                                    ) !!}
-                                                </a>
-                                            @endif
-                                        @endforeach
+                                        <a href="javascript:void(0);" class="detail-button {{ $pt->siteplan_text_color === '#ffffff' ? 'text-white-svg' : '' }}"
+                                            data-url="{{ route('public.siteplan.show', $pt->id) }}">
+                                            {!! str_replace(
+                                                ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
+                                                [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
+                                                $pt->jenis_map == 'polygon' ? $kav->masterSvg->polygon_svg : $kav->masterSvg->path_svg,
+                                            ) !!}
+                                        </a>
+                                    @endforeach
 
-                                        {!! $kav->masterSvg->footer_svg !!}
-                                    @endif
-                                </div>
+                                    {!! $kav->masterSvg->footer_svg !!}
+                                @endif
                             </div>
                         </div>
                     @endforeach
                 </div>
             </div>
+
+            {{-- Footer Copyright --}}
+            <div class="text-center text-muted py-3" style="font-size: 0.85rem; border-top: 1px solid #f1f5f9;">
+                <strong>Copyright &copy; 2026 di Kelola Tim Marcom RK GROUP Property</strong>
+            </div>
         </div>
     </div>
 
-    {{-- Legend --}}
-    <button class="legend-toggle" onclick="toggleLegend()">
-        <i class="fas fa-info-circle"></i>
-    </button>
-    <div class="legend-box hidden" id="legendBox">
-    <div class="legend-title">Keterangan Status</div>
-
+    {{-- Floating Legend modal / dropdown --}}
+    <div class="legend" id="legend" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span class="legend-title font-weight-bold m-0" style="font-size: 13px;">Status Unit:</span>
+            <button type="button" class="close text-muted p-0" onclick="toggleLegend()" style="font-size: 18px; line-height: 1; border:none; background:none;">&times;</button>
+        </div>
         @foreach ($legend as $item)
             <div class="legend-item">
                 <div class="legend-color" style="background-color: {{ $item->warna }}"></div>
-                <div class="legend-label">{{ $item->status_progres }}</div>
+                <span>{{ $item->status_progres }}</span>
             </div>
         @endforeach
-
-        <button class="btn btn-xs btn-block mt-3 text-muted" onclick="toggleLegend()">Tutup</button>
+        <button type="button" class="toggle-btn" onclick="toggleLegend()">Tutup</button>
     </div>
 
     {{-- Detail Popup --}}
@@ -403,14 +428,14 @@
             <button id="popupClose" onclick="closePopup()">&times;</button>
             <div class="popup-arrow"></div>
 
-            <div class="popup-title">Detail Blok / Unit</div>
+            <div class="popup-title">Detail Kavling</div>
 
             <div class="popup-row">
                 <span class="popup-label">Perumahan</span>
                 <span class="popup-value" id="p_nama_kavling">-</span>
             </div>
             <div class="popup-row">
-                <span class="popup-label">Kode Blok / Unit</span>
+                <span class="popup-label">Kode Kavling</span>
                 <span class="popup-value" id="p_kode_kavling">-</span>
             </div>
             <div class="popup-row">
@@ -440,7 +465,13 @@
         let popupUpdateInterval = null;
 
         function toggleLegend() {
-            $('#legendBox').toggleClass('hidden');
+            var legend = document.getElementById("legend");
+            if (!legend) return;
+            if (legend.style.display === "none" || !legend.style.display) {
+                legend.style.display = "block";
+            } else {
+                legend.style.display = "none";
+            }
         }
 
         function updatePopupPosition() {
@@ -526,7 +557,6 @@
         $(window).on('resize scroll', updatePopupPosition);
         $('a[data-toggle="pill"]').on('shown.bs.tab', closePopup);
 
-        // Auto-update position on SVG zoom/pan
         if (window.MutationObserver) {
             const observer = new MutationObserver(() => {
                 if ($('#popupOverlay').is(':visible')) updatePopupPosition();
@@ -538,5 +568,5 @@
             });
         }
     </script>
-    <script src="{{ asset('assets/svg_1.js') }}"></script>
+    <script src="{{ asset('assets/svg_1.js') }}?v={{ time() }}"></script>
 @endpush

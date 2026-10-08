@@ -117,7 +117,7 @@ class PengajuanHoldController extends Controller
 
         Carbon::setLocale('id');
 
-        $marketing = MarketingOffline::all();
+        $marketing = MarketingOffline::where('status', 1)->orderBy('nama_marketing', 'asc')->get();
         $bank      = Bank::all();
         $progres   = ProgresListPenjualan::all();
         $lokasi    = LokasiKavling::all();
@@ -241,8 +241,6 @@ class PengajuanHoldController extends Controller
 
         $request->merge([
             'booking_fee' => $request->booking_fee ? str_replace('.', '', $request->booking_fee) : 0,
-            'besaran_dp'  => $request->besaran_dp ? str_replace('.', '', $request->besaran_dp) : null,
-            'diskon'      => $request->diskon ? str_replace('.', '', $request->diskon) : null,
             'total_harga' => $request->total_harga ? str_replace('.', '', $request->total_harga) : 0,
         ]);
 
@@ -261,7 +259,6 @@ class PengajuanHoldController extends Controller
             'total_harga'     => 'required',
             'id_marketing'    => 'required',
             'booking_fee'     => 'required|gt:0',
-            'besaran_dp'      => 'required|gt:0',
             'jenis_perumahan' => 'required',
             'jenis_pembelian' => 'required',
             'sumber_prospek'  => 'required',
@@ -282,12 +279,12 @@ class PengajuanHoldController extends Controller
             'id_marketing.required'    => 'Marketing wajib dipilih.',
             'booking_fee.required'     => 'Booking fee wajib diisi.',
             'booking_fee.gt'           => 'Booking fee harus lebih dari 0.',
-            'besaran_dp.required'      => 'Besaran DP wajib diisi.',
-            'besaran_dp.gt'            => 'Besaran DP harus lebih dari 0.',
             'jenis_perumahan.required' => 'Jenis Perumahan wajib dipilih.',
             'jenis_pembelian.required' => 'Jenis Pembelian wajib dipilih.',
             'sumber_prospek.required'  => 'Sumber Prospek wajib dipilih.',
         ]);
+
+        DB::beginTransaction();
         try {
             $user = Auth::user();
 
@@ -312,8 +309,6 @@ class PengajuanHoldController extends Controller
                 'id_lokasi'         => $request->id_lokasi,
                 'id_kavling'        => $request->id_kavling,
                 'booking_fee'       => $request->booking_fee,
-                'besaran_dp'        => $request->besaran_dp ? str_replace('.', '', $request->besaran_dp) : null,
-                'diskon'            => $request->diskon ? str_replace('.', '', $request->diskon) : null,
                 'total_harga'       => $request->total_harga,
                 'id_marketing'      => $request->id_marketing,
                 'jenis_perumahan'   => $request->jenis_perumahan,
@@ -361,7 +356,7 @@ class PengajuanHoldController extends Controller
     {
         Carbon::setLocale('id');
 
-        $marketing = MarketingOffline::all();
+        $marketing = MarketingOffline::where('status', 1)->orderBy('nama_marketing', 'asc')->get();
         $bank      = Bank::all();
         $progres   = ProgresListPenjualan::all();
         $lokasi    = LokasiKavling::all();
@@ -371,10 +366,13 @@ class PengajuanHoldController extends Controller
         return view('frontend.booking.index', compact('marketing', 'lokasi', 'progres', 'bank', 'tgl', 'bg'));
     }
 
-    public function bookingSukses()
+    public function bookingSukses(Request $request)
     {
         $bg = PengaturanMedia::where('jenis_data', 'Background booking')->first();
-        return view('frontend.booking.sukses', compact('bg'));
+        $bookingId = $request->get('id') ?? session('booking_id');
+        $booking = $bookingId ? PengajuanHold::with(['lokasi', 'kavling', 'marketing'])->find($bookingId) : null;
+
+        return view('frontend.booking.sukses', compact('bg', 'booking'));
     }
 
     public function upload(Request $request, $id)
@@ -550,8 +548,6 @@ class PengajuanHoldController extends Controller
     {
         $request->merge([
             'booking_fee' => $request->booking_fee ? str_replace('.', '', $request->booking_fee) : 0,
-            'besaran_dp'  => $request->besaran_dp ? str_replace('.', '', $request->besaran_dp) : null,
-            'diskon'      => $request->diskon ? str_replace('.', '', $request->diskon) : null,
             'total_harga' => $request->total_harga ? str_replace('.', '', $request->total_harga) : 0,
         ]);
 
@@ -572,7 +568,6 @@ class PengajuanHoldController extends Controller
             'id_marketing'      => 'required',
             'status_pernikahan' => 'required',
             'booking_fee'       => 'required|gt:0',
-            'besaran_dp'        => 'required|gt:0',
             'jenis_perumahan'   => 'required',
             'jenis_pembelian'   => 'required',
             'sumber_prospek'    => 'required',
@@ -604,8 +599,6 @@ class PengajuanHoldController extends Controller
             'id_marketing.required'      => 'Marketing wajib dipilih.',
             'booking_fee.required'       => 'Booking fee wajib diisi.',
             'booking_fee.gt'             => 'Booking fee harus lebih dari 0.',
-            'besaran_dp.required'        => 'Besaran DP wajib diisi.',
-            'besaran_dp.gt'              => 'Besaran DP harus lebih dari 0.',
             'jenis_perumahan.required'   => 'Jenis Perumahan wajib dipilih.',
             'jenis_pembelian.required'   => 'Jenis Pembelian wajib dipilih.',
             'sumber_prospek.required'    => 'Sumber Prospek wajib dipilih.',
@@ -664,7 +657,7 @@ class PengajuanHoldController extends Controller
 
             $no_registrasi = $this->generateNoRegistrasi();
 
-            PengajuanHold::create([
+            $pengajuan = PengajuanHold::create([
                 'no_registrasi'     => $no_registrasi,
                 'tgl_booking'       => $request->tanggal ?? Carbon::now()->format('Y-m-d'),
                 'nama_lengkap'      => $request->nama_lengkap,
@@ -688,8 +681,6 @@ class PengajuanHoldController extends Controller
                 'id_kavling'        => $request->id_kavling,
                 'total_harga'       => $request->total_harga,
                 'booking_fee'       => $request->booking_fee ?? 0,
-                'besaran_dp'        => $request->besaran_dp ?? null,
-                'diskon'            => $request->diskon ?? null,
                 'id_marketing'      => $request->id_marketing ?? 0,
                 'jenis_perumahan'   => $request->jenis_perumahan ?? '',
                 'jenis_pembelian'   => $request->jenis_pembelian ?? '',
@@ -710,14 +701,18 @@ class PengajuanHoldController extends Controller
             DB::commit();
 
             session([
-                'nama'   => $request->nama_lengkap,
-                'lokasi' => LokasiKavling::find($request->id_lokasi)->nama_kavling,
-                'blok'   => KavlingPeta::find($request->id_kavling)->kode_kavling,
+                'booking_id'    => $pengajuan->id,
+                'no_registrasi' => $pengajuan->no_registrasi,
+                'nama'          => $request->nama_lengkap,
+                'lokasi'        => LokasiKavling::find($request->id_lokasi)->nama_kavling,
+                'blok'          => KavlingPeta::find($request->id_kavling)->kode_kavling,
             ]);
 
             return response()->json([
-                'status'  => 'success',
-                'message' => 'Booking berhasil.',
+                'status'       => 'success',
+                'message'      => 'Booking berhasil.',
+                'booking_id'   => $pengajuan->id,
+                'redirect_url' => route('booking.sukses', ['id' => $pengajuan->id]),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -806,7 +801,6 @@ class PengajuanHoldController extends Controller
             'foto_bpjs'    => 'Foto BPJS',
             'foto_ktp_p'   => 'Foto KTP Pasangan',
             'foto_pemohon' => 'Foto Pemohon',
-            'file_sppr'    => 'Bukti Proses Admin',
         ];
 
         $customerFiles = [];
@@ -815,26 +809,19 @@ class PengajuanHoldController extends Controller
 
             if ($data->$field && File::exists($oldPath)) {
                 $customerPath = public_path('assets/customer/' . $data->$field);
-                File::ensureDirectoryExists(dirname($customerPath));
 
                 File::copy($oldPath, $customerPath);
 
                 if ($field === 'file_bukti') {
                     $keuanganPath = public_path('assets/keuangan/pemasukan/' . $data->$field);
-                    File::ensureDirectoryExists(dirname($keuanganPath));
                     File::copy($oldPath, $keuanganPath);
                 }
+
+                File::delete($oldPath);
 
                 $customerFiles[$field] = $data->$field;
             } else {
                 $customerFiles[$field] = null;
-            }
-        }
-
-        foreach ($files as $field => $label) {
-            $oldPath = public_path('assets/booking/' . $data->$field);
-            if ($data->$field && File::exists($oldPath)) {
-                File::delete($oldPath);
             }
         }
 
@@ -869,9 +856,7 @@ class PengajuanHoldController extends Controller
             'no_bpjs_kes'          => $data->no_bpjs_kes,
             'pekerjaan'            => $data->pekerjaan,
             'id_bank'              => $request->id_bank,
-            'id_status_progres'    => 10,
-            'besaran_dp'           => $data->besaran_dp,
-            'diskon'               => $data->diskon,
+            'id_status_progres'    => (ProgresListPenjualan::where('id', 11)->orWhere('status_progres', 'LIKE', '%Pemberkasan Marketing%')->value('id') ?? 11),
             'an_surat_cash'        => $request->an_surat_cash,
             'termin_x_cash_b'      => $request->termin_x_cash_b ?? 0,
             'id_admin_pemberkasan' => $data->id_admin_pemberkasan,
@@ -943,7 +928,7 @@ class PengajuanHoldController extends Controller
             'jenis_pembelian'      => 'required',
             'id_metode_bayar'      => 'required',
             'id_bank'              => 'required',
-            'id_admin_pemberkasan' => 'required|exists:admin_pemberkasan,id',
+            'id_admin_pemberkasan' => 'nullable|exists:admin_pemberkasan,id',
             'an_surat_cash'        => 'required_if:jenis_pembelian,Pembelian Cash',
             'termin_x_cash_b'      => 'required_if:jenis_pembelian,Cash Bertahap',
         ];
@@ -953,8 +938,7 @@ class PengajuanHoldController extends Controller
             'jenis_pembelian.required'    => 'Jenis Pembelian wajib dipilih!',
             'id_metode_bayar.required'    => 'Metode Pembayaran wajib dipilih!',
             'id_bank.required'            => 'Bank wajib dipilih!',
-            'id_admin_pemberkasan.required' => 'Admin Pemberkasan wajib dipilih!',
-            'id_admin_pemberkasan.exists'   => 'Admin Pemberkasan tidak ditemukan!',
+            'id_admin_pemberkasan.exists' => 'Admin Pemberkasan tidak ditemukan!',
             'an_surat_cash.required_if'   => 'Atas Nama Surat wajib diisi!',
             'termin_x_cash_b.required_if' => 'Termin wajib diisi!',
         ];
@@ -993,17 +977,13 @@ class PengajuanHoldController extends Controller
 
                 $rincian    = $data->rincian_biaya ?? [];
                 $bookingFee = (int) ($data->booking_fee ?? 0);
-                $diskon     = (int) ($data->diskon ?? 0);
+                $sisaBayar  = $data->total_harga - $bookingFee;
 
                 foreach ($rincian as $item) {
                     $nama  = $item['nama'] ?? '';
                     $nilai = (int) ($item['nilai'] ?? 0);
                     if ($nilai <= 0) {
                         continue;
-                    }
-
-                    if ($nama === 'Harga Rumah' && $diskon > 0) {
-                        $nilai = $nilai - $diskon;
                     }
 
                     $terbayar = 0;
@@ -1042,6 +1022,11 @@ class PengajuanHoldController extends Controller
                 ];
 
                 Pemasukan::create($p1);
+
+                KavlingPeta::where('id', $data->id_kavling)->update([
+                    'status'      => 2,
+                    'id_customer' => $customer->id,
+                ]);
             } else {
                 $db = [
                     'stt_reg'              => $request->stt_reg,
@@ -1050,8 +1035,6 @@ class PengajuanHoldController extends Controller
 
                 $data->update($db);
             }
-
-            KavlingPeta::where('id', $data->id_kavling)->update(['status' => 2]);
 
             DB::commit();
 
@@ -1106,5 +1089,283 @@ class PengajuanHoldController extends Controller
                 'error'  => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Cetak Kwitansi Sementara / Draf Bukti Booking
+     */
+    public function cetakKwitansiSementara($id)
+    {
+        $booking = PengajuanHold::with(['lokasi', 'kavling', 'marketing'])->findOrFail($id);
+        $konfigurasi = DB::table('konfigurasi')->first();
+        $profil = \App\Models\PengaturanProfil::first();
+        $media = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Rekap')->orWhere('jenis_data', 'Logo Aplikasi')->first();
+
+        $namaPerusahaan = $konfigurasi->nama_perusahaan ?? $profil->nama_perusahaan ?? 'RK GROUP PROPERTY';
+        $alamatPerusahaan = $profil->alamat ?? 'Jl. Raya Tanjungpinang - Bintan';
+        $telpPerusahaan = $profil->telp ?? '0812-xxxx-xxxx';
+
+        $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+        $pdf->SetCreator('RK Group Property');
+        $pdf->SetAuthor($namaPerusahaan);
+        $pdf->SetTitle('Kwitansi Sementara Booking - ' . ($booking->no_registrasi ?? $booking->id));
+        $pdf->SetMargins(15, 12, 15);
+        $pdf->SetAutoPageBreak(true, 12);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->AddPage();
+
+        // 1. Watermark Miring DRAF / SEMENTARA
+        $pdf->SetAlpha(0.12);
+        $pdf->SetFont('helvetica', 'B', 42);
+        $pdf->SetTextColor(220, 38, 38);
+        $pdf->StartTransform();
+        $pdf->Rotate(32, 105, 140);
+        $pdf->Text(25, 135, 'DRAF / SEMENTARA');
+        $pdf->StopTransform();
+        $pdf->SetAlpha(1);
+
+        // 2. Header / Kop Kwitansi
+        $logoPath = null;
+        if ($media && $media->nama_file && file_exists(public_path('config_media/' . $media->nama_file))) {
+            $logoPath = public_path('config_media/' . $media->nama_file);
+        }
+
+        if ($logoPath) {
+            $pdf->Image($logoPath, 15, 12, 20);
+            $pdf->SetXY(38, 12);
+            $pdf->SetFont('helvetica', 'B', 14);
+            $pdf->SetTextColor(15, 23, 42);
+            $pdf->Cell(155, 6, strtoupper($namaPerusahaan), 0, 1, 'L');
+            $pdf->SetX(38);
+            $pdf->SetFont('helvetica', '', 8.5);
+            $pdf->SetTextColor(71, 85, 105);
+            $pdf->Cell(155, 4.5, $alamatPerusahaan . ' | Telp: ' . $telpPerusahaan, 0, 1, 'L');
+            $pdf->SetX(38);
+            $pdf->Cell(155, 4.5, 'Sistem Penjualan Perumahan Dealaska - RK GROUP Property', 0, 1, 'L');
+        } else {
+            $pdf->SetFont('helvetica', 'B', 15);
+            $pdf->SetTextColor(15, 23, 42);
+            $pdf->Cell(0, 6, strtoupper($namaPerusahaan), 0, 1, 'C');
+            $pdf->SetFont('helvetica', '', 9);
+            $pdf->SetTextColor(71, 85, 105);
+            $pdf->Cell(0, 4.5, $alamatPerusahaan . ' | Telp: ' . $telpPerusahaan, 0, 1, 'C');
+        }
+
+        // Garis Kop
+        $pdf->SetY(31);
+        $pdf->SetDrawColor(30, 95, 168);
+        $pdf->SetLineWidth(0.8);
+        $pdf->Line(15, 31, 195, 31);
+        $pdf->SetDrawColor(180, 200, 230);
+        $pdf->SetLineWidth(0.3);
+        $pdf->Line(15, 32, 195, 32);
+
+        $pdf->Ln(4);
+
+        // 3. Judul Dokumen & Badge Draf
+        $pdf->SetFont('helvetica', 'B', 13);
+        $pdf->SetTextColor(13, 59, 102);
+        $pdf->Cell(0, 6, 'KWITANSI PENGAJUAN BOOKING (SEMENTARA)', 0, 1, 'C');
+
+        $pdf->SetFont('helvetica', 'B', 8.5);
+        $pdf->SetTextColor(180, 83, 9);
+        $pdf->Cell(0, 5, '[ DRAF SEMENTARA - MENUNGGU PERSETUJUAN / ACC ADMIN ]', 0, 1, 'C');
+
+        $pdf->Ln(3);
+
+        // 4. Baris Nomor Registrasi & Tanggal
+        $pdf->SetFont('helvetica', '', 9.5);
+        $pdf->SetTextColor(30, 41, 59);
+
+        $pdf->SetFillColor(248, 250, 252);
+        $pdf->SetDrawColor(226, 232, 240);
+        $pdf->RoundedRect(15, $pdf->GetY(), 180, 11, 2, '1111', 'DF');
+
+        $curY = $pdf->GetY() + 2.5;
+        $pdf->SetXY(18, $curY);
+        $pdf->SetFont('helvetica', 'B', 9);
+        $pdf->Cell(30, 6, 'No. Registrasi', 0, 0);
+        $pdf->Cell(4, 6, ':', 0, 0);
+        $pdf->SetTextColor(30, 95, 168);
+        $pdf->Cell(55, 6, $booking->no_registrasi ?? ('REG-' . str_pad($booking->id, 5, '0', STR_PAD_LEFT)), 0, 0);
+
+        $pdf->SetTextColor(30, 41, 59);
+        $pdf->Cell(25, 6, 'Tanggal', 0, 0);
+        $pdf->Cell(4, 6, ':', 0, 0);
+        $pdf->SetFont('helvetica', '', 9);
+        $pdf->Cell(55, 6, \Carbon\Carbon::parse($booking->tgl_booking ?? now())->translatedFormat('d F Y'), 0, 1);
+
+        $pdf->Ln(5);
+
+        // 5. Tabel Data Kwitansi
+        $rowHeight = 7;
+        $lblW = 42;
+        $sepW = 4;
+        $valW = 134;
+
+        $pdf->SetTextColor(20, 20, 20);
+
+        // Telah Terima Dari
+        $pdf->SetFont('helvetica', '', 9.5);
+        $pdf->Cell($lblW, $rowHeight, 'Telah Terima Dari', 0, 0);
+        $pdf->Cell($sepW, $rowHeight, ':', 0, 0);
+        $pdf->SetFont('helvetica', 'B', 9.5);
+        $pdf->Cell($valW, $rowHeight, strtoupper($booking->nama_lengkap ?? '-'), 0, 1);
+
+        // NIK / No. KTP
+        $pdf->SetFont('helvetica', '', 9.5);
+        $pdf->Cell($lblW, $rowHeight, 'NIK / No. KTP', 0, 0);
+        $pdf->Cell($sepW, $rowHeight, ':', 0, 0);
+        $pdf->Cell($valW, $rowHeight, $booking->nik ?? '-', 0, 1);
+
+        // No. Telepon / HP
+        $pdf->Cell($lblW, $rowHeight, 'No. Telepon / HP', 0, 0);
+        $pdf->Cell($sepW, $rowHeight, ':', 0, 0);
+        $pdf->Cell($valW, $rowHeight, $booking->no_telp ?? '-', 0, 1);
+
+        // Alamat
+        $pdf->Cell($lblW, $rowHeight, 'Alamat Konsumen', 0, 0);
+        $pdf->Cell($sepW, $rowHeight, ':', 0, 0);
+        $pdf->MultiCell($valW, $rowHeight, $booking->alamat_domisili ?? $booking->alamat_ktp ?? '-', 0, 'L', false, 1);
+
+        // Lokasi Perumahan
+        $namaLokasi = $booking->lokasi->nama_kavling ?? '-';
+        $pdf->Cell($lblW, $rowHeight, 'Lokasi Perumahan', 0, 0);
+        $pdf->Cell($sepW, $rowHeight, ':', 0, 0);
+        $pdf->SetFont('helvetica', 'B', 9.5);
+        $pdf->Cell($valW, $rowHeight, $namaLokasi, 0, 1);
+
+        // Unit / Blok Kavling
+        $kodeKavling = $booking->kavling->kode_kavling ?? '-';
+        $pdf->SetFont('helvetica', '', 9.5);
+        $pdf->Cell($lblW, $rowHeight, 'Unit / Blok Kavling', 0, 0);
+        $pdf->Cell($sepW, $rowHeight, ':', 0, 0);
+        $pdf->SetFont('helvetica', 'B', 9.5);
+        $pdf->Cell($valW, $rowHeight, $kodeKavling, 0, 1);
+
+        // Marketing Penanganan
+        $namaMarketing = $booking->marketing->nama_marketing ?? '-';
+        $pdf->SetFont('helvetica', '', 9.5);
+        $pdf->Cell($lblW, $rowHeight, 'Marketing Penanganan', 0, 0);
+        $pdf->Cell($sepW, $rowHeight, ':', 0, 0);
+        $pdf->Cell($valW, $rowHeight, $namaMarketing, 0, 1);
+
+        // Untuk Pembayaran
+        $pdf->Cell($lblW, $rowHeight, 'Untuk Pembayaran', 0, 0);
+        $pdf->Cell($sepW, $rowHeight, ':', 0, 0);
+        $pdf->Cell($valW, $rowHeight, 'Booking Fee / Tanda Jadi Unit Rumah ' . $kodeKavling . ' - ' . $namaLokasi, 0, 1);
+
+        // Uang Sejumlah
+        $bookingFee = $booking->booking_fee ?? 0;
+        $pdf->SetFont('helvetica', 'B', 9.5);
+        $pdf->Cell($lblW, $rowHeight + 2, 'Uang Sejumlah', 0, 0);
+        $pdf->Cell($sepW, $rowHeight + 2, ':', 0, 0);
+
+        // Highlight Nominal Box
+        $pdf->SetFillColor(238, 242, 255);
+        $pdf->SetTextColor(30, 95, 168);
+        $pdf->SetFont('helvetica', 'B', 12);
+        $pdf->Cell(65, $rowHeight + 2, '  Rp ' . number_format($bookingFee, 0, ',', '.') . ',-', 1, 0, 'L', true);
+
+        $pdf->SetTextColor(20, 20, 20);
+        $pdf->Ln($rowHeight + 4);
+
+        // Terbilang
+        $terbilangTeks = ucwords(trim($this->terbilang($bookingFee))) . ' Rupiah';
+        $pdf->SetFont('helvetica', 'I', 9);
+        $pdf->Cell($lblW, 6, 'Terbilang', 0, 0);
+        $pdf->Cell($sepW, 6, ':', 0, 0);
+        $pdf->SetFont('helvetica', 'BI', 9.5);
+        $pdf->SetTextColor(70, 70, 70);
+        $pdf->MultiCell($valW, 6, '# ' . $terbilangTeks . ' #', 0, 'L', false, 1);
+
+        $pdf->Ln(3);
+
+        // 6. KOTAK PERINGATAN / CATATAN KHUSUS (DRAF SEMENTARA)
+        $pdf->SetTextColor(120, 53, 15);
+        $pdf->SetFillColor(254, 243, 199);
+        $pdf->SetDrawColor(245, 158, 11);
+        $pdf->SetLineWidth(0.4);
+
+        $boxY = $pdf->GetY();
+        $pdf->RoundedRect(15, $boxY, 180, 24, 2, '1111', 'DF');
+
+        $pdf->SetXY(18, $boxY + 2);
+        $pdf->SetFont('helvetica', 'B', 8.5);
+        $pdf->Cell(174, 4.5, 'CATATAN PENTING & STATUS DOKUMEN:', 0, 1, 'L');
+
+        $pdf->SetFont('helvetica', '', 7.8);
+        $pdf->SetX(18);
+        $pdf->Cell(174, 4, '1. Kwitansi ini adalah BUKTI BOOKING SEMENTARA (DRAF) yang digenerate otomatis sebagai tanda bukti registrasi awal.', 0, 1, 'L');
+        $pdf->SetX(18);
+        $pdf->Cell(174, 4, '2. Kwitansi ini belum disahkan oleh bagian Keuangan/Admin dan hanya berlaku sementara selama masa verifikasi.', 0, 1, 'L');
+        $pdf->SetX(18);
+        $pdf->SetFont('helvetica', 'B', 7.8);
+        $pdf->Cell(174, 4, '3. KWITANSI ASLI YANG SAH akan diterbitkan dan dikirimkan oleh Admin RK Group Property setelah proses booking di-ACC.', 0, 1, 'L');
+
+        $pdf->SetY($boxY + 27);
+
+        // 7. Area Tanda Tangan
+        $pdf->SetTextColor(30, 41, 59);
+        $pdf->SetFont('helvetica', '', 9);
+
+        $signY = $pdf->GetY();
+        $pdf->SetXY(20, $signY);
+        $pdf->Cell(65, 5, 'Pemohon / Konsumen,', 0, 0, 'C');
+
+        $pdf->SetXY(120, $signY);
+        $pdf->Cell(65, 5, 'Admin RK Group Property,', 0, 1, 'C');
+
+        $pdf->SetXY(120, $signY + 5);
+        $pdf->SetFont('helvetica', 'I', 8);
+        $pdf->SetTextColor(180, 83, 9);
+        $pdf->Cell(65, 4, '(Menunggu Verifikasi & ACC)', 0, 1, 'C');
+
+        // Space ttd
+        $pdf->SetY($signY + 20);
+        $pdf->SetTextColor(20, 20, 20);
+        $pdf->SetFont('helvetica', 'B', 9);
+        $pdf->SetX(20);
+        $pdf->Cell(65, 5, '( ' . strtoupper($booking->nama_lengkap ?? 'KONSUMEN') . ' )', 0, 0, 'C');
+
+        $pdf->SetX(120);
+        $pdf->Cell(65, 5, '( ADMIN OPERASIONAL )', 0, 1, 'C');
+
+        // Footer info cetak
+        $pdf->SetY(275);
+        $pdf->SetFont('helvetica', 'I', 7.5);
+        $pdf->SetTextColor(148, 163, 184);
+        $pdf->Cell(0, 4, 'Waktu Cetak: ' . now()->translatedFormat('d F Y H:i:s') . ' WIB | Sistem Penjualan Perumahan Dealaska - RK GROUP Property', 0, 1, 'C');
+
+        return response($pdf->Output('Kwitansi_Sementara_' . ($booking->no_registrasi ?? $booking->id) . '.pdf', 'I'))
+            ->header('Content-Type', 'application/pdf');
+    }
+
+    private function terbilang($angka)
+    {
+        $angka = abs($angka);
+        $baca  = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+        $hasil = "";
+
+        if ($angka < 12) {
+            $hasil = " " . $baca[$angka];
+        } elseif ($angka < 20) {
+            $hasil = $this->terbilang($angka - 10) . " Belas";
+        } elseif ($angka < 100) {
+            $hasil = $this->terbilang((int) ($angka / 10)) . " Puluh" . $this->terbilang($angka % 10);
+        } elseif ($angka < 200) {
+            $hasil = " Seratus" . $this->terbilang($angka - 100);
+        } elseif ($angka < 1000) {
+            $hasil = $this->terbilang((int) ($angka / 100)) . " Ratus" . $this->terbilang($angka % 100);
+        } elseif ($angka < 2000) {
+            $hasil = " Seribu" . $this->terbilang($angka - 1000);
+        } elseif ($angka < 1000000) {
+            $hasil = $this->terbilang((int) ($angka / 1000)) . " Ribu" . $this->terbilang($angka % 1000);
+        } elseif ($angka < 1000000000) {
+            $hasil = $this->terbilang((int) ($angka / 1000000)) . " Juta" . $this->terbilang($angka % 1000000);
+        }
+
+        return trim($hasil);
     }
 }

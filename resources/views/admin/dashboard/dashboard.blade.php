@@ -23,8 +23,8 @@
                         <!-- small box -->
                         <div class="small-box bg-primary">
                             <div class="inner">
-                                <h3>{{ $totalKavling }} / {{ $totalKavling }}</h3>
-                                <p>Total Unit</p>
+                                <h3>{{ $totalCustomer ?? $totalKavling }} / {{ $totalKavling }}</h3>
+                                <p>Terjual / Total Unit</p>
                             </div>
                             <div class="icon">
                                 <i class="ion ion-bag"></i>
@@ -39,7 +39,7 @@
                         <div class="small-box bg-danger">
                             <div class="inner">
                                 <h3>{{ $merah }}</h3>
-                                <p>Booking</p>
+                                <p>Booking / Marketing</p>
                             </div>
                             <div class="icon">
                                 <i class="ion ion-stats-bars"></i>

@@ -26,9 +26,9 @@ class DashboardController extends Controller
         $tglSekarang   = Carbon::now()->translatedFormat('j F Y');
         $totalKavling  = KavlingPeta::count();
         $totalCustomer = Customer::count();
-        $merah        = Customer::where('id_status_progres', 10)->count();
-        $hijau         = Customer::where('id_status_progres', 7)->count();
-        $ungu           = Customer::where('id_status_progres', 3)->count();
+        $merah         = Customer::whereIn('id_status_progres', [2, 11])->count();
+        $hijau         = Customer::whereIn('id_status_progres', [7, 4])->count();
+        $ungu          = Customer::where('id_status_progres', 3)->count();
 
         $kolomStatus = ProgresListPenjualan::where('stt_tampil', 1)
             ->where('id', '!=', 8)
@@ -152,6 +152,7 @@ class DashboardController extends Controller
 
         return view('admin.dashboard.dashboard', compact(
             'totalKavling',
+            'totalCustomer',
             'tglSekarang',
             'dataLokasi',
             'dataProgres',

@@ -63,6 +63,33 @@
             position: relative;
         }
 
+        /* Styling interaktif kavling */
+        polygon.kavling-poly, path.kavling-poly {
+            transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+        }
+        /* Unit belum terjual (putih #ffffff) dibuat transparan agar gambar denah & nomor lot terlihat jelas tanpa bertumpuk */
+        polygon.kavling-poly[style*="#ffffff"],
+        polygon.kavling-poly[style*="#FFFFFF"],
+        polygon.kavling-poly[style*="fill:#ffffff"],
+        polygon.kavling-poly[style*="fill: #ffffff"],
+        path.kavling-poly[style*="#ffffff"],
+        path.kavling-poly[style*="#FFFFFF"],
+        path.kavling-poly[style*="fill:#ffffff"],
+        path.kavling-poly[style*="fill: #ffffff"] {
+            fill: transparent !important;
+            stroke: rgba(37, 99, 235, 0.35) !important;
+            stroke-width: 1px !important;
+        }
+        /* Efek hover interaktif */
+        polygon.kavling-poly:hover,
+        path.kavling-poly:hover {
+            fill: rgba(59, 130, 246, 0.45) !important;
+            stroke: #1d4ed8 !important;
+            stroke-width: 2.5px !important;
+            filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.7));
+            cursor: pointer !important;
+        }
+
         .svg-container svg {
             width: 100%;
             height: 100%;
@@ -213,7 +240,7 @@
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-indigo">
-                    <h5 class="modal-title text-white font-weight-bold" id="modalDetailLabel">Detail Blok / Unit</h5>
+                    <h5 class="modal-title text-white font-weight-bold" id="modalDetailLabel">Detail Data Kavling</h5>
                     <div class="ml-auto d-flex align-items-center">
                         <button type="button" class="btn btn-primary btn-sm mr-2" id="btn-cetak">
                             <i class="fas fa-print"></i> Cetak Data
@@ -257,7 +284,7 @@
                                             <input type="text" name="nama_kavling" id="nama_kavling"
                                                 class="form-control" readonly>
                                         </div>
-                                        <label class="col-sm-2 col-form-label">Kode Blok / Unit</label>
+                                        <label class="col-sm-2 col-form-label">Kode Kavling</label>
                                         <div class="col-sm-2">
                                             <input type="text" name="kode_kavling" id="kode_kavling"
                                                 class="form-control" readonly>
@@ -588,7 +615,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal',
-                    text: 'Data tidak lengkap. Pastikan detail unit sudah dimuat.',
+                    text: 'Data tidak lengkap. Pastikan detail kavling sudah dimuat.',
                 });
                 return;
             }

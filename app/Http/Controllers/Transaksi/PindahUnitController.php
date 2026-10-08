@@ -22,13 +22,11 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\SimpleType\Jc;
 use TCPDF;
-use App\Traits\KopSuratPdfTrait;
 use Yajra\DataTables\DataTables;
 
 class PindahUnitController extends Controller
 {
     use LogAktivitasTrait;
-    use KopSuratPdfTrait;
     protected GenerateNumberController $generator;
 
     public function __construct(GenerateNumberController $generator)
@@ -108,7 +106,7 @@ class PindahUnitController extends Controller
         }
 
         $customers = Customer::select(['id', 'nama_lengkap'])
-            ->whereIn('id_status_progres', [2, 4, 7, 10, 11])->where('stt_arsip', 0)
+            ->whereIn('id_status_progres', [2, 4, 7])->where('stt_arsip', 0)
             ->get();
 
         $tanggalSekarang = Carbon::now('Asia/Jakarta')->format('Y-m-d');
@@ -433,52 +431,45 @@ class PindahUnitController extends Controller
     $pdf->SetTitle('Rekap Pindah Unit - ' . $customer->nama_lengkap);
     $pdf->AddPage();
 
-        $kopSurat = $this->kopSuratLokasi($customer->id_lokasi);
-
-        if ($kopSurat) {
-            $this->gambarKopSurat($pdf, $kopSurat);
-            $pdf->Ln(4);
-        } else {
-          $mediaRekap = PengaturanMedia::where('jenis_data', 'Logo Rekap')->first();
-            $pathRekap  = null;
-            if ($mediaRekap && $mediaRekap->nama_file) {
-                $pathRekap = public_path('config_media/' . $mediaRekap->nama_file);
-            }
-
-             if ($pathRekap && file_exists($pathRekap)) {
-                $pdf->Image($pathRekap, 15, 12, 30, 25);
-            }
-
-        $pdf->SetFont('helvetica', 'B', 25);
-        $pdf->SetTextColor(0, 51, 102);
-        $pdf->Cell(0, 7, 'PT. ALAM INDAH SELALU', 0, 1, 'C');
-
-        $pdf->SetFont('Times', '', 11);
-        $pdf->SetTextColor(218, 0, 0);
-        $pdf->Cell(0, 6, 'KONTRAKTOR - DEVELOPER', 0, 1, 'C');
-
-        $pdf->SetFont('Times', '', 9);
-        $pdf->SetTextColor(0, 0, 0);
-        $pdf->MultiCell(
-                0,
-                0,
-                'Komplek Ruko Hawai Garden Blok B No. 2 Kelurahan Belian Batan - Center',
-                0,
-                'C'
-            );
-            $pdf->SetX(10);
-            $pdf->cell(0, 0, 'Telp. 0778 - 4173387', 0, 1, 'C');
-
-        $pdf->Ln(5);
-        $pdf->SetDrawColor(0, 0, 0);
-        $pdf->SetLineWidth(0.7);
-        $pdf->Line(10, 42, 200, 42);
-
-        $pdf->SetLineWidth(0.3);
-        $pdf->Line(10, 41, 200, 41);
-
-        $pdf->Ln(8);
+      $mediaRekap = PengaturanMedia::where('jenis_data', 'Logo Rekap')->first();
+        $pathRekap  = null;
+        if ($mediaRekap && $mediaRekap->nama_file) {
+            $pathRekap = public_path('config_media/' . $mediaRekap->nama_file);
         }
+
+         if ($pathRekap && file_exists($pathRekap)) {
+            $pdf->Image($pathRekap, 15, 12, 30, 25);
+        }
+
+    $pdf->SetFont('helvetica', 'B', 25);
+    $pdf->SetTextColor(0, 51, 102);
+    $pdf->Cell(0, 7, 'PT. ALAM INDAH SELALU', 0, 1, 'C');
+
+    $pdf->SetFont('Times', '', 11);
+    $pdf->SetTextColor(218, 0, 0);
+    $pdf->Cell(0, 6, 'KONTRAKTOR - DEVELOPER', 0, 1, 'C');
+
+    $pdf->SetFont('Times', '', 9);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->MultiCell(
+            0,
+            0,
+            'Komplek Ruko Hawai Garden Blok B No. 2 Kelurahan Belian Batan - Center',
+            0,
+            'C'
+        );
+        $pdf->SetX(10);
+        $pdf->cell(0, 0, 'Telp. 0778 - 4173387', 0, 1, 'C');
+
+    $pdf->Ln(5);
+    $pdf->SetDrawColor(0, 0, 0);
+    $pdf->SetLineWidth(0.7);
+    $pdf->Line(10, 42, 200, 42);
+
+    $pdf->SetLineWidth(0.3);
+    $pdf->Line(10, 41, 200, 41);
+
+    $pdf->Ln(8);
     $pdf->SetFont('Times', 'B', 10);
     $pdf->SetTextColor(218, 0, 0);
     $pdf->Cell(190, 8, 'TABEL REKAP PINDAH UNIT', 0, 1, 'C');

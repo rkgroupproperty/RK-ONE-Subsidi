@@ -301,12 +301,23 @@
                             use Illuminate\Support\Str;
                             use Illuminate\Support\Facades\Route as RouteFacade;
                             $menus = session('getmenus', collect());
+                            $currentRoute = request()->route();
+                            $currentRouteName = $currentRoute ? (string) $currentRoute->getName() : '';
+                            $currentPrefix = $currentRouteName !== '' ? Str::before($currentRouteName, '.') : '';
                         @endphp
 
                         @foreach ($menus as $menu)
                             @php
-                                $children = $menu->children->filter(fn ($child) => RouteFacade::has($child->route_name));
-                                $hasMenuRoute = RouteFacade::has($menu->route_name);
+                                $children = ($menu->children ?? collect())->filter(fn ($child) => !empty($child->route_name) && RouteFacade::has($child->route_name));
+                                $children = $children->map(function ($child) {
+                                    if ($child->id == 95 || $child->route_name == 'proses-marketing.index') {
+                                        $child->urutan = 2;
+                                    } elseif ($child->id == 86 || $child->route_name == 'proses-admin.index') {
+                                        $child->urutan = 3;
+                                    }
+                                    return $child;
+                                })->sortBy('urutan')->values();
+                                $hasMenuRoute = !empty($menu->route_name) && RouteFacade::has($menu->route_name);
 
                                 if (! $hasMenuRoute && $children->isEmpty()) {
                                     continue;
@@ -314,10 +325,12 @@
 
                                 $isActiveParent = false;
                                 foreach ($children as $child) {
+                                    $childPrefix = !empty($child->route_name) ? Str::before($child->route_name, '.') : '';
                                     if (
-                                        request()->routeIs($child->route_name . '*') ||
-                                        Str::before(request()->route()->getName(), '.') ===
-                                            Str::before($child->route_name, '.')
+                                        !empty($child->route_name) && (
+                                            request()->routeIs($child->route_name . '*') ||
+                                            ($currentPrefix !== '' && $currentPrefix === $childPrefix)
+                                        )
                                     ) {
                                         $isActiveParent = true;
                                         break;
@@ -327,13 +340,15 @@
 
                             @if ($children->isEmpty())
                                 @php
+                                    $menuPrefix = !empty($menu->route_name) ? Str::before($menu->route_name, '.') : '';
                                     $isActiveSingle =
-                                        request()->routeIs($menu->route_name . '*') ||
-                                        Str::before(request()->route()->getName(), '.') ===
-                                            Str::before($menu->route_name, '.');
+                                        !empty($menu->route_name) && (
+                                            request()->routeIs($menu->route_name . '*') ||
+                                            ($currentPrefix !== '' && $currentPrefix === $menuPrefix)
+                                        );
                                 @endphp
                                 <li class="nav-item">
-                                    <a href="{{ route($menu->route_name) }}"
+                                    <a href="{{ $hasMenuRoute ? route($menu->route_name) : '#' }}"
                                         class="nav-link {{ $isActiveSingle ? '' : '' }}"
                                         style="{{ $isActiveSingle ? 'background-color: #6610f2 !important; color: #ffffff !important;' : '' }}">
                                         <i class="nav-icon fas {{ $menu->icon }}"
@@ -357,16 +372,18 @@
                                     <ul class="nav nav-treeview">
                                         @foreach ($children as $child)
                                             @php
+                                                $childPrefix = !empty($child->route_name) ? Str::before($child->route_name, '.') : '';
                                                 $isActiveChild =
-                                                    request()->routeIs($child->route_name . '*') ||
-                                                    Str::before(request()->route()->getName(), '.') ===
-                                                        Str::before($child->route_name, '.');
+                                                    !empty($child->route_name) && (
+                                                        request()->routeIs($child->route_name . '*') ||
+                                                        ($currentPrefix !== '' && $currentPrefix === $childPrefix)
+                                                    );
                                             @endphp
                                             <li class="nav-item">
-                                                <a href="{{ route($child->route_name) }}"
+                                                <a href="{{ RouteFacade::has($child->route_name) ? route($child->route_name) : '#' }}"
                                                     class="nav-link {{ $isActiveChild ? 'active' : '' }}">
                                                     <i class="far fa-circle nav-icon"></i>
-                                                    <p>{{ $child->title }}</p>
+                                                    <p>{{ ($child->id == 95 || $child->route_name == 'proses-marketing.index') ? 'Pemberkasan Marketing' : $child->title }}</p>
                                                 </a>
                                             </li>
                                         @endforeach
@@ -397,8 +414,7 @@
         <!-- /.content-wrapper -->
 
         <footer class="main-footer">
-            <strong>Copyright &copy; {{ date('Y') }} <a href="#"
-                    class="text-gray">{{ $konfigurasi->nama_perusahaan ?? 'Template Aplikasi' }}</a>.</strong>
+            <strong>Copyright &copy; 2026 di Kelola Tim Marcom RK GROUP Property</strong>
         </footer>
 
         <!-- Control Sidebar -->

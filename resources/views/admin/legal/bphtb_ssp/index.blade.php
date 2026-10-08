@@ -80,7 +80,7 @@
                                 </select>
                             </div>
 
-                            <label for="id_kavling" class="col-sm-2 col-form-label">Blok / Unit</label>
+                            <label for="id_kavling" class="col-sm-2 col-form-label">Blok/Kav</label>
                             <div class="col-sm-2">
                                 <select name="id_kavling" id="id_kavling" class="form-control select-kavling"></select>
                             </div>
@@ -136,7 +136,7 @@
             });
             $('.select-kavling').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Blok / Unit",
+                placeholder: "Pilih Kavling",
             });
            $('.select-bphtb').select2({
                 theme: "bootstrap4",

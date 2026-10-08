@@ -32,7 +32,7 @@
                                             <th width="5%">No</th>
                                             <th>Perumahan</th>
                                             <th width="25%">Alamat</th>
-                                            <th width="15%">Jumlah Unit</th>
+                                            <th width="15%">Jumlah Kavling</th>
                                             <th width="20%">Action</th>
                                         </tr>
                                     </thead>
@@ -99,8 +99,8 @@
                         <div class="form-group row">
                             <label class="col-sm-2 col-form-label">Perusahaan</label>
                             <div class="col-sm-8">
-                                <select name="id_perusahaan" id="id_perusahaan" class="form-select select-perusahaan"
-                                    data-placeholder="Pilih Perusahaan">
+                                <select name="id_perusahaan[]" id="id_perusahaan" class="form-select select-perusahaan"
+                                    multiple="multiple" data-placeholder="Pilih Perusahaan">
                                     <option value=""></option>
                                     @foreach ($perusahaanList as $perusahaan)
                                         <option value="{{ $perusahaan->id }}">{{ $perusahaan->nama_perusahaan }}</option>
@@ -275,7 +275,8 @@
                     $('#is_cluster').val(response.data.is_cluster).trigger('change');
 
                     if (response.data.perusahaan) {
-                        $('#id_perusahaan').val(response.data.id_perusahaan).trigger('change');
+                        let perusahaanIds = response.data.perusahaan.map(p => p.id_perusahaan);
+                        $('#id_perusahaan').val(perusahaanIds).trigger('change');
                     }
 
                     $('#modalForm').modal('show');
@@ -294,7 +295,7 @@
             $('#is_cluster').val('').trigger('change');
             $('#reset_nomor').val('').trigger('change');
 
-            $('#id_perusahaan').val('').trigger('change.select2');
+            $('#id_perusahaan').val(null).trigger('change.select2');
 
             let submitBtn = $('#submitBtn');
             let spinner = submitBtn.find('.spinner-border');
@@ -336,8 +337,8 @@
                 success: function(response) {
                     $('#modalForm').modal('hide');
                     audio.play();
-let msg = id ? "Lokasi berhasil diupdate!" :
-                    "Lokasi berhasil ditambahkan!";
+                    let msg = id ? "Lokasi Kavling berhasil diupdate!" :
+                        "Lokasi Kavling berhasil ditambahkan!";
                     toastr.success(msg, "BERHASIL", {
                         progressBar: true,
                         timeOut: 3500,
@@ -380,7 +381,7 @@ let msg = id ? "Lokasi berhasil diupdate!" :
 
             Swal.fire({
                 title: 'Apakah Anda yakin?',
-                text: 'Lokasi ini akan dihapus secara permanen!',
+                text: 'Lokasi Kavling ini akan dihapus secara permanen!',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: '<span class="swal-btn-text">Ya, Hapus</span>',
@@ -406,7 +407,7 @@ let msg = id ? "Lokasi berhasil diupdate!" :
                             data: form.serialize(),
                             success: function() {
                                 audio.play();
-                                toastr.success("Lokasi telah dihapus!",
+                                toastr.success("Lokasi Kavling telah dihapus!",
                                     "BERHASIL", {
                                         progressBar: true,
                                         timeOut: 3500,

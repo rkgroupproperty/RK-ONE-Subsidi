@@ -28,16 +28,85 @@ class BerandaController extends Controller
     {
         $username = Auth::user()->username;
 
-        $periode = $this->hitungPeriode($request);
-        $periodeFilter = $periode['periode_filter'];
-        $filterBulan = $periode['filter_bulan'];
-        $filterTahun = $periode['filter_tahun'];
-        $customStart = $periode['custom_start'];
-        $customEnd = $periode['custom_end'];
-        $labelPeriode = $periode['label_periode'];
-        $bookingFeePeriode = $periode['booking_fee_periode'];
-        $customerPeriode = $periode['customer_periode'];
+        Carbon::setLocale('id');
+        $now = Carbon::now('Asia/Jakarta');
 
+        $periodeFilter = $request->input('periode', 'bulan_ini');
+        $filterBulan = (int) $request->input('bulan', $now->month);
+        $filterTahun = (int) $request->input('tahun', $now->year);
+        $customStart = $request->input('start_date');
+        $customEnd = $request->input('end_date');
+
+        $isFilteredByDate = true;
+
+        switch ($periodeFilter) {
+            case 'bulan_kemarin':
+                $startCarbon = $now->copy()->subMonth()->startOfMonth();
+                $endCarbon = $now->copy()->subMonth()->endOfMonth();
+                $labelPeriode = 'Bulan Kemarin (' . $startCarbon->translatedFormat('F Y') . ')';
+                break;
+            case 'pilih_bulan':
+                $startCarbon = Carbon::create($filterTahun, $filterBulan, 1, 0, 0, 0, 'Asia/Jakarta')->startOfMonth();
+                $endCarbon = $startCarbon->copy()->endOfMonth();
+                $labelPeriode = $startCarbon->translatedFormat('F Y');
+                break;
+            case 'custom':
+                if ($customStart && $customEnd) {
+                    $startCarbon = Carbon::parse($customStart, 'Asia/Jakarta')->startOfDay();
+                    $endCarbon = Carbon::parse($customEnd, 'Asia/Jakarta')->endOfDay();
+                    $labelPeriode = $startCarbon->translatedFormat('d M Y') . ' - ' . $endCarbon->translatedFormat('d M Y');
+                } else {
+                    $startCarbon = $now->copy()->startOfMonth();
+                    $endCarbon = $now->copy()->endOfMonth();
+                    $labelPeriode = 'Bulan Ini (' . $startCarbon->translatedFormat('F Y') . ')';
+                }
+                break;
+            case 'semua':
+                $isFilteredByDate = false;
+                $startCarbon = null;
+                $endCarbon = null;
+                $labelPeriode = 'Semua Waktu';
+                break;
+            case 'bulan_ini':
+            default:
+                $periodeFilter = 'bulan_ini';
+                $startCarbon = $now->copy()->startOfMonth();
+                $endCarbon = $now->copy()->endOfMonth();
+                $labelPeriode = 'Bulan Ini (' . $startCarbon->translatedFormat('F Y') . ')';
+                break;
+        }
+
+        // Hitung Booking Fee & Customer pada periode terpilih
+        $bookingFeeQuery = PengajuanHold::query();
+        $pemasukanBfQuery = \App\Models\Pemasukan::where('id_kategori_transaksi', 1);
+        $customerPeriodeQuery = Customer::where('stt_arsip', 0);
+
+        if ($isFilteredByDate && $startCarbon && $endCarbon) {
+            $bookingFeeQuery->whereBetween('tgl_booking', [$startCarbon->toDateTimeString(), $endCarbon->toDateTimeString()]);
+            $pemasukanBfQuery->whereBetween('tanggal', [$startCarbon->toDateString(), $endCarbon->toDateString()]);
+            $customerPeriodeQuery->whereBetween('tanggal_verif', [$startCarbon->toDateTimeString(), $endCarbon->toDateTimeString()]);
+        }
+
+        $bookingFeePeriode = (int) $bookingFeeQuery->sum('booking_fee') + (int) $pemasukanBfQuery->sum('nominal');
+        $customerPeriode = $customerPeriodeQuery->count();
+
+        $pipelineCounts = [
+            'booking' => PengajuanHold::where('stt_reg', '!=', 2)->count()
+                + Customer::where('id_status_progres', 2)->where('stt_arsip', 0)->count(),
+            'marketing' => Customer::where('id_status_progres', 11)->where('stt_arsip', 0)->count(),
+            'sppr' => Customer::where('id_status_progres', 10)->where('stt_arsip', 0)->count()
+                + SPPR::whereDoesntHave('customer')->count(),
+            'wawancara' => Customer::where('id_status_progres', 7)->where('stt_arsip', 0)->count()
+                + Wawancara::where('status', 1)->whereDoesntHave('customer')->count(),
+            'acc_bank' => Customer::where('id_status_progres', 4)->where('stt_arsip', 0)->count()
+                + WawancaraSp3k::where('status', 1)->whereDoesntHave('wawancara.customer')->count(),
+            'ppjb' => PPJB::whereHas('customer', fn ($query) => $query->where('stt_arsip', 0))->count()
+                + Customer::where('id_status_progres', 6)->where('stt_arsip', 0)->count(),
+            'akad' => Customer::where('id_status_progres', 3)->where('stt_arsip', 0)->count()
+                + AkadDetail::whereDoesntHave('customer')->count(),
+            'bast' => Customer::where('id_status_progres', 5)->where('stt_arsip', 0)->count()
+                + BAST::whereHas('customer', fn ($query) => $query->where('stt_arsip', 0))->count(),
+        ];
 
         $totalUnit = KavlingPeta::count();
         $unitTerjual = Customer::where('stt_arsip', 0)->count();
@@ -119,18 +188,6 @@ class BerandaController extends Controller
             'terjual' => $projectStats->sum('terjual'),
         ];
 
-        // Pipeline disamakan dengan total per project agar angka kartu dan tabel selalu sinkron
-        $pipelineCounts = [
-            'booking' => $projectTotals['booking'],
-            'marketing' => $projectTotals['marketing'],
-            'sppr' => $projectTotals['sppr'],
-            'wawancara' => $projectTotals['wawancara'],
-            'acc_bank' => $projectTotals['acc_bank'],
-            'ppjb' => $projectTotals['ppjb'],
-            'akad' => $projectTotals['akad'],
-            'bast' => $projectTotals['bast'],
-        ];
-
         $marketingStats = MarketingOffline::where('status', 1)
             ->orderBy('nama_marketing')
             ->get()
@@ -210,10 +267,7 @@ class BerandaController extends Controller
         $currentYear = Carbon::now('Asia/Jakarta')->year;
 
         $projectResumes = $this->getProjectResumes();
-        $hasilSumber = $this->getSumberProspekMatrix();
-        $sumberMatrix = $hasilSumber['data'];
-        $tahunAktif = $hasilSumber['tahun_aktif'];
-        $tahunLalu = $hasilSumber['tahun_lalu'];
+        $sumberMatrix = $this->getSumberProspekMatrix();
 
         $monthKeys = [
             1 => 'jan', 2 => 'feb', 3 => 'mar', 4 => 'apr',
@@ -228,31 +282,25 @@ class BerandaController extends Controller
                 $sum += ($item[$mKey] ?? 0);
             }
             $monthlyTotals[$mNum] = $sum;
+        $total2025 = 0;
+        $total2026 = 0;
+        foreach ($sumberMatrix as $src => $item) {
+            $total2025 += ($item['y2025'] ?? 0);
+            $total2026 += ($item['y2026'] ?? 0);
         }
 
-        $totalSpAktif = 0;
-        $totalSpLalu = 0;
-        foreach ($sumberMatrix as $itemSp) {
-            $totalSpAktif += $itemSp['total_aktif'];
-            $totalSpLalu += $itemSp['total_lalu'];
-        }
-        $bulanBerjalanSp = $tahunAktif === (int) Carbon::now('Asia/Jakarta')->year ? max((int) Carbon::now('Asia/Jakarta')->month, 1) : 12;
-        $rataSpAktif = round($totalSpAktif / $bulanBerjalanSp, 1);
+        $growth = $total2026 - $total2025;
+        $growthPct = $total2025 > 0 ? round(($growth / $total2025) * 100, 1) : 0.0;
+        $growthRata = round($growth / 12, 1);
+
         $yoySummary = [
-            'total_aktif' => $totalSpAktif,
-            'total_lalu' => $totalSpLalu,
-            'growth' => $totalSpAktif - $totalSpLalu,
-            'growth_pct' => $totalSpLalu > 0 ? round(($totalSpAktif - $totalSpLalu) / $totalSpLalu * 100, 1) : 0,
-            'growth_rata' => round($rataSpAktif - round($totalSpLalu / 12, 1), 1),
-            'rata_aktif' => $rataSpAktif,
+            'total_2025'  => $total2025,
+            'total_2026'  => $total2026,
+            'growth'      => $growth,
+            'growth_pct'  => $growthPct,
+            'growth_rata' => $growthRata,
+            'rata_2026'   => round($total2026 / 12, 1),
         ];
-        $spTopSumber = '-';
-        foreach ($sumberMatrix as $srcSp => $itemSp) {
-            if ($itemSp['total_aktif'] > 0) {
-                $spTopSumber = $srcSp . ' (' . $itemSp['total_aktif'] . ' unit)';
-                break;
-            }
-        }
 
         return view('admin.beranda.index', compact(
             'username',
@@ -268,90 +316,8 @@ class BerandaController extends Controller
             'projectResumes',
             'sumberMatrix',
             'monthlyTotals',
-            'yoySummary',
-            'tahunAktif',
-            'tahunLalu',
-            'spTopSumber'
+            'yoySummary'
         ));
-    }
-
-    public function periodeData(Request $request)
-    {
-        return response()->json($this->hitungPeriode($request));
-    }
-
-    private function hitungPeriode(Request $request)
-    {
-        Carbon::setLocale('id');
-        $now = Carbon::now('Asia/Jakarta');
-
-        $periodeFilter = $request->input('periode', 'bulan_ini');
-        $filterBulan = (int) $request->input('bulan', $now->month);
-        $filterTahun = (int) $request->input('tahun', $now->year);
-        $customStart = $request->input('start_date');
-        $customEnd = $request->input('end_date');
-
-        $isFilteredByDate = true;
-
-        switch ($periodeFilter) {
-            case 'bulan_kemarin':
-                $startCarbon = $now->copy()->subMonth()->startOfMonth();
-                $endCarbon = $now->copy()->subMonth()->endOfMonth();
-                $labelPeriode = 'Bulan Kemarin (' . $startCarbon->translatedFormat('F Y') . ')';
-                break;
-            case 'pilih_bulan':
-                $startCarbon = Carbon::create($filterTahun, $filterBulan, 1, 0, 0, 0, 'Asia/Jakarta')->startOfMonth();
-                $endCarbon = $startCarbon->copy()->endOfMonth();
-                $labelPeriode = $startCarbon->translatedFormat('F Y');
-                break;
-            case 'custom':
-                if ($customStart && $customEnd) {
-                    $startCarbon = Carbon::parse($customStart, 'Asia/Jakarta')->startOfDay();
-                    $endCarbon = Carbon::parse($customEnd, 'Asia/Jakarta')->endOfDay();
-                    $labelPeriode = $startCarbon->translatedFormat('d M Y') . ' - ' . $endCarbon->translatedFormat('d M Y');
-                } else {
-                    $startCarbon = $now->copy()->startOfMonth();
-                    $endCarbon = $now->copy()->endOfMonth();
-                    $labelPeriode = 'Bulan Ini (' . $startCarbon->translatedFormat('F Y') . ')';
-                }
-                break;
-            case 'semua':
-                $isFilteredByDate = false;
-                $startCarbon = null;
-                $endCarbon = null;
-                $labelPeriode = 'Semua Waktu';
-                break;
-            case 'bulan_ini':
-            default:
-                $periodeFilter = 'bulan_ini';
-                $startCarbon = $now->copy()->startOfMonth();
-                $endCarbon = $now->copy()->endOfMonth();
-                $labelPeriode = 'Bulan Ini (' . $startCarbon->translatedFormat('F Y') . ')';
-                break;
-        }
-
-        // Booking Fee yang benar-benar diterima pada periode terpilih (kas masuk kategori Booking Fee)
-        $pemasukanBfQuery = \App\Models\Pemasukan::where('id_kategori_transaksi', 1);
-        $customerPeriodeQuery = Customer::where('stt_arsip', 0);
-
-        if ($isFilteredByDate && $startCarbon && $endCarbon) {
-            $pemasukanBfQuery->whereBetween('tanggal', [$startCarbon->toDateString(), $endCarbon->toDateString()]);
-            $customerPeriodeQuery->whereBetween('tanggal_verif', [$startCarbon->toDateTimeString(), $endCarbon->toDateTimeString()]);
-        }
-
-        $bookingFeePeriode = (int) $pemasukanBfQuery->sum('nominal');
-        $customerPeriode = $customerPeriodeQuery->count();
-
-        return [
-            'periode_filter' => $periodeFilter,
-            'filter_bulan' => $filterBulan,
-            'filter_tahun' => $filterTahun,
-            'custom_start' => $customStart,
-            'custom_end' => $customEnd,
-            'label_periode' => $labelPeriode,
-            'booking_fee_periode' => $bookingFeePeriode,
-            'customer_periode' => $customerPeriode,
-        ];
     }
 
     public function getChartData(Request $request)
@@ -459,16 +425,11 @@ class BerandaController extends Controller
             ->editColumn('id_status_progres', function ($row) {
                 $status = $row->progres->status_progres ?? '-';
                 $badgeColors = [
-                    'Ready' => 'secondary',
-                    'Booking' => 'warning',
-                    'Akad' => 'info',
+                    'BOOKING FEE' => 'warning',
+                    'PROSES BANK' => 'secondary',
                     'SP3K' => 'success',
-                    'Serah Terima' => 'dark',
-                    'PROSES BANK' => 'primary',
-                    'Pembelian Cash' => 'success',
-                    'Unit Sudah Laku' => 'dark',
-                    'Proses Admin' => 'info',
-                    'Pemberkasan Marketing' => 'primary',
+                    'AKAD' => 'info',
+                    'SERAH TERIMA' => 'dark',
                 ];
                 if (array_key_exists($status, $badgeColors)) {
                     $statusDisplay = '<span class="badge bg-' . $badgeColors[$status] . '">' . $status . '</span>';
@@ -490,9 +451,7 @@ class BerandaController extends Controller
     public function getSumberProspekData(Request $request)
     {
         $filterBulan = $request->input('bulan', 'semua');
-        $hasilSumber = $this->getSumberProspekMatrix();
-        $sumberMatrix = $hasilSumber['data'];
-        $tahunAktif = $hasilSumber['tahun_aktif'];
+        $sumberMatrix = $this->getSumberProspekMatrix();
 
         $monthNames = [
             1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
@@ -512,7 +471,7 @@ class BerandaController extends Controller
         if ($filterBulan !== 'semua' && isset($monthKeys[(int)$filterBulan])) {
             $mKey = $monthKeys[(int)$filterBulan];
             $monthName = $monthNames[(int)$filterBulan];
-            $periodeLabel = "Bulan $monthName $tahunAktif";
+            $periodeLabel = "Bulan $monthName 2026";
 
             $temp = [];
             foreach ($sumberMatrix as $src => $data) {
@@ -522,10 +481,10 @@ class BerandaController extends Controller
             $labels = array_keys($temp);
             $values = array_values($temp);
         } else {
-            $periodeLabel = 'Tahun ' . $tahunAktif . ' (Semua Bulan)';
+            $periodeLabel = 'Tahun 2026 (Semua Bulan)';
             $temp = [];
             foreach ($sumberMatrix as $src => $data) {
-                $temp[$src] = $data['total_aktif'];
+                $temp[$src] = $data['y2026'];
             }
             arsort($temp);
             $labels = array_keys($temp);
@@ -551,93 +510,114 @@ class BerandaController extends Controller
 
     private function getSumberProspekMatrix()
     {
-        $tahunAktif = (int) Carbon::now('Asia/Jakarta')->year;
-        $tahunLalu = $tahunAktif - 1;
-
+        $channels = ['Iklan Kantor', 'Market Place FB', 'Freelance', 'Kanvasing', 'Sosmed Pribadi', 'Sosmed Kantor', 'Referensi', 'WIC'];
+        $base = [];
         $monthKeys = [
             1 => 'jan', 2 => 'feb', 3 => 'mar', 4 => 'apr',
             5 => 'mei', 6 => 'jun', 7 => 'jul', 8 => 'aug',
             9 => 'sep', 10 => 'okt', 11 => 'nov', 12 => 'des',
         ];
-        $monthCols = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];
 
-        $rows = Customer::where('stt_arsip', 0)
-            ->whereNotNull('tanggal_verif')
-            ->whereYear('tanggal_verif', '>=', $tahunLalu)
-            ->select('sumber_prospek', DB::raw('YEAR(tanggal_verif) as thn'), DB::raw('MONTH(tanggal_verif) as bln'), DB::raw('COUNT(*) as total'))
-            ->groupBy('sumber_prospek', 'thn', 'bln')
-            ->get();
+        foreach ($channels as $ch) {
+            $base[$ch] = [
+                'jan' => 0, 'feb' => 0, 'mar' => 0, 'apr' => 0,
+                'mei' => 0, 'jun' => 0, 'jul' => 0, 'aug' => 0,
+                'sep' => 0, 'okt' => 0, 'nov' => 0, 'des' => 0,
+                'y2025' => 0, 'y2026' => 0, 'rata_rata' => 0.0, 'growth' => 0, 'growth_rata' => 0.0
+            ];
+        }
 
-        $base = [];
-        foreach ($rows as $row) {
-            $src = trim((string) ($row->sumber_prospek ?? ''));
-            if ($src === '') {
-                $src = '(Tanpa Sumber)';
+        $normalizeChannel = function ($raw) use ($channels) {
+            if (empty($raw)) return 'Referensi';
+            $c = strtolower(trim($raw));
+
+            if (str_contains($c, 'iklan kantor') || $c === 'iklan') return 'Iklan Kantor';
+            if (str_contains($c, 'market place') || str_contains($c, 'marketplace') || str_contains($c, 'fb') || str_contains($c, 'facebook')) return 'Market Place FB';
+            if (str_contains($c, 'freelance') || str_contains($c, 'agen')) return 'Freelance';
+            if (str_contains($c, 'kanvas') || str_contains($c, 'canvas') || str_contains($c, 'flyer') || str_contains($c, 'sebar')) return 'Kanvasing';
+            if (str_contains($c, 'sosmed kantor') || str_contains($c, 'ig kantor') || str_contains($c, 'tiktok kantor')) return 'Sosmed Kantor';
+            if (str_contains($c, 'sosmed') || str_contains($c, 'instagram') || str_contains($c, 'ig') || str_contains($c, 'tiktok') || str_contains($c, 'wa')) return 'Sosmed Pribadi';
+            if (str_contains($c, 'wic') || str_contains($c, 'walk') || str_contains($c, 'kantor') || str_contains($c, 'lokasi')) return 'WIC';
+            if (str_contains($c, 'referensi') || str_contains($c, 'teman') || str_contains($c, 'keluarga') || str_contains($c, 'konsumen')) return 'Referensi';
+
+            foreach ($channels as $ch) {
+                if (strcasecmp($ch, $raw) === 0) return $ch;
             }
-            if (! isset($base[$src])) {
-                $base[$src] = array_fill_keys($monthCols, 0) + ['total_lalu' => 0, 'total_aktif' => 0, 'rata_rata' => 0, 'growth' => 0, 'growth_rata' => 0];
-            }
-            if ((int) $row->thn === $tahunAktif) {
-                $mKey = $monthKeys[(int) $row->bln] ?? null;
-                if ($mKey) {
-                    $base[$src][$mKey] += (int) $row->total;
+
+            return 'Referensi';
+        };
+
+        try {
+            // 1. Data Customer Terverifikasi Tahun 2026
+            $customers2026 = Customer::where('stt_arsip', 0)
+                ->where(function ($q) {
+                    $q->whereYear('tanggal_verif', 2026)
+                      ->orWhere(function ($q2) {
+                          $q2->whereNull('tanggal_verif')->where('id', '>', 455);
+                      });
+                })
+                ->get(['sumber_prospek', 'tanggal_verif', 'id']);
+
+            foreach ($customers2026 as $row) {
+                $matchedKey = $normalizeChannel($row->sumber_prospek ?? '');
+                $bln = $row->tanggal_verif ? (int) Carbon::parse($row->tanggal_verif)->month : (int) Carbon::now('Asia/Jakarta')->month;
+                $mKey = $monthKeys[$bln] ?? null;
+                if ($mKey && isset($base[$matchedKey])) {
+                    $base[$matchedKey][$mKey]++;
                 }
-            } elseif ((int) $row->thn === $tahunLalu) {
-                $base[$src]['total_lalu'] += (int) $row->total;
             }
+
+            // 2. Data Booking Masuk Baru di Pengajuan Hold Tahun 2026 yang belum diverifikasi
+            $holds2026 = PengajuanHold::where('stt_reg', '!=', 2)
+                ->where(function ($q) {
+                    $q->whereYear('tgl_booking', 2026)
+                      ->orWhereNull('tgl_booking');
+                })
+                ->get(['sumber_prospek', 'tgl_booking']);
+
+            foreach ($holds2026 as $hold) {
+                $matchedKey = $normalizeChannel($hold->sumber_prospek ?? '');
+                $bln = $hold->tgl_booking ? (int) Carbon::parse($hold->tgl_booking)->month : (int) Carbon::now('Asia/Jakarta')->month;
+                $mKey = $monthKeys[$bln] ?? null;
+                if ($mKey && isset($base[$matchedKey])) {
+                    $base[$matchedKey][$mKey]++;
+                }
+            }
+
+            // 3. Data Baseline Tahun 2025
+            $customers2025 = Customer::where('stt_arsip', 0)
+                ->whereYear('tanggal_verif', 2025)
+                ->get(['sumber_prospek']);
+
+            foreach ($customers2025 as $row) {
+                $matchedKey = $normalizeChannel($row->sumber_prospek ?? '');
+                if (isset($base[$matchedKey])) {
+                    $base[$matchedKey]['y2025']++;
+                }
+            }
+
+            // 4. Kalkulasi Total 2026, Rata-rata, dan Growth
+            foreach ($base as $k => &$item) {
+                $sum2026 = 0;
+                for ($m = 1; $m <= 12; $m++) {
+                    $sum2026 += $item[$monthKeys[$m]];
+                }
+                $item['y2026'] = $sum2026;
+                $item['rata_rata'] = round($sum2026 / 12, 1);
+                $item['growth'] = $item['y2026'] - $item['y2025'];
+                $item['growth_rata'] = round($item['growth'] / 12, 1);
+            }
+            unset($item);
+        } catch (\Exception $e) {
+            Log::error('Error getSumberProspekMatrix: ' . $e->getMessage());
         }
 
-        $bulanBerjalan = $tahunAktif === (int) Carbon::now('Asia/Jakarta')->year ? (int) Carbon::now('Asia/Jakarta')->month : 12;
-        $bulanBerjalan = max($bulanBerjalan, 1);
-
-        foreach ($base as $k => &$item) {
-            $sum = 0;
-            foreach ($monthCols as $mk) {
-                $sum += $item[$mk];
-            }
-            $item['total_aktif'] = $sum;
-            $item['rata_rata'] = round($sum / $bulanBerjalan, 1);
-            $item['growth'] = $sum - $item['total_lalu'];
-            $item['growth_rata'] = round($item['rata_rata'] - round($item['total_lalu'] / 12, 1), 1);
-        }
-        unset($item);
-
-        uasort($base, fn($a, $b) => $b['total_aktif'] <=> $a['total_aktif']);
-
-        return ['data' => $base, 'tahun_aktif' => $tahunAktif, 'tahun_lalu' => $tahunLalu];
+        return $base;
     }
 
     private function getProjectResumes()
     {
-        $configs = [
-            'bir4' => [
-                'id' => 2,
-                'nama' => 'Bukit Intan Residence Tahap 4',
-                'short_name' => 'BIR Tahap 4',
-                'badge' => 'Tahap 4',
-                'default_total' => 322,
-                'catatan' => 'Belum terjual rumah dibangun (Kantor Pemasaran 2 unit)',
-                'fisik_ref' => ['SP3K' => 4, 'Proses Bank' => 6, 'Admin' => 1, 'Marketing' => 15, 'Belum Terjual' => 14],
-            ],
-            'bir2' => [
-                'id' => 1,
-                'nama' => 'Bukit Intan Residence 2',
-                'short_name' => 'BIR 2',
-                'badge' => 'Tahap 2',
-                'default_total' => 268,
-                'catatan' => 'Belum terjual rumah dibangun (Kantor Pemasaran 2 unit) · Jumlah unit blok A1 dan A2 = 37 unit',
-                'fisik_ref' => ['SP3K' => 2, 'Proses Bank' => 0, 'Admin' => 4, 'Marketing' => 9, 'Belum Terjual' => 30],
-            ],
-            'art3' => [
-                'id' => 3,
-                'nama' => 'Alzafa Residence Tahap 3',
-                'short_name' => 'Alzafa T3',
-                'badge' => 'Tahap 3',
-                'default_total' => 244,
-                'catatan' => 'Belum terjual rumah dibangun (Kantor Pemasaran 1 unit)',
-                'fisik_ref' => ['SP3K' => 0, 'Proses Bank' => 0, 'Admin' => 0, 'Marketing' => 0, 'Belum Terjual' => 0],
-            ],
-        ];
+        $lokasis = LokasiKavling::where('stt_tampil', 1)->orderBy('urutan', 'asc')->get();
 
         $resumes = [];
         $totalAllUnits = 0;
@@ -654,15 +634,15 @@ class BerandaController extends Controller
             'Belum Terjual (Rumah Dibangun)' => ['unit' => 0, 'fisik' => 0, 'icon' => 'fa-home', 'color' => '#ec4899'],
         ];
 
-        foreach ($configs as $key => $cfg) {
-            $lokasiId = $cfg['id'];
+        foreach ($lokasis as $lokasi) {
+            $lokasiId = $lokasi->id;
+            $key = 'lok_' . $lokasiId;
             $totalUnit = KavlingPeta::where('id_lokasi', $lokasiId)->count();
-            if ($totalUnit <= 0) $totalUnit = $cfg['default_total'];
 
             $akad = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 3)->where('stt_arsip', 0)->count()
                 + AkadDetail::whereHas('customer', fn ($q) => $q->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('customer', fn ($q) => $q->where('id_status_progres', 3))->count();
 
-            $cash = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->whereIn('jenis_pembelian', ['Pembelian Cash', 'Cash Bertahap'])->count();
+            $cash = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->where('jenis_pembelian', 'Cash')->count();
 
             $sp3k = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 4)->where('stt_arsip', 0)->count()
                 + WawancaraSp3k::where('status', 1)->whereHas('wawancara.customer', fn ($q) => $q->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('wawancara.customer', fn ($q) => $q->where('id_status_progres', 4))->count();
@@ -686,11 +666,11 @@ class BerandaController extends Controller
             $pctProses = $totalUnit > 0 ? round(($onProses / $totalUnit) * 100, 1) : 0;
             $pctSisa = $totalUnit > 0 ? round(($sisaUnit / $totalUnit) * 100, 1) : 0;
 
-            $fSP3K = min($sp3k, $cfg['fisik_ref']['SP3K']);
-            $fBank = min($bank, $cfg['fisik_ref']['Proses Bank']);
-            $fAdmin = min($admin, $cfg['fisik_ref']['Admin']);
-            $fMkt = min($marketing, $cfg['fisik_ref']['Marketing']);
-            $fBelum = $cfg['fisik_ref']['Belum Terjual'];
+            $fSP3K = $sp3k;
+            $fBank = $bank;
+            $fAdmin = $admin;
+            $fMkt = $marketing;
+            $fBelum = 0;
             $totalFisik = $fSP3K + $fBank + $fAdmin + $fMkt + $fBelum;
 
             $prosesItems = [
@@ -703,9 +683,9 @@ class BerandaController extends Controller
 
             $resumes[$key] = [
                 'id' => $lokasiId,
-                'nama' => $cfg['nama'],
-                'short_name' => $cfg['short_name'],
-                'badge' => $cfg['badge'],
+                'nama' => $lokasi->nama_kavling,
+                'short_name' => $lokasi->nama_singkat ?: $lokasi->nama_kavling,
+                'badge' => $lokasi->nama_singkat ?: 'Komersil',
                 'total_unit' => $totalUnit,
                 'total_terjual' => $terjual,
                 'persentase_terjual' => $pctTerjual,
@@ -718,7 +698,7 @@ class BerandaController extends Controller
                 'proses_items' => $prosesItems,
                 'total_unit_proses' => $onProses,
                 'total_fisik_proses' => $totalFisik,
-                'catatan' => $cfg['catatan'],
+                'catatan' => 'Unit siap dipasarkan / booking',
             ];
 
             $totalAllUnits += $totalUnit;
@@ -768,7 +748,7 @@ class BerandaController extends Controller
             'proses_items' => $allProsesList,
             'total_unit_proses' => $totalAllProses,
             'total_fisik_proses' => $totalAllFisik,
-            'catatan' => 'Total konsolidasi seluruh Perumahan Aktif (sinkron otomatis dari database)',
+            'catatan' => 'Total konsolidasi seluruh Perumahan Komersil (sinkron otomatis dari database)',
         ];
 
         return $resumes;
@@ -858,16 +838,11 @@ class BerandaController extends Controller
             ->editColumn('id_status_progres', function ($row) {
                 $status = $row->progres->status_progres ?? '-';
                 $badgeColors = [
-                    'Ready' => 'secondary',
-                    'Booking' => 'warning',
-                    'Akad' => 'info',
+                    'BOOKING FEE' => 'warning',
+                    'PROSES BANK' => 'secondary',
                     'SP3K' => 'success',
-                    'Serah Terima' => 'dark',
-                    'PROSES BANK' => 'primary',
-                    'Pembelian Cash' => 'success',
-                    'Unit Sudah Laku' => 'dark',
-                    'Proses Admin' => 'info',
-                    'Pemberkasan Marketing' => 'primary',
+                    'AKAD' => 'info',
+                    'SERAH TERIMA' => 'dark',
                 ];
                 if (array_key_exists($status, $badgeColors)) {
                     return '<span class="badge bg-' . $badgeColors[$status] . '">' . $status . '</span>';
@@ -917,16 +892,11 @@ class BerandaController extends Controller
             ->editColumn('id_status_progres', function ($row) {
                 $status = $row->progres->status_progres ?? '-';
                 $badgeColors = [
-                    'Ready' => 'secondary',
-                    'Booking' => 'warning',
-                    'Akad' => 'info',
+                    'BOOKING FEE' => 'warning',
+                    'PROSES BANK' => 'secondary',
                     'SP3K' => 'success',
-                    'Serah Terima' => 'dark',
-                    'PROSES BANK' => 'primary',
-                    'Pembelian Cash' => 'success',
-                    'Unit Sudah Laku' => 'dark',
-                    'Proses Admin' => 'info',
-                    'Pemberkasan Marketing' => 'primary',
+                    'AKAD' => 'info',
+                    'SERAH TERIMA' => 'dark',
                 ];
                 if (array_key_exists($status, $badgeColors)) {
                     return '<span class="badge bg-' . $badgeColors[$status] . '">' . $status . '</span>';

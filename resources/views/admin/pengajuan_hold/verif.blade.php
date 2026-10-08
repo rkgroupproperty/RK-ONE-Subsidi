@@ -146,7 +146,7 @@
                                         </div>
 
                                         <div class="form-group row">
-                                            <label class="col-sm-4 col-form-label">Blok / Unit</label>
+                                            <label class="col-sm-4 col-form-label">Blok Kavling</label>
                                             <div class="col-sm-8">
                                                 <input type="text" value="{{ $data->kavling->kode_kavling ?? '-' }}"
                                                     class="form-control" readonly>
@@ -212,34 +212,6 @@
                                                     </div>
                                                     <input type="text" name="booking_fee" id="booking_fee"
                                                         value="{{ number_format((float) $data->booking_fee, 0, ',', '.') }}"
-                                                        class="form-control" readonly>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group row">
-                                            <label class="col-sm-4 col-form-label">Besaran DP</label>
-                                            <div class="col-sm-8">
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <span class="input-group-text">Rp.</span>
-                                                    </div>
-                                                    <input type="text"
-                                                        value="{{ number_format((float) $data->besaran_dp, 0, ',', '.') }}"
-                                                        class="form-control" readonly>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group row">
-                                            <label class="col-sm-4 col-form-label">Diskon</label>
-                                            <div class="col-sm-8">
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <span class="input-group-text">Rp.</span>
-                                                    </div>
-                                                    <input type="text"
-                                                        value="{{ number_format((float) $data->diskon, 0, ',', '.') }}"
                                                         class="form-control" readonly>
                                                 </div>
                                             </div>
@@ -353,7 +325,7 @@
 
                                     <div class="form-group row">
                                         <label for="stt_reg" class="col-sm-2 col-form-label">Status Verifikasi</label>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-4">
                                             <select name="stt_reg" id="stt_reg" class="form-control select-status">
                                                 <option value=""></option>
                                                 <option value="1" {{ $data->stt_reg == 1 ? 'selected' : '' }}>Pending
@@ -363,18 +335,6 @@
                                                 </option>
                                                 <option value="3" {{ $data->stt_reg == 3 ? 'selected' : '' }}>Ditolak
                                                 </option>
-                                            </select>
-                                        </div>
-                                        <label for="id_admin_pemberkasan" class="col-sm-2 col-form-label">Admin Pemberkasan</label>
-                                        <div class="col-sm-3">
-                                            <select name="id_admin_pemberkasan" id="id_admin_pemberkasan"
-                                                class="form-control select-admin-pemberkasan">
-                                                <option value=""></option>
-                                                @foreach ($adminPemberkasanList as $item)
-                                                    <option value="{{ $item->id }}" {{ $data->id_admin_pemberkasan == $item->id ? 'selected' : '' }}>
-                                                        {{ $item->nama_lengkap }}
-                                                    </option>
-                                                @endforeach
                                             </select>
                                         </div>
                                     </div>

@@ -550,7 +550,7 @@
       .kpi-card:last-child { grid-column: auto; }
       .panel-body { padding: 15px; }
     }
-
+  
       body.dark-mode .dashboard-shell {
         background: #111827;
         color: #e5e7eb;
@@ -706,7 +706,7 @@
       <header class="topbar">
         <div class="title">
           <h1>Selamat datang, {{ $username ?? 'dev' }}</h1>
-          <p>Ringkasan penjualan dan aktivitas: <strong class="text-primary" id="labelPeriode">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</strong></p>
+          <p>Ringkasan penjualan dan aktivitas: <strong class="text-primary">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</strong></p>
         </div>
 
         <div class="top-actions">
@@ -716,46 +716,43 @@
       </header>
 
       <!-- Filter Bar Periode -->
-      <section class="mb-3 p-3 rounded shadow-sm" style="background:linear-gradient(135deg,#ffffff 0%,#f5f3ff 100%);border:1px solid #e5e7eb;border-left:4px solid #5b2cff;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <span style="font-weight:800;font-size:14px;color:#1e293b;display:inline-flex;align-items:center;gap:8px;">
-            <span style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:inline-grid;place-items:center;color:#fff;"><i class="fa-solid fa-filter"></i></span>
-            Filter Periode
-          </span>
-
-          <div class="btn-group btn-group-sm" role="group" style="background:#eef2ff;border:1px solid #e0e7ff;border-radius:999px;padding:4px;gap:2px;">
-            <a href="{{ route('beranda.index', ['periode' => 'bulan_ini']) }}" data-periode="bulan_ini" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? 'bulan_ini') === 'bulan_ini' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;">
+      <section class="periode-filter-bar mb-3 p-3 rounded shadow-sm" style="background:#ffffff;border:1px solid #e5e7eb;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-weight:600;font-size:13px;color:#4b5563;"><i class="fa-solid fa-filter mr-1 text-primary"></i> Filter Periode:</span>
+          
+          <div class="btn-group btn-group-sm" role="group">
+            <a href="{{ route('beranda.index', ['periode' => 'bulan_ini']) }}" class="btn {{ ($summaryMetrics['periode_filter'] ?? 'bulan_ini') === 'bulan_ini' ? 'btn-primary font-weight-bold' : 'btn-outline-secondary' }}">
               Bulan Ini
             </a>
-            <a href="{{ route('beranda.index', ['periode' => 'bulan_kemarin']) }}" data-periode="bulan_kemarin" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? '') === 'bulan_kemarin' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;">
+            <a href="{{ route('beranda.index', ['periode' => 'bulan_kemarin']) }}" class="btn {{ ($summaryMetrics['periode_filter'] ?? '') === 'bulan_kemarin' ? 'btn-primary font-weight-bold' : 'btn-outline-secondary' }}">
               Bulan Kemarin
             </a>
-            <button type="button" data-periode="pilih_bulan" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? '') === 'pilih_bulan' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;" data-toggle="collapse" data-target="#collapsePilihBulan">
+            <button type="button" class="btn {{ ($summaryMetrics['periode_filter'] ?? '') === 'pilih_bulan' ? 'btn-primary font-weight-bold' : 'btn-outline-secondary' }}" data-toggle="collapse" data-target="#collapsePilihBulan">
               <i class="fa-regular fa-calendar mr-1"></i> Pilih Bulan <i class="fa-solid fa-caret-down ml-1"></i>
             </button>
-            <button type="button" data-periode="custom" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? '') === 'custom' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;" data-toggle="collapse" data-target="#collapseCustomTanggal">
+            <button type="button" class="btn {{ ($summaryMetrics['periode_filter'] ?? '') === 'custom' ? 'btn-primary font-weight-bold' : 'btn-outline-secondary' }}" data-toggle="collapse" data-target="#collapseCustomTanggal">
               <i class="fa-regular fa-calendar-days mr-1"></i> Custom Tanggal <i class="fa-solid fa-caret-down ml-1"></i>
             </button>
-            <a href="{{ route('beranda.index', ['periode' => 'semua']) }}" data-periode="semua" class="btn periode-pill {{ ($summaryMetrics['periode_filter'] ?? '') === 'semua' ? 'btn-primary font-weight-bold shadow-sm' : 'btn-light text-secondary' }}" style="border-radius:999px;border:0;">
+            <a href="{{ route('beranda.index', ['periode' => 'semua']) }}" class="btn {{ ($summaryMetrics['periode_filter'] ?? '') === 'semua' ? 'btn-primary font-weight-bold' : 'btn-outline-secondary' }}">
               Semua Waktu
             </a>
           </div>
         </div>
 
         <div>
-          <span class="px-3 py-2" style="font-size:12px;border-radius:999px;color:#fff;background:linear-gradient(135deg,#0ea5e9,#2563eb);box-shadow:0 4px 12px rgba(37,99,235,.25);white-space:nowrap;">
-            <i class="fa-solid fa-clock-rotate-left mr-1"></i> Aktif: <strong id="badgePeriode">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</strong>
+          <span class="badge badge-light px-3 py-2" style="font-size:12px;border:1px solid #d1d5db;border-radius:20px;color:#374151;">
+            <i class="fa-solid fa-clock-rotate-left mr-1 text-info"></i> Aktif: <strong>{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</strong>
           </span>
         </div>
       </section>
 
       <!-- Collapse Form: Pilih Bulan & Tahun -->
       <div class="collapse {{ ($summaryMetrics['periode_filter'] ?? '') === 'pilih_bulan' ? 'show' : '' }} mb-3" id="collapsePilihBulan">
-        <div class="card card-body p-3 shadow-sm" style="background:linear-gradient(135deg,#eef2ff 0%,#f8fafc 100%);border:1px solid #e0e7ff !important;border-radius:14px;">
-          <form action="{{ route('beranda.index') }}" method="GET" id="formPeriodeBulan" class="form-inline d-flex flex-wrap align-items-center" style="gap:10px;">
+        <div class="card card-body p-3 shadow-sm border-0" style="background:#f9fafb;border:1px solid #e5e7eb !important;">
+          <form action="{{ route('beranda.index') }}" method="GET" class="form-inline d-flex flex-wrap align-items-center gap-2">
             <input type="hidden" name="periode" value="pilih_bulan">
-            <label class="font-weight-bold text-secondary" style="font-size:13px;">Bulan:</label>
-            <select name="bulan" class="form-control form-control-sm" style="width:150px;border-radius:10px;">
+            <label class="mr-2 font-weight-bold text-sm text-secondary">Bulan:</label>
+            <select name="bulan" class="form-control form-control-sm mr-3" style="width:140px">
               @foreach($availableMonths as $num => $nama)
                 <option value="{{ $num }}" {{ ($summaryMetrics['filter_bulan'] ?? Carbon\Carbon::now()->month) == $num ? 'selected' : '' }}>
                   {{ $nama }}
@@ -763,8 +760,8 @@
               @endforeach
             </select>
 
-            <label class="font-weight-bold text-secondary" style="font-size:13px;">Tahun:</label>
-            <select name="tahun" class="form-control form-control-sm" style="width:110px;border-radius:10px;">
+            <label class="mr-2 font-weight-bold text-sm text-secondary">Tahun:</label>
+            <select name="tahun" class="form-control form-control-sm mr-3" style="width:110px">
               @foreach($availableYears as $year)
                 <option value="{{ $year }}" {{ ($summaryMetrics['filter_tahun'] ?? Carbon\Carbon::now()->year) == $year ? 'selected' : '' }}>
                   {{ $year }}
@@ -772,7 +769,7 @@
               @endforeach
             </select>
 
-            <button type="submit" class="btn btn-sm btn-primary px-4" style="border-radius:999px;font-weight:700;">
+            <button type="submit" class="btn btn-sm btn-primary px-3">
               <i class="fa-solid fa-magnifying-glass mr-1"></i> Terapkan
             </button>
           </form>
@@ -781,16 +778,16 @@
 
       <!-- Collapse Form: Custom Rentang Tanggal -->
       <div class="collapse {{ ($summaryMetrics['periode_filter'] ?? '') === 'custom' ? 'show' : '' }} mb-3" id="collapseCustomTanggal">
-        <div class="card card-body p-3 shadow-sm" style="background:linear-gradient(135deg,#ecfdf5 0%,#f8fafc 100%);border:1px solid #bbf7d0 !important;border-radius:14px;">
-          <form action="{{ route('beranda.index') }}" method="GET" id="formPeriodeCustom" class="form-inline d-flex flex-wrap align-items-center" style="gap:10px;">
+        <div class="card card-body p-3 shadow-sm border-0" style="background:#f9fafb;border:1px solid #e5e7eb !important;">
+          <form action="{{ route('beranda.index') }}" method="GET" class="form-inline d-flex flex-wrap align-items-center gap-2">
             <input type="hidden" name="periode" value="custom">
-            <label class="font-weight-bold text-secondary" style="font-size:13px;">Dari Tanggal:</label>
-            <input type="date" name="start_date" value="{{ $summaryMetrics['custom_start'] ?? Carbon\Carbon::now()->startOfMonth()->toDateString() }}" class="form-control form-control-sm" style="border-radius:10px;" required>
+            <label class="mr-2 font-weight-bold text-sm text-secondary">Dari Tanggal:</label>
+            <input type="date" name="start_date" value="{{ $summaryMetrics['custom_start'] ?? Carbon\Carbon::now()->startOfMonth()->toDateString() }}" class="form-control form-control-sm mr-3" required>
 
-            <label class="font-weight-bold text-secondary" style="font-size:13px;">Sampai Tanggal:</label>
-            <input type="date" name="end_date" value="{{ $summaryMetrics['custom_end'] ?? Carbon\Carbon::now()->endOfMonth()->toDateString() }}" class="form-control form-control-sm" style="border-radius:10px;" required>
+            <label class="mr-2 font-weight-bold text-sm text-secondary">Sampai Tanggal:</label>
+            <input type="date" name="end_date" value="{{ $summaryMetrics['custom_end'] ?? Carbon\Carbon::now()->endOfMonth()->toDateString() }}" class="form-control form-control-sm mr-3" required>
 
-            <button type="submit" class="btn btn-sm btn-success px-4" style="border-radius:999px;font-weight:700;">
+            <button type="submit" class="btn btn-sm btn-primary px-3">
               <i class="fa-solid fa-magnifying-glass mr-1"></i> Terapkan
             </button>
           </form>
@@ -819,8 +816,8 @@
           <div class="kpi-icon orange"><i class="fa-solid fa-wallet"></i></div>
           <div>
             <div class="kpi-label">Booking Fee / Bulanan</div>
-            <div class="kpi-value money" style="color:#f97316" id="kpiBookingFee">Rp {{ number_format($summaryMetrics['booking_fee_periode'] ?? 0, 0, ',', '.') }}</div>
-            <div class="kpi-note"><span id="kpiBookingCount">{{ $summaryMetrics['customer_periode'] ?? 0 }}</span> customer terdaftar (<span id="kpiBookingLabel">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</span>)</div>
+            <div class="kpi-value money" style="color:#f97316">Rp {{ number_format($summaryMetrics['booking_fee_periode'] ?? 0, 0, ',', '.') }}</div>
+            <div class="kpi-note">{{ $summaryMetrics['customer_periode'] ?? 0 }} customer terdaftar ({{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }})</div>
           </div>
         </article>
 
@@ -1105,7 +1102,6 @@
                     <option value="wawancara">Proses Bank</option>
                     <option value="sp3k">SP3K</option>
                     <option value="akad">Akad</option>
-                    <option value="bast">BAST</option>
                   </select>
                 </div>
               </div>
@@ -1181,8 +1177,6 @@
                 <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Status</label>
                 <select id="filterStatusAdmin" class="form-control" style="width:150px">
                   <option value="semua" selected>Semua</option>
-                  <option value="marketing">Pemberkasan Marketing</option>
-                  <option value="sppr">Proses Admin</option>
                   <option value="wawancara">Proses Bank</option>
                   <option value="sp3k">SP3K</option>
                   <option value="akad">Akad</option>
@@ -1203,9 +1197,9 @@
           <div class="section-head" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
             <div>
               <h2 style="margin:0;font-size:18px;font-weight:800;color:#1e293b">
-                <i class="fa-solid fa-bullhorn text-primary mr-1"></i> Rekap DP & Grafik Sumber Prospek (Tahun {{ $tahunAktif }})
+                <i class="fa-solid fa-bullhorn text-primary mr-1"></i> Rekap DP & Grafik Sumber Prospek (Tahun 2026)
               </h2>
-              <span style="font-size:12px;color:#64748b">Analisis efektivitas kanal promosi dan performa sumber prospek tahun {{ $tahunAktif }}</span>
+              <span style="font-size:12px;color:#64748b">Analisis efektivitas kanal promosi dan performa sumber prospek tahun 2026</span>
             </div>
 
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
@@ -1245,24 +1239,23 @@
           <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;margin-bottom:16px">
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px">
               <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Total Prospek (Periode)</span>
-              <div style="font-size:20px;font-weight:900;color:#1e293b" id="spBadgeTotal">{{ $yoySummary['total_aktif'] ?? 0 }} <small style="font-size:11px;font-weight:600;color:#64748b">Unit</small></div>
-              <span style="font-size:10px;color:#16a34a;font-weight:600" id="spBadgeLabel">Tahun {{ $tahunAktif ?? date('Y') }} (Semua Bulan)</span>
+              <div style="font-size:20px;font-weight:900;color:#1e293b" id="spBadgeTotal">{{ $yoySummary['total_2026'] }} <small style="font-size:11px;font-weight:600;color:#64748b">Unit</small></div>
+              <span style="font-size:10px;color:#16a34a;font-weight:600" id="spBadgeLabel">Tahun 2026 (Semua Bulan)</span>
             </div>
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px">
               <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Sumber Tertinggi</span>
-              <div style="font-size:17px;font-weight:900;color:#2563eb" id="spBadgeTop">{{ $spTopSumber ?? '-' }}</div>
+              <div style="font-size:17px;font-weight:900;color:#2563eb" id="spBadgeTop">-</div>
               <span style="font-size:10px;color:#64748b">Penyumbang Terbesar</span>
             </div>
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px">
               <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Rata-rata per Bulan</span>
-              <div style="font-size:20px;font-weight:900;color:#059669">{{ $yoySummary['rata_aktif'] ?? 0 }} <small style="font-size:11px;font-weight:600;color:#64748b">Unit/Bln</small></div>
-              <span style="font-size:10px;color:#64748b">Rata-rata per bulan berjalan</span>
+              <div style="font-size:20px;font-weight:900;color:#059669">{{ $yoySummary['rata_2026'] }} <small style="font-size:11px;font-weight:600;color:#64748b">Unit/Bln</small></div>
+              <span style="font-size:10px;color:#64748b">Berdasarkan Bulan Aktif</span>
             </div>
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px">
-              <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Pertumbuhan YoY (vs {{ $tahunLalu ?? '' }})</span>
-              @php $spGrowth = $yoySummary['growth'] ?? 0; $spGrowthPct = $yoySummary['growth_pct'] ?? 0; @endphp
-              <div style="font-size:20px;font-weight:900;color:{{ $spGrowth >= 0 ? '#16a34a' : '#dc2626' }}">{{ $spGrowth >= 0 ? '+' : '' }}{{ $spGrowth }} <small style="font-size:11px;font-weight:600;color:inherit">({{ $spGrowth >= 0 ? '+' : '' }}{{ $spGrowthPct }}%)</small></div>
-              <span style="font-size:10px;font-weight:600;color:{{ $spGrowth >= 0 ? '#16a34a' : '#dc2626' }}"><i class="fa-solid {{ $spGrowth >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} mr-1"></i> {{ $yoySummary['total_lalu'] ?? 0 }} ({{ $tahunLalu ?? '' }}) &rarr; {{ $yoySummary['total_aktif'] ?? 0 }} ({{ $tahunAktif ?? '' }})</span>
+              <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Pertumbuhan YoY (vs 2025)</span>
+              <div style="font-size:20px;font-weight:900;color:#16a34a">+{{ $yoySummary['growth'] }} <small style="font-size:11px;font-weight:600;color:#16a34a">(+{{ $yoySummary['growth_pct'] }}%)</small></div>
+              <span style="font-size:10px;color:#16a34a;font-weight:600"><i class="fa-solid fa-arrow-trend-up mr-1"></i> {{ $yoySummary['total_2025'] }} (2025) &rarr; {{ $yoySummary['total_2026'] }} (2026)</span>
             </div>
           </div>
 
@@ -1278,16 +1271,16 @@
                 <tr style="background:#e0f2fe">
                   <th rowspan="2" style="width:36px">NO</th>
                   <th rowspan="2" style="text-align:left;min-width:160px">MARKETING / SUMBER</th>
-                  <th colspan="12" style="background:#bae6fd;color:#0369a1">BULAN TAHUN {{ $tahunAktif }}</th>
+                  <th colspan="12" style="background:#bae6fd;color:#0369a1">BULAN TAHUN 2026</th>
                   <th rowspan="2" style="background:#fed7aa;color:#9a3412">TOTAL</th>
                   <th rowspan="2" style="background:#fef08a;color:#854d0e">RATA-RATA</th>
-                  <th colspan="4" style="background:#fbcfe8;color:#9d174d">YEAR ON YEAR ({{ $tahunLalu }} vs {{ $tahunAktif }})</th>
+                  <th colspan="4" style="background:#fbcfe8;color:#9d174d">YEAR ON YEAR (2025 vs 2026)</th>
                 </tr>
                 <tr>
                   <th>JAN</th><th>FEB</th><th>MAR</th><th>APR</th><th>MEI</th><th>JUN</th>
                   <th>JUL</th><th>AUG</th><th>SEP</th><th>OKT</th><th>NOV</th><th>DES</th>
-                  <th style="background:#fdf2f8">{{ $tahunLalu }}</th>
-                  <th style="background:#fdf2f8">{{ $tahunAktif }}</th>
+                  <th style="background:#fdf2f8">2025</th>
+                  <th style="background:#fdf2f8">2026</th>
                   <th style="background:#fdf2f8">GROWTH</th>
                   <th style="background:#fdf2f8">RATA-RATA</th>
                 </tr>
@@ -1312,10 +1305,10 @@
                     <td>{{ $data['okt'] ?: '-' }}</td>
                     <td>{{ $data['nov'] ?: '-' }}</td>
                     <td>{{ $data['des'] ?: '-' }}</td>
-                    <td style="font-weight:800;color:#0f172a;background:#fff7ed">{{ $data['total_aktif'] }}</td>
+                    <td style="font-weight:800;color:#0f172a;background:#fff7ed">{{ $data['y2026'] }}</td>
                     <td style="font-weight:700;color:#0f172a;background:#fefce8">{{ number_format($data['rata_rata'], 1) }}</td>
-                    <td>{{ $data['total_lalu'] }}</td>
-                    <td style="font-weight:700">{{ $data['total_aktif'] }}</td>
+                    <td>{{ $data['y2025'] }}</td>
+                    <td style="font-weight:700">{{ $data['y2026'] }}</td>
                     <td style="font-weight:800;color:{{ $data['growth'] >= 0 ? '#16a34a' : '#dc2626' }}">
                       {{ $data['growth'] > 0 ? '+' : '' }}{{ $data['growth'] }}
                     </td>
@@ -1329,13 +1322,12 @@
                   @foreach(range(1, 12) as $m)
                     <td style="font-weight:900;color:#1e40af">{{ $monthlyTotals[$m] ?? 0 }}</td>
                   @endforeach
-                  <td style="font-weight:900;color:#c2410c;background:#fed7aa">{{ $yoySummary['total_aktif'] ?? 0 }}</td>
-                  <td style="font-weight:900;color:#854d0e;background:#fef08a">{{ $yoySummary['rata_aktif'] ?? 0 }}</td>
-                  <td style="font-weight:900">{{ $yoySummary['total_lalu'] ?? 0 }}</td>
-                  <td style="font-weight:900">{{ $yoySummary['total_aktif'] ?? 0 }}</td>
-                  @php $spTumbuh = $yoySummary['growth'] ?? 0; $spTumbuhRata = $yoySummary['growth_rata'] ?? 0; @endphp
-                  <td style="font-weight:900;color:{{ $spTumbuh >= 0 ? '#16a34a' : '#dc2626' }}">{{ $spTumbuh >= 0 ? '+' : '' }}{{ $spTumbuh }}</td>
-                  <td style="font-weight:900;color:{{ $spTumbuhRata >= 0 ? '#16a34a' : '#dc2626' }}">{{ $spTumbuhRata >= 0 ? '+' : '' }}{{ $spTumbuhRata }}</td>
+                  <td style="font-weight:900;color:#c2410c;background:#fed7aa">{{ $yoySummary['total_2026'] }}</td>
+                  <td style="font-weight:900;color:#854d0e;background:#fef08a">{{ $yoySummary['rata_2026'] }}</td>
+                  <td style="font-weight:900">{{ $yoySummary['total_2025'] }}</td>
+                  <td style="font-weight:900">{{ $yoySummary['total_2026'] }}</td>
+                  <td style="font-weight:900;color:#16a34a">+{{ $yoySummary['growth'] }}</td>
+                  <td style="font-weight:900;color:#16a34a">+{{ $yoySummary['growth_rata'] }}</td>
                 </tr>
               </tbody>
             </table>
@@ -1487,76 +1479,6 @@
             $('#filterBulanSumber').on('change', function() {
                 loadSumberProspekChart();
             });
-        });
-
-        function formatRpBeranda(nilai) {
-            return 'Rp ' + Number(nilai || 0).toLocaleString('id-ID');
-        }
-
-        function setPillPeriodeAktif(periode) {
-            $('.periode-pill').each(function() {
-                var aktif = $(this).data('periode') === periode;
-                $(this).toggleClass('btn-primary', aktif).toggleClass('font-weight-bold', aktif).toggleClass('shadow-sm', aktif);
-                $(this).toggleClass('btn-light', !aktif).toggleClass('text-secondary', !aktif);
-            });
-            if (periode === 'pilih_bulan') {
-                $('#collapsePilihBulan').collapse('show');
-                $('#collapseCustomTanggal').collapse('hide');
-            } else if (periode === 'custom') {
-                $('#collapseCustomTanggal').collapse('show');
-                $('#collapsePilihBulan').collapse('hide');
-            } else {
-                $('#collapsePilihBulan').collapse('hide');
-                $('#collapseCustomTanggal').collapse('hide');
-            }
-        }
-
-        function terapkanPeriode(d) {
-            $('#kpiBookingFee').text(formatRpBeranda(d.booking_fee_periode));
-            $('#kpiBookingCount').text(d.customer_periode);
-            $('#kpiBookingLabel').text(d.label_periode);
-            $('#labelPeriode').text(d.label_periode);
-            $('#badgePeriode').text(d.label_periode);
-            $('select[name="bulan"]').val(d.filter_bulan);
-            $('select[name="tahun"]').val(d.filter_tahun);
-            if (d.custom_start) { $('input[name="start_date"]').val(d.custom_start); }
-            if (d.custom_end) { $('input[name="end_date"]').val(d.custom_end); }
-            setPillPeriodeAktif(d.periode_filter);
-        }
-
-        function muatPeriode(params, tombol) {
-            var $tombol = tombol ? $(tombol) : $();
-            $.ajax({
-                url: '{{ route("beranda.periode-data") }}',
-                type: 'GET',
-                data: params,
-                beforeSend: function() { $tombol.prop('disabled', true); },
-                success: function(d) { terapkanPeriode(d); },
-                error: function() {
-                    if (window.toastr) { toastr.error("Gagal memuat data periode.", "GAGAL!", { progressBar: true, timeOut: 3500, positionClass: "toast-bottom-right" }); }
-                },
-                complete: function() { $tombol.prop('disabled', false); }
-            });
-        }
-
-        $(document).on('click', '.periode-pill', function(e) {
-            e.preventDefault();
-            var mode = $(this).data('periode');
-            if (mode === 'pilih_bulan' || mode === 'custom') {
-                setPillPeriodeAktif(mode);
-                return;
-            }
-            muatPeriode({ periode: mode }, this);
-        });
-
-        $('#formPeriodeBulan').on('submit', function(e) {
-            e.preventDefault();
-            muatPeriode($(this).serialize(), this);
-        });
-
-        $('#formPeriodeCustom').on('submit', function(e) {
-            e.preventDefault();
-            muatPeriode($(this).serialize(), this);
         });
 
         let sumberProspekChart;
@@ -1737,3 +1659,6 @@
     </script>
     @endpush
 @endsection
+
+
+

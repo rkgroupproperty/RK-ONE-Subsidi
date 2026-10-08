@@ -11,7 +11,6 @@ use App\Models\ProgresListPenjualan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use TCPDF;
-use App\Traits\KopSuratPdfTrait;
 use App\Models\ListrikAir;
 use Illuminate\Http\Request;
 use App\Models\Customer;
@@ -19,7 +18,6 @@ use App\Models\PengaturanMedia;
 
 class SiteplanPenjualanController extends Controller
 {
-    use KopSuratPdfTrait;
     public function index()
     {
          $lokasiKavling = LokasiKavling::with([
@@ -143,15 +141,17 @@ class SiteplanPenjualanController extends Controller
         }
         file_put_contents($jpgPath, $jpgContent);
 
+        $this->attachLegendToJPG($jpgPath);
+
         return response()->download($jpgPath);
     }
 
     public function cetakPDF($id_lokasi)
     {
-        $namaPerusahaan = DB::table('konfigurasi')->value('nama_perusahaan');
+        $namaPerusahaan = DB::table('konfigurasi')->value('nama_perusahaan') ?? 'RK GROUP Property';
         $lokasi         = DB::table('lokasi_kavling')->where('id', $id_lokasi)->first();
         $namaKavling    = $lokasi->nama_kavling ?? '-';
-        $periodeCetak   = now()->translatedFormat('d F Y');
+        $periodeCetak   = now()->translatedFormat('d F Y H:i') . ' WIB';
 
         $svgContent  = $this->generateSVG($id_lokasi);
         $svgFilename = "siteplan_{$id_lokasi}.svg";
@@ -185,32 +185,113 @@ class SiteplanPenjualanController extends Controller
 
         file_put_contents($jpgPath, $jpgContent);
 
+        $this->attachLegendToJPG($jpgPath);
+
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-        $pdf->setPrintHeader(false);
         $pdf->SetCreator(PDF_CREATOR);
         $pdf->SetAuthor($namaPerusahaan);
         $pdf->SetTitle("Site Plan Penjualan - {$namaKavling}");
         $pdf->SetMargins(10, 10, 10);
         $pdf->AddPage();
 
-        $kopPath = $this->kopSuratLokasi($id_lokasi);
+        $pdf->SetFont('helvetica', 'B', 14);
+        $pdf->Cell(0, 7, strtoupper($namaPerusahaan), 0, 1, 'C');
+        $pdf->SetFont('helvetica', '', 12);
+        $pdf->Cell(0, 6, 'SITE PLAN PENJUALAN ' . strtoupper($namaKavling), 0, 1, 'C');
+        $pdf->SetFont('helvetica', '', 10);
+        $pdf->Cell(0, 6, 'Tanggal & Jam Unduh : ' . $periodeCetak, 0, 1, 'C');
 
-        if ($kopPath) {
-            $this->gambarKopSurat($pdf, $kopPath);
-        } else {
-            $pdf->SetFont('helvetica', 'B', 14);
-            $pdf->Cell(0, 7, strtoupper($namaPerusahaan), 0, 1, 'C');
-            $pdf->SetFont('helvetica', '', 12);
-            $pdf->Cell(0, 6, 'SITE PLAN PENJUALAN ' . strtoupper($namaKavling), 0, 1, 'C');
-            $pdf->SetFont('helvetica', '', 10);
-            $pdf->Cell(0, 6, 'Periode Cetak : ' . $periodeCetak, 0, 1, 'C');
-        }
+        $pdf->SetDrawColor(0, 0, 0);
+        $pdf->SetLineWidth(0.7);
+        $pdf->Line(10, $pdf->GetY() + 2, 200, $pdf->GetY() + 2);
+        $pdf->SetLineWidth(0.3);
+        $pdf->Line(10, $pdf->GetY() + 3, 200, $pdf->GetY() + 3);
 
-        $pdf->Ln(10);
+        $pdf->Ln(6);
 
-        $pdf->Image($jpgPath, 25, $pdf->GetY(), 160, 0, 'JPG');
+        $pdf->Image($jpgPath, 15, $pdf->GetY(), 180, 0, 'JPG');
 
         $pdf->Output("siteplan_{$namaKavling}.pdf", 'I');
+    }
+
+    private function attachLegendToJPG($jpgPath)
+    {
+        if (! function_exists('imagecreatefromjpeg') || ! file_exists($jpgPath)) {
+            return;
+        }
+
+        $srcImg = @imagecreatefromjpeg($jpgPath);
+        if (! $srcImg) {
+            return;
+        }
+
+        $srcW = imagesx($srcImg);
+        $srcH = imagesy($srcImg);
+
+        $legends = DB::table('progres_list_penjualan')
+            ->whereNotNull('warna')
+            ->where('warna', '!=', '')
+            ->where('stt_tampil', 1)
+            ->orderBy('urutan', 'asc')
+            ->get();
+
+        $legendH = 140;
+        $destImg = imagecreatetruecolor($srcW, $srcH + $legendH);
+
+        $white = imagecolorallocate($destImg, 255, 255, 255);
+        $textColor = imagecolorallocate($destImg, 30, 41, 59);
+        $borderColor = imagecolorallocate($destImg, 203, 213, 225);
+        $grayText = imagecolorallocate($destImg, 100, 116, 139);
+
+        imagefilledrectangle($destImg, 0, 0, $srcW, $srcH + $legendH, $white);
+        imagecopy($destImg, $srcImg, 0, 0, 0, 0, $srcW, $srcH);
+
+        imageline($destImg, 0, $srcH, $srcW, $srcH, $borderColor);
+
+        imagestring($destImg, 5, 25, $srcH + 12, "KETERANGAN STATUS UNIT KAVLING:", $textColor);
+
+        $colCount = 5;
+        $colW = (int)(($srcW - 50) / $colCount);
+        $rowH = 26;
+        $startX = 25;
+        $startY = $srcH + 38;
+
+        $idx = 0;
+        foreach ($legends as $leg) {
+            $cCol = $idx % $colCount;
+            $cRow = (int)($idx / $colCount);
+            $x = $startX + ($cCol * $colW);
+            $y = $startY + ($cRow * $rowH);
+
+            $hex = ltrim($leg->warna, '#');
+            if (strlen($hex) == 6) {
+                $r = hexdec(substr($hex, 0, 2));
+                $g = hexdec(substr($hex, 2, 2));
+                $b = hexdec(substr($hex, 4, 2));
+            } else {
+                $r = 255; $g = 255; $b = 255;
+            }
+            $legColor = imagecolorallocate($destImg, $r, $g, $b);
+
+            imagefilledrectangle($destImg, $x, $y, $x + 18, $y + 14, $legColor);
+            imagerectangle($destImg, $x, $y, $x + 18, $y + 14, $borderColor);
+
+            $label = $leg->status_progres;
+            imagestring($destImg, 3, $x + 24, $y + 1, substr($label, 0, 22), $textColor);
+
+            $idx++;
+        }
+
+        $copyText = "Copyright (c) 2026 di Kelola Tim Marcom RK GROUP Property";
+        imagestring($destImg, 3, 25, $srcH + $legendH - 22, $copyText, $grayText);
+
+        $tglUnduh = "Tanggal Unduh: " . now()->translatedFormat('d F Y H:i') . " WIB";
+        $textX = max(25, $srcW - 350);
+        imagestring($destImg, 3, $textX, $srcH + $legendH - 22, $tglUnduh, $grayText);
+
+        imagejpeg($destImg, $jpgPath, 95);
+        imagedestroy($srcImg);
+        imagedestroy($destImg);
     }
 
     public function cetak(Request $request)

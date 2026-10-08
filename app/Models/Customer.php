@@ -44,9 +44,8 @@ class Customer extends Model
         'an_surat_cash',
         'termin_x_cash_b',
         'stt_arsip',
-        'besaran_dp',
-        'diskon',
         'id_admin_pemberkasan',
+        'id_bank_kpr',
     ];
 
     public function persyaratan()
@@ -62,6 +61,11 @@ class Customer extends Model
     public function bank()
     {
         return $this->belongsTo(Bank::class, 'id_bank');
+    }
+
+    public function bankKpr()
+    {
+        return $this->belongsTo(BankKPR::class, 'id_bank_kpr');
     }
 
     public function lokasi()
@@ -102,11 +106,6 @@ class Customer extends Model
     public function pemasukans()
     {
         return $this->hasMany(Pemasukan::class, 'id_customer');
-    }
-
-    public function berkas()
-    {
-        return $this->hasMany(UploudFile::class, 'id_customer');
     }
 
     public function wawancara()

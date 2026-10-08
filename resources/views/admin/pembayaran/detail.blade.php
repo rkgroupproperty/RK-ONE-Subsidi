@@ -1065,7 +1065,7 @@
 
             Swal.fire({
                 title: 'Yakin update harga rumah?',
-                text: "Harga akan disesuaikan dengan harga jual unit!",
+                text: "Harga akan disesuaikan dengan harga jual kavling!",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: '<span class="swal-btn-text">Ya, Update</span>',

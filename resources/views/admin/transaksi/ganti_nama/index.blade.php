@@ -17,7 +17,6 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Ganti Nama</h3>
                                     <div class="d-flex align-items-center">
-                                        <a href="{{ route('export.transaksi.ganti-nama') }}" target="_blank" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
                                         @if ($permissions['tambah'])
                                             <button class="btn btn-primary btn-sm" data-toggle="modal"
                                                 data-target="#modalForm"><i class="fas fa-plus"></i>
@@ -294,7 +293,7 @@
             });
             $('.select-kavling').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Blok / Unit Baru",
+                placeholder: "Pilih Kavling Baru",
             });
             $('.select-bank').select2({
                 theme: "bootstrap4",

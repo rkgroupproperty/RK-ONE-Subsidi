@@ -16,6 +16,11 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Customer</h3>
                                     <div class="d-flex align-items-center">
+                                        @if (request('id_lokasi') || request('id_status_progres') || request('id_marketing'))
+                                            <a href="{{ route('customer.index') }}" class="btn btn-sm btn-outline-secondary mr-2">
+                                                <i class="fas fa-times mr-1"></i> Reset Filter
+                                            </a>
+                                        @endif
                                         @if ($user->id_role == 1)
                                             <a href="{{ route('customer.tempo') }}" class="btn btn-sm btn-primary mr-2">
                                                 <i class="fas fa-clock mr-1"></i> Customer Tempo
@@ -69,7 +74,8 @@
                 <form action="{{ route('customer.cetak') }}" method="GET" target="_blank">
                     <div class="modal-content">
                         <div class="modal-header bg-indigo">
-                            <h5 class="modal-title text-white font-weight-bold" id="modalFilterCetakLabel">Form Cetak Data
+                            <h5 class="modal-title text-white font-weight-bold" id="modalFilterCetakLabel">
+                                <i class="fas fa-print mr-1"></i> Form Cetak / Export Data Customer
                             </h5>
                             <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -77,28 +83,40 @@
                         </div>
                         <div class="modal-body">
                             <div class="form-group mb-3">
-                                <label>Lokasi</label>
-                                <select name="lokasi" class="form-control select-lokasi">
-                                    <option value=""></option>
+                                <label class="font-weight-bold">Status / Kategori Progres</label>
+                                <select name="id_status_progres" id="cetak_id_status_progres" class="form-control select-cetak-status">
+                                    <option value="">Semua Status / Kategori</option>
+                                    @foreach ($progres as $p)
+                                        <option value="{{ $p->id }}">{{ $p->status_progres }}</option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Pilih status (SP3K, Proses Bank, dll) atau biarkan Semua Status.</small>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold">Lokasi / Proyek</label>
+                                <select name="id_lokasi" id="cetak_id_lokasi" class="form-control select-cetak-lokasi">
+                                    <option value="">Semua Lokasi / Proyek</option>
                                     @foreach ($lokasi as $l)
                                         <option value="{{ $l->id }}">{{ $l->nama_kavling }}</option>
                                     @endforeach
                                 </select>
+                                <small class="text-muted">Pilih perumahan tertentu atau biarkan Semua Lokasi / Proyek.</small>
                             </div>
                             <div class="form-group">
-                                <label>Opsi Cetak</label>
-                                <select name="tipe" class="form-control select-tipe">
-                                    <option value=""></option>
-                                    <option value="1">Excel</option>
-                                    <option value="0">PDF</option>
+                                <label class="font-weight-bold">Opsi Format</label>
+                                <select name="tipe" id="cetak_tipe" class="form-control select-tipe">
+                                    <option value="0">PDF Document (.pdf)</option>
+                                    <option value="1">Excel Spreadsheet (.xlsx)</option>
                                 </select>
                             </div>
                         </div>
                         <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
                             <button type="button" class="btn btn-primary btn-cetak">
                                 <span class="spinner-border spinner-border-sm d-none" role="status"
                                     aria-hidden="true"></span>
-                                <span class="btn-text">Cetak</span>
+                                <i class="fas fa-download mr-1"></i>
+                                <span class="btn-text">Download / Cetak</span>
                             </button>
                         </div>
                     </div>
@@ -121,13 +139,6 @@
                         @csrf
                         <input type="hidden" id="primary_id" name="primary_id">
                         <div class="modal-body">
-                            <div class="form-group row">
-                                <label class="col-sm-3 col-form-label">Tanggal</label>
-                                <div class="col-sm-2">
-                                    <input type="text" class="form-control" id="tgl_terima" name="tgl_terima" readonly>
-                                </div>
-                            </div>
-
                             <div class="form-group row">
                                 <label class="control-label col-sm-3">Nama Lengkap <span
                                         style="color: red;">*</span></label>
@@ -175,7 +186,7 @@
                                 <div class="col-sm-4">
                                     <input name="email" id="email" class="form-control" type="text">
                                 </div>
-                                <label class="control-label col-sm-2">NPWP</label>
+                                <label class="control-label col-sm-2">NPWP <span style="color: red;">*</span></label>
                                 <div class="col-sm-3">
                                     <input name="npwp" id="npwp" class="form-control" type="text">
                                 </div>
@@ -184,26 +195,7 @@
                             <div class="form-group row">
                                 <label class="control-label col-sm-3">Pekerjaan</label>
                                 <div class="col-sm-4">
-                                    <select class="form-control select-pekerjaan" name="pekerjaan" id="pekerjaan">
-                                        <option value=""></option>
-                                        <option value="Wiraswasta">Wiraswasta</option>
-                                        <option value="Pegawai Swasta">Pegawai Swasta</option>
-                                        <option value="ASN">ASN</option>
-                                        <option value="TNI atau Polri">TNI atau Polri</option>
-                                        <option value="Karyawan BUMN">Karyawan BUMN</option>
-                                        <option value="Karyawan">Karyawan</option>
-                                        <option value="Buruh">Buruh</option>
-                                        <option value="Petani">Petani</option>
-                                        <option value="Pedagang">Pedagang</option>
-                                        <option value="Sopir">Sopir</option>
-                                        <option value="Guru/Dosen">Guru/Dosen</option>
-                                        <option value="Dokter">Dokter</option>
-                                        <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
-                                        <option value="Pensiunan">Pensiunan</option>
-                                        <option value="Pelajar/Mahasiswa">Pelajar/Mahasiswa</option>
-                                        <option value="Freelancer">Freelancer</option>
-                                        <option value="Lain-lain">Lain-lain</option>
-                                    </select>
+                                    <input name="pekerjaan" id="pekerjaan" class="form-control" type="text">
                                 </div>
                                 <label class="control-label col-sm-2">No. BPJS Kes</label>
                                 <div class="col-sm-3">
@@ -266,7 +258,7 @@
                             <hr>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-3">Lokasi Perumahan <span style="color: red;">*</span></label>
+                                <label class="control-label col-sm-3">Lokasi Perumahan</label>
                                 <div class="col-sm-4">
                                     <select class="form-control select-lokasi" disabled name="id_lokasi" id="id_lokasi">
                                         <option value=""></option>
@@ -275,25 +267,64 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <label class="control-label col-sm-2">Blok / Unit <span style="color: red;">*</span></label>
+                                <label class="control-label col-sm-2">Blok/Kav</label>
                                 <div class="col-sm-3">
                                     <select name="id_kavling" id="id_kavling" disabled
                                         class="form-control select-kavling"></select>
                                 </div>
                             </div>
 
-                        <div id="rincian-harga-container">
-                            <div class="text-muted">Pilih blok / unit terlebih dahulu untuk menampilkan rincian harga.</div>
-                        </div>
-                        <input type="hidden" name="total_harga" id="total_harga" value="">
-
+                            <div class="form-group row">
+                                <label class="control-label col-sm-3">Harga Rumah</label>
+                                <div class="col-sm-4">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">Rp.</span>
+                                        </div>
+                                        <input type="text" name="hrg_jual" id="hrg_jual"
+                                            class="form-control format-number" readonly>
+                                    </div>
+                                </div>
+                                <label class="control-label col-sm-2">Biaya Surat</label>
+                                <div class="col-sm-3">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">Rp.</span>
+                                        </div>
+                                        <input type="text" name="biaya_surat" id="biaya_surat"
+                                            class="form-control format-number" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label class="control-label col-sm-3">Peningkatan Mutu</label>
+                                <div class="col-sm-4">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">Rp.</span>
+                                        </div>
+                                        <input type="text" name="peningkatan_mutu" id="peningkatan_mutu"
+                                            class="form-control format-number" readonly>
+                                    </div>
+                                </div>
+                                <label class="control-label col-sm-2">Total Harga</label>
+                                <div class="col-sm-3">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">Rp.</span>
+                                        </div>
+                                        <input type="text" name="total_harga" id="total_harga"
+                                            class="form-control format-number" readonly>
+                                    </div>
+                                </div>
+                            </div>
 
                             <hr>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-3">Marketing <span style="color: red;">*</span></label>
+                                <label class="control-label col-sm-3">Marketing</label>
                                 <div class="col-sm-4">
-                                    <select class="form-control select-marketing" name="id_marketing"
+                                    <select class="form-control select-marketing" disabled name="id_marketing"
                                         id="id_marketing">
                                         <option value=""></option>
                                         @foreach ($marketing as $m)
@@ -304,18 +335,18 @@
                             </div>
 
                             <div class="form-group row">
-                                <label class="control-label col-sm-3">Jenis Perumahan <span style="color: red;">*</span></label>
+                                <label class="control-label col-sm-3">Jenis Perumahan</label>
                                 <div class="col-sm-4">
-                                    <select class="form-control select-jp" name="jenis_perumahan"
+                                    <select class="form-control select-jp" disabled name="jenis_perumahan"
                                         id="jenis_perumahan">
                                         <option value=""></option>
                                         <option value="Subsidi">Subsidi</option>
                                         <option value="Komersil">Komersil</option>
                                     </select>
                                 </div>
-                                <label class="control-label col-sm-2">Jenis Pembelian <span style="color: red;">*</span></label>
+                                <label class="control-label col-sm-2">Jenis Pembelian</label>
                                 <div class="col-sm-3">
-                                    <select class="form-control select-pembelian" name="jenis_pembelian"
+                                    <select class="form-control select-pembelian" disabled name="jenis_pembelian"
                                         id="jenis_pembelian">
                                         <option value=""></option>
                                         <option value="Pembelian Cash">Pembelian Cash</option>
@@ -325,50 +356,38 @@
                                 </div>
                             </div>
 
-                        <div class="form-group row">
-                            <label class="control-label col-sm-3">Sumber Prospek <span style="color: red;">*</span></label>
-                            <div class="col-sm-4">
-                                <select class="form-control select-sumber-prospek" name="sumber_prospek"
-                                    id="sumber_prospek">
-                                    <option value=""></option>
-                                    <option value="Iklan Kantor">Iklan Kantor</option>
-                                    <option value="Market Place FB">Market Place FB</option>
-                                    <option value="Freelance">Freelance</option>
-                                    <option value="Kanvasing">Kanvasing</option>
-                                    <option value="Sosmed Pribadi">Sosmed Pribadi</option>
-                                    <option value="Sosmed Kantor">Sosmed Kantor</option>
-                                    <option value="Referensi">Referensi</option>
-                                    <option value="WIC">WIC</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <label class="control-label col-sm-3">Besaran DP <span style="color: red;">*</span></label>
-                            <div class="col-sm-4">
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">Rp.</span>
-                                    </div>
-                                    <input name="besaran_dp" id="besaran_dp" class="form-control format-number"
-                                        type="text">
+                            <div class="form-group row">
+                                <label class="control-label col-sm-3">Sumber Prospek</label>
+                                <div class="col-sm-4">
+                                    <input type="text" name="sumber_prospek" id="sumber_prospek"
+                                        class="form-control" readonly>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="form-group row">
-                            <label class="control-label col-sm-3">Diskon</label>
-                            <div class="col-sm-4">
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">Rp.</span>
+                            <!-- CASH ==================================> -->
+                            <hr class="hr-transaksi" style="display: none;">
+                            <div id="trx_cash" style="display: none;">
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label">Atas Nama Surat</label>
+                                    <div class="col-sm-3">
+                                        <input name="an_surat_cash" id="an_surat_cash" class="form-control"
+                                            type="text" readonly>
                                     </div>
-                                    <input name="diskon" id="diskon" class="form-control format-number"
-                                        type="text">
                                 </div>
                             </div>
-                        </div>
 
+                            <!-- CASH BERTAHAP ==================================> -->
+                            <hr class="hr-transaksi" style="display: none;">
+                            <div id="trx_cash_bertahap" style="display: none;">
+
+                                <div class="form-group row">
+                                    <label class="col-sm-3 col-form-label">Termin (x)</label>
+                                    <div class="col-sm-3">
+                                        <input name="termin_x_cash_b" id="termin_x_cash_b"
+                                            class="form-control format-number" type="number" readonly>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="modal-footer">
@@ -556,8 +575,8 @@
 
                         <hr>
 
-                        <!-- Data Blok / Unit -->
-                        <h6 class="text-danger font-weight-bold mb-3"><i class="fas fa-home mr-1"></i> Data Blok / Unit</h6>
+                        <!-- Data Kavling -->
+                        <h6 class="text-danger font-weight-bold mb-3"><i class="fas fa-home mr-1"></i> Data Kavling</h6>
 
                         <div class="form-group row">
                             <label class="control-label col-sm-3">Lokasi Perumahan <span style="color: red;">*</span></label>
@@ -569,7 +588,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <label class="control-label col-sm-2">Blok / Unit <span style="color: red;">*</span></label>
+                            <label class="control-label col-sm-2">Blok/Kav <span style="color: red;">*</span></label>
                             <div class="col-sm-3">
                                 <select name="id_kavling" id="usl_id_kavling"
                                     class="form-control select-kavling-usl"></select>
@@ -584,7 +603,7 @@
                                         <span class="input-group-text">Rp.</span>
                                     </div>
                                     <input type="text" name="total_harga" id="usl_total_harga"
-                                        class="form-control" readonly disabled placeholder="Pilih blok / unit terlebih dahulu">
+                                        class="form-control" readonly disabled placeholder="Pilih kavling terlebih dahulu">
                                 </div>
                             </div>
                         </div>
@@ -704,10 +723,6 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
-            $('.select-pekerjaan').select2({
-                theme: "bootstrap4",
-                placeholder: "Pilih Pekerjaan",
-            });
             $('.select-lokasi').select2({
                 theme: "bootstrap4",
                 minimumResultsForSearch: Infinity,
@@ -743,15 +758,10 @@
                 placeholder: "Pilih Status",
                 minimumResultsForSearch: Infinity,
             });
-            $('.select-sumber-prospek').select2({
-                theme: "bootstrap4",
-                minimumResultsForSearch: Infinity,
-                placeholder: "Pilih Sumber Prospek",
-            });
         });
 
         $('#modalForm').on('hidden.bs.modal', function() {
-            $('#rincian-harga-container').html('<div class="text-muted">Pilih blok / unit terlebih dahulu untuk menampilkan rincian harga.</div>');
+            hideAllTransactionForms();
             $('#formData')[0].reset();
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
@@ -761,9 +771,7 @@
             $('#id_kavling').val('').trigger('change');
             $('#id_marketing').val('').trigger('change');
             $('#jenis_pembelian').val('').trigger('change');
-            $('#jenis_perumahan').val('').trigger('change');
-            $('#pekerjaan').val('').trigger('change');
-            $('#sumber_prospek').val('').trigger('change');
+            $('#sumber_prospek').val('');
 
             let submitBtn = $('#submitBtn');
             let spinner = submitBtn.find('.spinner-border');
@@ -775,8 +783,15 @@
         });
 
         $('#modalFilterCetak').on('show.bs.modal', function() {
-            $('.select-tipe').val('').trigger('change');
-            $('.select-lokasi').val('').trigger('change');
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentStatus = urlParams.get('id_status_progres') || '';
+            const currentLokasi = urlParams.get('id_lokasi') || '';
+
+            $('#cetak_id_status_progres').val(currentStatus).trigger('change');
+            $('#cetak_id_lokasi').val(currentLokasi).trigger('change');
+            if (!$('#cetak_tipe').val()) {
+                $('#cetak_tipe').val('0').trigger('change');
+            }
         });
 
         let isEditMode = false;
@@ -790,7 +805,7 @@
                     const data = response.data;
 
                     $('#primary_id').val(data.id);
-                    $('#tgl_terima').val(data.tgl_terima_formatted);
+                    $('#tgl_booking').val(response.data.tgl_booking_formatted);
                     $('#nama_lengkap').val(data.nama_lengkap);
                     $('#nik').val(data.nik);
                     $('#nik_p').val(data.nik_p);
@@ -801,29 +816,28 @@
                     $('#email').val(data.email);
                     $('#npwp').val(data.npwp);
                     $('#no_bpjs_kes').val(data.no_bpjs_kes);
+                    $('#booking_fee').val(formatNumber(data.booking_fee));
                     $('#alamat_ktp').val(data.alamat_ktp);
                     $('#alamat_domisili').val(data.alamat_domisili);
-                    $('#pekerjaan').val(data.pekerjaan).trigger('change');
+                    $('#pekerjaan').val(data.pekerjaan);
                     $('#status_pernikahan').val(data.status_pernikahan).trigger('change');
                     $('#nama_p').val(data.nama_p);
                     $('#nama_saudara').val(data.nama_saudara);
                     $('#no_telp_saudara').val(data.no_telp_saudara);
-                    $('#besaran_dp').val(formatNumber(data.besaran_dp));
-                    $('#diskon').val(formatNumber(data.diskon));
 
                     $('#id_lokasi').val(data.id_lokasi).trigger('change');
                     setTimeout(function() {
                         $('#id_kavling').val(data.id_kavling).trigger('change');
-                        var urlHarga = "{{ route('customer.getHargaKavling', ':id') }}".replace(':id', data.id_kavling);
-                        $.get(urlHarga, function(harga) {
-                            renderRincianHarga(harga.rincian_biaya, data.total_harga);
-                        });
                     }, 500);
 
+                    $('#hrg_jual').val(formatNumber(data.hrg_jual));
+                    $('#biaya_surat').val(formatNumber(data.biaya_surat));
+                    $('#peningkatan_mutu').val(formatNumber(data.peningkatan_mutu));
+                    $('#total_harga').val(formatNumber(data.total_harga));
                     $('#id_marketing').val(data.id_marketing).trigger('change');
                     $('#jenis_pembelian').val(data.jenis_pembelian).trigger('change');
                     $('#jenis_perumahan').val(data.jenis_perumahan).trigger('change');
-                    $('#sumber_prospek').val(data.sumber_prospek).trigger('change');
+                    $('#sumber_prospek').val(data.sumber_prospek);
 
                     $('#modalForm').modal('show');
 
@@ -831,9 +845,38 @@
             });
         });
 
+        $(document).on('change', '#jenis_pembelian', function() {
+            const val = $(this).val();
+
+            $('#trx_cash, #trx_cash_bertahap, .hr-transaksi').hide();
+
+            if (val === 'Pembelian Cash') {
+                $('#trx_cash').show();
+                $('#trx_cash').prev('.hr-transaksi').show();
+            }
+
+            if (val === 'Cash Bertahap') {
+                $('#trx_cash_bertahap').show();
+                $('#trx_cash_bertahap').prev('.hr-transaksi').show();
+            }
+        });
 
 
         $(document).ready(function() {
+            $('.select-cetak-status').select2({
+                theme: "bootstrap4",
+                placeholder: "Semua Status / Kategori",
+                allowClear: true,
+                dropdownParent: $('#modalFilterCetak')
+            });
+
+            $('.select-cetak-lokasi').select2({
+                theme: "bootstrap4",
+                placeholder: "Semua Lokasi / Proyek",
+                allowClear: true,
+                dropdownParent: $('#modalFilterCetak')
+            });
+
             $('.select-lokasi').select2({
                 theme: "bootstrap4",
                 placeholder: "Pilih Lokasi",
@@ -841,66 +884,17 @@
 
             $('.select-kavling').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Blok / Unit",
+                placeholder: "Pilih Kavling",
             });
 
             const routeGetKavling = "{{ route('customer.getKavling', ':id') }}";
             const routeGetHarga = "{{ route('customer.getHargaKavling', ':id') }}";
 
-            function renderRincianHarga(rincian, total) {
-                let container = $('#rincian-harga-container');
-                container.empty();
-
-                if (!rincian || rincian.length === 0) {
-                    container.html('<div class="text-muted">Tidak ada rincian biaya.</div>');
-                    $('#total_harga').val('');
-                    return;
-                }
-
-                let html = '';
-                rincian.forEach(function(item) {
-                    if ((item.nilai || 0) <= 0) return;
-                    html += '<div class="form-group row">';
-                    html += '<label class="control-label col-sm-3">' + item.nama + '</label>';
-                    html += '<div class="col-sm-4">';
-                    html += '<div class="input-group">';
-                    html += '<div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>';
-                    html += '<input type="text" class="form-control" readonly value="' + item.nilai.toLocaleString('id-ID') + '">';
-                    html += '</div></div></div>';
-                });
-
-                html += '<div class="form-group row">';
-                html += '<label class="control-label col-sm-3"><strong>Total Harga</strong></label>';
-                html += '<div class="col-sm-4">';
-                html += '<div class="input-group">';
-                html += '<div class="input-group-prepend"><span class="input-group-text">Rp.</span></div>';
-                html += '<input type="text" class="form-control" readonly value="' + (total || 0).toLocaleString('id-ID') + '">';
-                html += '</div></div></div>';
-
-                container.html(html);
-                $('#total_harga').val(total || 0);
-            }
-
-            $('#id_kavling').on('change', function() {
-                if (isEditMode) return;
-
-                let idKavling = $(this).val();
-
-                if (idKavling) {
-                    const urlHarga = routeGetHarga.replace(':id', idKavling);
-                    $.get(urlHarga, function(data) {
-                        renderRincianHarga(data.rincian_biaya, data.total_harga);
-                    });
-                } else {
-                    renderRincianHarga([], 0);
-                }
-            });
-
             $('#id_lokasi').on('change', function() {
                 let idLokasi = $(this).val();
 
                 if (!isEditMode) {
-                    renderRincianHarga([], 0);
+                    $('#hrg_jual, #biaya_surat, #peningkatan_mutu, #total_harga').val('');
                 }
 
                 if (idLokasi) {
@@ -929,14 +923,14 @@
                 let tipe = form.find('.select-tipe').val();
                 let formData = form.serialize();
 
-                if (!tipe) {
-                    alert('Pilih opsi cetak dulu');
+                if (tipe === "" || tipe === null || tipe === undefined) {
+                    alert('Pilih format cetak terlebih dahulu');
                     return;
                 }
 
                 btn.prop('disabled', true);
                 btn.find('.spinner-border').removeClass('d-none');
-                btn.find('.btn-text').text('Loading...');
+                btn.find('.btn-text').text('Memproses...');
 
                 if (tipe == "0") {
                     let url = form.attr('action') + "?" + formData;
@@ -944,7 +938,7 @@
 
                     btn.prop('disabled', false);
                     btn.find('.spinner-border').addClass('d-none');
-                    btn.find('.btn-text').text('Cetak');
+                    btn.find('.btn-text').text('Download / Cetak');
                     $('#modalFilterCetak').modal('hide');
 
                 } else {
@@ -959,7 +953,7 @@
                             let disposition = xhr.getResponseHeader('Content-Disposition');
                             let filename = "export.xlsx";
                             if (disposition && disposition.indexOf('filename=') !== -1) {
-                                let matches = /filename="?(.+)"?/.exec(disposition);
+                                let matches = /filename="?([^";]+)"?/.exec(disposition);
                                 if (matches != null && matches[1]) filename = matches[1];
                             }
 
@@ -973,15 +967,15 @@
 
                             btn.prop('disabled', false);
                             btn.find('.spinner-border').addClass('d-none');
-                            btn.find('.btn-text').text('Cetak');
+                            btn.find('.btn-text').text('Download / Cetak');
                             $('#modalFilterCetak').modal('hide');
                         },
                         error: function() {
-                            alert('Gagal mencetak Excel, coba lagi.');
+                            alert('Gagal mendownload file Excel, silakan coba lagi.');
 
                             btn.prop('disabled', false);
                             btn.find('.spinner-border').addClass('d-none');
-                            btn.find('.btn-text').text('Cetak');
+                            btn.find('.btn-text').text('Download / Cetak');
                         }
                     });
                 }
@@ -1105,9 +1099,16 @@
                 ajax: {
                     url: "{{ route('customer.index') }}",
                     data: function(d) {
-                        var q = new URLSearchParams(window.location.search);
-                        d.id_lokasi = q.get('id_lokasi');
-                        d.id_status_progres = q.get('id_status_progres');
+                        const urlParams = new URLSearchParams(window.location.search);
+                        if (urlParams.get('id_status_progres')) {
+                            d.id_status_progres = urlParams.get('id_status_progres');
+                        }
+                        if (urlParams.get('id_lokasi')) {
+                            d.id_lokasi = urlParams.get('id_lokasi');
+                        }
+                        if (urlParams.get('id_marketing')) {
+                            d.id_marketing = urlParams.get('id_marketing');
+                        }
                     }
                 },
                 columns: [{
@@ -1174,7 +1175,7 @@
             });
             $('.select-kavling-usl').select2({
                 theme: "bootstrap4",
-                placeholder: "Pilih Blok / Unit",
+                placeholder: "Pilih Kavling",
             });
             $('.select-jk-usl').select2({
                 theme: "bootstrap4",
@@ -1217,7 +1218,7 @@
         $(document).on('change', '#usl_id_lokasi', function() {
             let idLokasi = $(this).val();
             $('#usl_id_kavling').html('<option value="">Loading...</option>').trigger('change');
-            $('#usl_total_harga').val('').attr('placeholder', 'Pilih blok / unit terlebih dahulu');
+            $('#usl_total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
 
             if (idLokasi) {
                 const urlKavling = routeGetKavlingUSL.replace(':id', idLokasi);
@@ -1246,7 +1247,7 @@
                     $('#usl_total_harga').val(hargaJual ? hargaJual.toLocaleString('id-ID') : '').attr('placeholder', '0');
                 });
             } else {
-                $('#usl_total_harga').val('').attr('placeholder', 'Pilih blok / unit terlebih dahulu');
+                $('#usl_total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
             }
         });
 
@@ -1284,7 +1285,7 @@
             $('#usl_pekerjaan').val('').trigger('change');
             $('#usl_pasangan').hide();
             $('#usl_row-pekerjaan-lain').hide();
-            $('#usl_total_harga').val('').attr('placeholder', 'Pilih blok / unit terlebih dahulu');
+            $('#usl_total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
 
             let submitBtn = $('#submitBtnUnitSudahLaku');
             submitBtn.find('.spinner-border').addClass('d-none');
@@ -1429,3 +1430,4 @@
     </script>
     @include('admin.partials.js-cetak')
 @endpush
+

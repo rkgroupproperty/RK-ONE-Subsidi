@@ -65,24 +65,35 @@
 
             {{-- SVG Container --}}
             <div class="d-flex justify-content-center">
-                <div class="svg-container position-relative">
+                <div class="svg-container position-relative w-100" style="min-height: 480px;">
+                    <div class="siteplan-zoom-toolbar">
+                        <button type="button" class="btn-zoom-in" title="Perbesar (Zoom In)">
+                            <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">Zoom In</span>
+                        </button>
+                        <button type="button" class="btn-zoom-out" title="Perkecil (Zoom Out)">
+                            <i class="fas fa-minus"></i> <span class="d-none d-sm-inline">Zoom Out</span>
+                        </button>
+                        <div class="zoom-level-badge">100%</div>
+                        <button type="button" class="btn-zoom-reset reset-button" title="Kembalikan Tampilan Awal">
+                            <i class="fas fa-sync-alt mr-1"></i> <span class="d-none d-sm-inline">Reset Siteplan</span>
+                        </button>
+                    </div>
+
                     {{-- SVG Header --}}
                     @if ($kav->masterSvg)
-                        {!! str_replace(['[[lebar]]', '[[tinggi]]'], ['100%', '400px'], $kav->masterSvg->header_svg) !!}
+                        {!! str_replace(['[[lebar]]', '[[tinggi]]'], ['100%', '100%'], $kav->masterSvg->header_svg) !!}
                     @endif
 
                     {{-- Loop kavling --}}
                     @foreach ($kav->kavlingPeta as $pt)
                         @php
                             $warna = '#ffffff';
-                            if ($pt->customer) {
-                                if ($pt->progres) {
-                                    $warna = $pt->progres->warna;
-                                }
-                            } else {
-                                if ($pt->status == 1) {
-                                    $warna = '#42f202';
-                                }
+                            if ($pt->customer && $pt->customer->progres) {
+                                $warna = $pt->customer->progres->warna ?? '#ffffff';
+                            } elseif ($pt->progres) {
+                                $warna = $pt->progres->warna ?? '#ffffff';
+                            } elseif ($pt->status == 1) {
+                                $warna = '#42f202';
                             }
                         @endphp
 
@@ -107,6 +118,22 @@
                     @endif
                 </div>
             </div>
+
+            @if(isset($legend) && count($legend) > 0)
+                <div class="siteplan-legend-container mt-4 pt-3 border-top text-start">
+                    <h6 class="fw-bold mb-3 text-center" style="font-size: 0.9rem; color: #1e293b;">
+                        <i class="fas fa-info-circle me-1 text-primary"></i> Keterangan Status Kavling:
+                    </h6>
+                    <div class="d-flex flex-wrap justify-content-center" style="gap: 12px 18px;">
+                        @foreach($legend as $leg)
+                            <div class="d-flex align-items-center" style="font-size: 0.82rem;">
+                                <span style="display:inline-block; width:16px; height:16px; border-radius:4px; background-color: {{ $leg->warna }}; border: 1px solid rgba(0,0,0,0.2); margin-right: 6px;"></span>
+                                <span class="fw-medium text-dark">{{ $leg->status_progres }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>
@@ -179,7 +206,7 @@
                     $konfigurasi = \App\Models\PengaturanProfil::first();
                     @endphp
                     <div class="copyright-text text-center">
-                        <p>&copy; 2025 {{ $konfigurasi->nama_perusahaan ?? 'Template Aplikasi' }}</p>
+                        <p>Copyright &copy; 2026 di Kelola Tim Marcom RK GROUP Property</p>
                     </div>
                 </div>
             </div>
@@ -232,6 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 </script>
+<script src="{{ asset('assets/svg_1.js') }}?v={{ time() }}"></script>
 
 
 

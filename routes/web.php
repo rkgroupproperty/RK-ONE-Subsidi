@@ -40,7 +40,6 @@ use App\Http\Controllers\Pengaturan\PengaturanPenggunaController;
 use App\Http\Controllers\Pengaturan\PengaturanProfilController;
 use App\Http\Controllers\Pengaturan\RoleUserController;
 use App\Http\Controllers\Siteplan\SiteplanPenjualanController;
-use App\Http\Controllers\Siteplan\SiteplanUnitReadyController;
 use App\Http\Controllers\Siteplan\SiteplanListrikController;
 use App\Http\Controllers\Siteplan\SiteplanBphtbSSPController;
 use App\Http\Controllers\Siteplan\SiteplanAirController;
@@ -104,8 +103,11 @@ Route::get('/', function () {
 
 Route::get('/booking', [PengajuanHoldController::class, 'booking'])->name('booking');
 Route::get('/booking-sukses', [PengajuanHoldController::class, 'bookingSukses'])->name('booking.sukses');
+Route::get('/booking/kwitansi-sementara/{id}', [PengajuanHoldController::class, 'cetakKwitansiSementara'])->name('booking.kwitansi-sementara');
 Route::get('siteplan', [PublicSiteplanController::class, 'index'])->name('public.siteplan.index');
 Route::get('siteplan/detail/{id}', [PublicSiteplanController::class, 'show'])->name('public.siteplan.show');
+Route::get('siteplan/cetak/pdf/{id_lokasi}', [PublicSiteplanController::class, 'cetakPDF'])->name('public.siteplan.cetak.pdf');
+Route::get('siteplan/cetak/jpg/{id_lokasi}', [PublicSiteplanController::class, 'cetakJPG'])->name('public.siteplan.cetak.jpg');
 
 Route::get('/get-kavling-hold/{id_lokasi}', [PengajuanHoldController::class, 'getKavlingHold'])->name('pengajuan-hold.getKavling');
 Route::get('/get-harga-kavling-hold/{id_kavling}', [PengajuanHoldController::class, 'getHargaKavlingHold'])->name('pengajuan-hold.getHargaKavling');
@@ -129,8 +131,9 @@ Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar'
 Route::middleware(['auth'])->group(function () {
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
     Route::get('admin/beranda/chart-data', [BerandaController::class, 'getChartData'])->name('beranda.chart-data');
-    Route::get('admin/beranda/periode-data', [BerandaController::class, 'periodeData'])->name('beranda.periode-data');
+    Route::get('admin/beranda/marketing-stats', [BerandaController::class, 'getMarketingStats'])->name('beranda.marketing-stats');
     Route::get('admin/beranda/sumber-prospek-data', [BerandaController::class, 'getSumberProspekData'])->name('beranda.sumber-prospek-data');
+    Route::get('admin/beranda/export-sumber-prospek', [BerandaController::class, 'exportSumberProspek'])->name('beranda.export-sumber-prospek');
     Route::get('admin/beranda/admin-pemberkasan-data', [BerandaController::class, 'adminPemberkasanData'])->name('beranda.admin-pemberkasan-data');
     Route::get('admin/detail-grafik-penjualan-bulanan', [BerandaController::class, 'detailGrafik'])->name('beranda.detail-grafik');
     Route::get('admin/detail-grafik-penjualan-bulanan/data', [BerandaController::class, 'detailGrafikData'])->name('beranda.detail-grafik.data');
@@ -173,9 +176,6 @@ Route::middleware(['auth'])->group(function () {
             Route::get('siteplan-penjualan/cetak/pdf/{id_lokasi}', [SiteplanPenjualanController::class, 'cetakPDF'])->name('siteplan-penjualan.cetak.pdf');
             Route::get('siteplan-penjualan/cetak/jpg/{id_lokasi}', [SiteplanPenjualanController::class, 'cetakJPG'])->name('siteplan-penjualan.cetak.jpg');
             Route::post('siteplan-penjualan/cetak', [SiteplanPenjualanController::class, 'cetak'])->name('penjualan.cetak');
-
-            Route::get('siteplan-unit-ready/cetak/pdf/{id_lokasi}', [SiteplanUnitReadyController::class, 'cetakPDF'])->name('siteplan-unit-ready.cetak.pdf');
-            Route::get('siteplan-unit-ready/cetak/jpg/{id_lokasi}', [SiteplanUnitReadyController::class, 'cetakJPG'])->name('siteplan-unit-ready.cetak.jpg');
 
         });
     });
@@ -226,6 +226,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/wawancara/acc-bank/{id_wawancara}', [WawancaraController::class, 'simpanSp3k'])->name('proses-bank.sp3k');
         Route::get('/wawancara/{id}/acc', [WawancaraController::class, 'acc'])->name('proses-bank.acc');
         Route::get('/sp3k/data', [AccBankController::class, 'getDataSp3k'])->name('sp3k.data');
+        Route::get('/acc-bank/customer-detail/{id}', [AccBankController::class, 'getCustomerDetail'])->name('sp3k.customer-detail');
 
         Route::resource('acc-bank', AccBankController::class)->names('sp3k');
         Route::resource('akad', AkadController::class);
@@ -330,13 +331,13 @@ Route::middleware(['auth'])->group(function () {
         // Perusahaan
         Route::resource('perusahaan', PerusahaanController::class)->except('show');
         Route::put('lokasi-kavling/{id}/updateDetail', [LokasiKavlingController::class, 'updateDetail'])->name('LokasiKavling.updateDetail');
+        Route::put('lokasi-kavling/{id}/update-detail', [LokasiKavlingController::class, 'updateDetail']);
         Route::get('/lokasi-kavling/{id}/setting', [LokasiKavlingController::class, 'setting'])->name('LokasiKavling.setting');
         Route::put('/lokasi-kavling/{id}/setting', [LokasiKavlingController::class, 'updateSetting'])->name('LokasiKavling.updateSetting');
         Route::get('/lokasi-kavling/{id}/detail', [LokasiKavlingController::class, 'detail'])->name('LokasiKavling.detail');
         Route::get('/lokasi-kavling/export/{id}', [LokasiKavlingController::class, 'exportDetail'])->name('LokasiKavling.export');
         Route::post('/lokasi-kavling/upload-excel', [LokasiKavlingController::class, 'uploadExcel'])->name('LokasiKavling.uploadExcel');
         Route::get('/lokasi-kavling/{id}/edit-detail', [LokasiKavlingController::class, 'editDetail'])->name('LokasiKavling.editDetail');
-        Route::put('/lokasi-kavling/{id}/update-detail', [LokasiKavlingController::class, 'updateDetail'])->name('LokasiKavling.updateDetail');
         Route::get('get-perusahaan', [LokasiKavlingController::class, 'getPerusahaan'])->name('getPerusahaan');
 
         Route::get('/kavling/cetak-excel/{id_lokasi}', [KavlingController::class, 'cetakExcel'])->name('kavling.cetakExcel');

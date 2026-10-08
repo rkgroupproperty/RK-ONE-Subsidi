@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\Customer;
 use App\Models\MarketingOffline;
-use App\Models\ProgresListPenjualan;
+use App\Models\AdminPemberkasan;
 use App\Models\SPPR;
 use App\Traits\LogAktivitasTrait;
 use Illuminate\Http\Request;
@@ -25,11 +25,7 @@ class SPPRController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = SPPR::with('customer')
-                ->whereHas('customer', function ($query) {
-                    $query->where('id_status_progres', 10)->where('stt_arsip', 0);
-                })
-                ->orderBy('id', 'desc');
+            $data = SPPR::with('customer')->orderBy('id', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -70,13 +66,14 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
                 ->make(true);
         }
 
-        $customerList = Customer::where('stt_arsip', 0)->where('id_status_progres', 11)->orderBy('nama_lengkap')->get();
+        $customerList = Customer::orderBy('nama_lengkap')->get();
         $marketingList = MarketingOffline::orderBy('nama_marketing')->get();
+        $adminPemberkasanList = AdminPemberkasan::orderBy('nama_lengkap')->get();
 
         $lastId = SPPR::max('id') ?? 0;
         $nextNoSppr = str_pad($lastId + 1, 3, '0', STR_PAD_LEFT);
 
-        return view('admin.transaksi.sppr.index', compact('permissions', 'customerList', 'marketingList', 'nextNoSppr'));
+        return view('admin.transaksi.sppr.index', compact('permissions', 'customerList', 'marketingList', 'adminPemberkasanList', 'nextNoSppr'));
     }
 
     public function getCustomerDetail($id)
@@ -106,6 +103,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
                 'status' => 'success',
                 'data' => [
                     'nama_lengkap' => $customer->nama_lengkap,
+                    'id_admin_pemberkasan' => $customer->id_admin_pemberkasan,
                     'alamat' => $customer->alamat_ktp ?? $customer->alamat_domisili ?? '',
                     'nik' => $customer->nik,
                     'no_telp' => $customer->no_telp,
@@ -132,6 +130,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
     {
         $request->validate([
             'id_customer' => 'required|integer|exists:customer,id',
+            'id_admin_pemberkasan' => 'nullable|integer|exists:admin_pemberkasan,id',
             'no_sppr' => 'nullable',
             'nama' => 'required',
             'alamat' => 'required',
@@ -236,7 +235,12 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
         ]);
 
         $this->logCreate('Proses Admin', $sppr->id);
-        $this->ubahStatusProgres($sppr->id_customer);
+
+        if ($request->filled('id_admin_pemberkasan')) {
+            Customer::where('id', $request->id_customer)->update([
+                'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
+            ]);
+        }
 
         return response()->json(['status' => 'success']);
     }
@@ -257,6 +261,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
 
         $request->validate([
             'id_customer' => 'required|integer|exists:customer,id',
+            'id_admin_pemberkasan' => 'nullable|integer|exists:admin_pemberkasan,id',
             'no_sppr' => 'nullable',
             'nama' => 'required',
             'alamat' => 'required',
@@ -345,7 +350,15 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
         ]);
 
         $this->logEdit('Proses Admin', $sppr->id);
-        $this->ubahStatusProgres($sppr->id_customer);
+
+        if ($request->filled('id_admin_pemberkasan')) {
+            $custId = $sppr->id_customer ?? $request->id_customer;
+            if ($custId) {
+                Customer::where('id', $custId)->update([
+                    'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
+                ]);
+            }
+        }
 
         return response()->json(['status' => 'success']);
     }
@@ -434,22 +447,6 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
         $templateProcessor->saveAs($tempFile);
 
         return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
-    }
-
-
-
-    private function ubahStatusProgres($idCustomer)
-    {
-        $customer = Customer::with('progres')->find($idCustomer);
-        $status   = ProgresListPenjualan::find(10);
-
-        if (! $customer || ! $status) {
-            return;
-        }
-
-        if (! $customer->progres || in_array($customer->id_status_progres, [1, 2, 11])) {
-            $customer->update(['id_status_progres' => $status->id]);
-        }
     }
 
 

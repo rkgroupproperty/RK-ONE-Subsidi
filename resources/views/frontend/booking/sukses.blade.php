@@ -77,12 +77,28 @@
                             <hr class="my-4">
 
                             @php
-                                $nama = session('nama');
-                                $lokasi = session('lokasi');
-                                $blok = session('blok');
+                                $bookingId = $booking->id ?? session('booking_id');
+                                $noReg = $booking->no_registrasi ?? session('no_registrasi');
+                                $nama = $booking->nama_lengkap ?? session('nama');
+                                $lokasi = $booking->lokasi->nama_kavling ?? session('lokasi');
+                                $blok = $booking->kavling->kode_kavling ?? session('blok');
+                                $bookingFee = $booking->booking_fee ?? null;
                             @endphp
 
                             <div class="booking-details">
+                                @if ($noReg)
+                                    <div class="detail-item mb-3 p-3 bg-light rounded-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-wrapper mr-3">
+                                                <i class="fas fa-file-invoice text-primary" style="font-size: 22px;"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <small class="text-muted d-block">Nomor Registrasi</small>
+                                                <strong class="text-primary font-weight-bold">{{ $noReg }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
                                 <div class="detail-item mb-3 p-3 bg-light rounded-3">
                                     <div class="d-flex align-items-center">
                                         <div class="icon-wrapper mr-3">
@@ -147,6 +163,36 @@
                                         </div>
                                     </div>
                                 </div>
+                                @if ($bookingFee)
+                                    <div class="detail-item mb-4 p-3 bg-light rounded-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-wrapper mr-3">
+                                                <i class="fas fa-money-bill-wave text-success" style="font-size: 20px;"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <small class="text-muted d-block">Nominal Booking Fee</small>
+                                                <strong class="text-success font-weight-bold">Rp {{ number_format($bookingFee, 0, ',', '.') }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Catatan Penting / Disclaimer Draf Kwitansi Sementara --}}
+                            <div class="alert alert-warning border-0 rounded-3 mb-4 text-left p-3" style="background: #fffbeb; border-left: 4px solid #f59e0b !important;">
+                                <div class="d-flex align-items-start">
+                                    <div class="mr-3 text-warning pt-1" style="font-size: 1.4rem;">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </div>
+                                    <div>
+                                        <strong class="text-dark d-block mb-1" style="font-size: 0.95rem;">Catatan Bukti Kwitansi Sementara (Draf):</strong>
+                                        <p class="text-muted mb-0" style="font-size: 0.83rem; line-height: 1.5;">
+                                            Kwitansi yang diunduh melalui tombol di bawah merupakan <strong>Kwitansi Sementara (Draf)</strong> sebagai bukti awal pengajuan booking Anda telah terdata di sistem.
+                                            <br>
+                                            <strong>Kwitansi Asli yang Sah</strong> akan secara resmi diterbitkan dan dikirimkan oleh <strong>Admin RK Group Property</strong> setelah berkas &amp; pembayaran booking Anda diverifikasi serta di-ACC oleh Admin.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="alert alert-info border-0 rounded-3 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
@@ -162,15 +208,20 @@
 
                             <div class="text-center mb-4">
                                 <p class="text-muted mb-0">Salam hangat dari</p>
-                                <h5 style="color: #1e5fa8" class="fw-bold  mb-0">{{ $konfigurasi->nama_perusahaan ?? 'Template Aplikasi' }}</h5>
+                                <h5 style="color: #1e5fa8" class="fw-bold mb-0">{{ $konfigurasi->nama_perusahaan ?? 'Template Aplikasi' }}</h5>
                             </div>
 
-                            <div class="text-center">
-                                <a href="{{ route('booking') }}" class="btn-submit ">
+                            <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-2">
+                                @if ($bookingId)
+                                    <a href="{{ route('booking.kwitansi-sementara', $bookingId) }}" target="_blank" class="btn btn-warning text-dark font-weight-bold px-4 py-2 mr-sm-2 mb-2 mb-sm-0 shadow-sm" style="border-radius: 12px; font-size: 0.95rem;">
+                                        <i class="fas fa-file-download mr-1"></i> Download Kwitansi Sementara
+                                    </a>
+                                @endif
+                                <a href="{{ route('booking') }}" class="btn-submit py-2 px-4" style="text-decoration: none;">
                                     <svg class="me-2" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
                                     </svg>
-                                    Kembali
+                                    Kembali ke Booking
                                 </a>
                             </div>
                         </div>
