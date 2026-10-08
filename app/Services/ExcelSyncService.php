@@ -26,6 +26,7 @@ class ExcelSyncService
         'customer_updated' => 0,
         'sp3k_created'     => 0,
         'bir2_akad_count'  => 0,
+        'mkt_synced'       => 0,
         'errors'           => 0,
     ];
 
@@ -60,7 +61,10 @@ class ExcelSyncService
             // 2. Eksekusi Sinkronisasi Khusus 17 Konsumen SP3K
             $this->syncDirectSp3k();
 
-            // 3. Jika file CSV tersedia, baca dan parse data unit tambahan
+            // 3. Eksekusi Sinkronisasi Khusus 114 Konsumen Pemberkasan Marketing
+            $this->syncDirectMarketing();
+
+            // 4. Jika file CSV tersedia, baca dan parse data unit tambahan
             if ($csvPath && file_exists($csvPath)) {
                 $lines = file($csvPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                 $this->addLog("Membaca file data eksternal: " . count($lines) . " baris.");
@@ -310,6 +314,199 @@ class ExcelSyncService
         }
 
         $this->addLog("Berhasil menyinkronkan 17 data konsumen SP3K!");
+    }
+
+    /**
+     * Sinkronisasi langsung 114 Konsumen Pemberkasan Marketing dari Spreadsheet
+     */
+    public function syncDirectMarketing()
+    {
+        $this->addLog("Menyinkronkan 114 data konsumen Pemberkasan Marketing dari spreadsheet...");
+        $mktList = $this->getMarketingData();
+        $count = 0;
+
+        foreach ($mktList as $item) {
+            $lokasi = $this->resolveLokasi($item['perumahan']);
+            if (!$lokasi) continue;
+
+            $kavling = $this->resolveKavling($lokasi->id, $item['blok']);
+            $mkt = $this->resolveMarketing($item['marketing']);
+
+            $customer = null;
+            if ($kavling->id_customer) {
+                $customer = Customer::find($kavling->id_customer);
+            }
+            if (!$customer) {
+                $customer = Customer::where('id_lokasi', $lokasi->id)
+                    ->where('id_kavling', $kavling->id)
+                    ->where('stt_arsip', 0)
+                    ->first();
+            }
+            if (!$customer) {
+                $customer = Customer::where('id_lokasi', $lokasi->id)
+                    ->where('nama_lengkap', 'LIKE', '%' . $item['nama'] . '%')
+                    ->where('stt_arsip', 0)
+                    ->first();
+            }
+
+            $payload = [
+                'nama_lengkap'      => $item['nama'],
+                'id_lokasi'         => $lokasi->id,
+                'id_kavling'        => $kavling->id,
+                'id_marketing'      => optional($mkt)->id,
+                'id_status_progres' => 11, // Pemberkasan Marketing
+                'jenis_pembelian'   => 'KPR',
+                'sumber_prospek'    => 'Iklan Kantor',
+                'tanggal_verif'     => $item['booking'] ?: date('Y-m-d'),
+                'stt_arsip'         => 0,
+            ];
+
+            if ($customer) {
+                if ($customer->id_status_progres != 3 && $customer->id_status_progres != 4) {
+                    $customer->update($payload);
+                    $this->stats['customer_updated']++;
+                }
+            } else {
+                $payload['kode_customer'] = 'CUST-' . strtoupper(Str::random(6));
+                $payload['total_harga']   = (int) ($kavling->hrg_jual ?: 168000000);
+                $customer = Customer::create($payload);
+                $this->stats['customer_created']++;
+            }
+
+            if ($kavling->status != 2 || !$kavling->id_customer) {
+                $kavling->update(['status' => 2, 'id_customer' => $customer->id]);
+                $this->stats['kavling_updated']++;
+            }
+            $count++;
+        }
+
+        $this->stats['mkt_synced'] = $count;
+        $this->addLog("Berhasil menyinkronkan " . $count . " data konsumen Pemberkasan Marketing (ID: 11)!");
+    }
+
+    /**
+     * Master Data 114 Konsumen Pemberkasan Marketing dari Spreadsheet
+     */
+    public function getMarketingData(): array
+    {
+        return [
+            // --- DAFTAR MASTER TABEL 1 (54 Konsumen) ---
+            ['nama' => 'Sinta Rini', 'perumahan' => 'Alzafa T2', 'blok' => 'C3 NO 05A', 'marketing' => 'Niya', 'booking' => '2026-07-02'],
+            ['nama' => 'Nia Kurniasih', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E3 NO 01', 'marketing' => 'Niya', 'booking' => '2026-09-08'],
+            ['nama' => 'Rafiastuti', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E3 NO 08', 'marketing' => 'Ernawati', 'booking' => '2026-08-20'],
+            ['nama' => 'Helmawati', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E3 NO 20', 'marketing' => 'Niya', 'booking' => '2026-08-28'],
+            ['nama' => 'Lucky Juliansyah', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E3 NO 21', 'marketing' => 'Ernawati', 'booking' => '2026-09-02'],
+            ['nama' => 'Elvin Oktapian', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 02', 'marketing' => 'Ernawati', 'booking' => '2026-09-01'],
+            ['nama' => 'Endan Mulyadi', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 04', 'marketing' => 'Ernawati', 'booking' => '2026-09-14'],
+            ['nama' => 'Nora Febriyani', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 06', 'marketing' => 'Niya', 'booking' => '2026-09-16'],
+            ['nama' => 'Hendra Suryanto', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 08', 'marketing' => 'Ernawati', 'booking' => '2026-10-06'],
+            ['nama' => 'Ilham Effendi', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 12A', 'marketing' => 'Niya', 'booking' => '2026-08-25'],
+            ['nama' => 'Muhammad Abdul Mulyono', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 14', 'marketing' => 'Niya', 'booking' => '2026-09-06'],
+            ['nama' => 'Sugiarti', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 15', 'marketing' => 'Niya', 'booking' => '2026-10-08'],
+            ['nama' => 'Astri Widiastuti', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E5 NO 07', 'marketing' => 'Niya', 'booking' => '2026-07-25'],
+            ['nama' => 'Nang', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 04', 'marketing' => 'Mentari', 'booking' => '2026-02-14'],
+            ['nama' => 'Dewi Yulianti', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 09', 'marketing' => 'Ernawati', 'booking' => '2026-04-02'],
+            ['nama' => 'Annur Rizkia', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 19', 'marketing' => 'Ernawati', 'booking' => '2026-10-04'],
+            ['nama' => 'Agus Sutrisno', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 28', 'marketing' => 'Niya', 'booking' => '2026-07-03'],
+            ['nama' => 'Ria Novitasari', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 29', 'marketing' => 'Ernawati', 'booking' => '2026-05-25'],
+            ['nama' => 'Umi Qulsum', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E7 NO 07', 'marketing' => 'Ernawati', 'booking' => '2026-06-14'],
+            ['nama' => 'Ramadhoni Saputra', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E7 NO 09', 'marketing' => 'Ernawati', 'booking' => '2026-10-08'],
+            ['nama' => 'Dikson Livi Arianto', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F06 NO 04', 'marketing' => 'Tami', 'booking' => '2026-06-06'],
+            ['nama' => 'Riza Hidayat', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F06 NO 08', 'marketing' => 'Tami', 'booking' => '2026-04-28'],
+            ['nama' => 'Ponirin Nika', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F06 NO 18', 'marketing' => 'Fiko', 'booking' => '2026-07-13'],
+            ['nama' => 'Silpiani', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F06 NO 19', 'marketing' => 'Fiko', 'booking' => '2026-07-13'],
+            ['nama' => 'Ade Syaputra', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F08 NO 02', 'marketing' => 'Dian', 'booking' => '2026-01-14'],
+            ['nama' => 'Reza Ramadiftah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F08 NO 05', 'marketing' => 'Tami', 'booking' => '2026-09-27'],
+            ['nama' => 'Rahmat Hidayat', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F09 NO 04', 'marketing' => 'Fiko', 'booking' => '2024-06-06'],
+            ['nama' => 'Adelia Irma Dianti', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F10 NO 07', 'marketing' => 'Fiko', 'booking' => '2026-04-17'],
+            ['nama' => 'Ashabul Kahfi', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F10 NO 08', 'marketing' => 'Fiko', 'booking' => '2025-10-05'],
+            ['nama' => 'Eveng Novedes', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F10 NO 16', 'marketing' => 'Akbar', 'booking' => '2026-07-15'],
+            ['nama' => 'Helen Saparinga', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F10 NO 17', 'marketing' => 'Akbar', 'booking' => '2026-07-15'],
+            ['nama' => 'Puji Rahayu', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F11 NO 01', 'marketing' => 'Fiko', 'booking' => '2024-11-08'],
+            ['nama' => 'Ahmad Ardi Gunawan', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 09', 'marketing' => 'Vira', 'booking' => '2026-07-18'],
+            ['nama' => 'Ahmad Ardi Gunawan', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 10', 'marketing' => 'Vira', 'booking' => '2026-07-18'],
+            ['nama' => 'Muhammad Dika Herdian', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 11', 'marketing' => 'Kantor', 'booking' => '2026-07-21'],
+            ['nama' => 'Fadly Efansyah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F13 NO 04', 'marketing' => 'Fiko', 'booking' => '2026-02-04'],
+            ['nama' => 'Alva Hasanah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F13 NO 10', 'marketing' => 'Fiko', 'booking' => '2026-04-15'],
+            ['nama' => 'Aditya Pratama', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F14 NO 01', 'marketing' => 'Fiko', 'booking' => '2025-04-06'],
+            ['nama' => 'Nihesta Husnil Fatah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F14 NO 11', 'marketing' => 'Fiko', 'booking' => '2026-06-05'],
+            ['nama' => 'Salsa Alroisyah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F14 NO 12', 'marketing' => 'Hendrik', 'booking' => '2026-07-27'],
+            ['nama' => 'Sonny Hidayat', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F15 NO 07', 'marketing' => 'Fiko', 'booking' => '2025-10-06'],
+            ['nama' => 'M Alvin Yudhistira', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F16 NO 01', 'marketing' => 'Fiko', 'booking' => '2024-12-20'],
+            ['nama' => 'Suci Shugmycaesaria', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F16 NO 10', 'marketing' => 'Fiko', 'booking' => '2025-11-13'],
+            ['nama' => 'Muhammad Rizky Dwi', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F16 NO 11', 'marketing' => 'Fiko', 'booking' => '2025-04-16'],
+            ['nama' => 'Dhea Oktaviani', 'perumahan' => 'BIR 2', 'blok' => 'B04 NO 14', 'marketing' => 'Fiko', 'booking' => '2026-08-15'],
+            ['nama' => 'Raizan', 'perumahan' => 'BIR 2', 'blok' => 'B05 NO 17', 'marketing' => 'Hendrik', 'booking' => '2026-08-09'],
+            ['nama' => 'Septian Ridho Arouvama', 'perumahan' => 'BIR 2', 'blok' => 'B06 NO 07', 'marketing' => 'Akbar', 'booking' => '2026-08-27'],
+            ['nama' => 'Budi', 'perumahan' => 'BIR 2', 'blok' => 'B06 NO 15', 'marketing' => 'Akbar', 'booking' => '2026-09-27'],
+            ['nama' => 'Nanda Agustin', 'perumahan' => 'BIR 2', 'blok' => 'B06 NO 17', 'marketing' => 'Akbar', 'booking' => '2026-07-16'],
+            ['nama' => 'Nursania Manurung', 'perumahan' => 'BIR 2', 'blok' => 'B07 NO 01', 'marketing' => 'Hendrik', 'booking' => '2026-08-10'],
+            ['nama' => 'Halimatus Sakdiah', 'perumahan' => 'BIR 2', 'blok' => 'B07 NO 02', 'marketing' => 'Hendrik', 'booking' => '2026-09-30'],
+            ['nama' => 'Ira', 'perumahan' => 'BIR 2', 'blok' => 'B07 NO 04', 'marketing' => 'Fiko', 'booking' => '2026-09-10'],
+            ['nama' => 'Rendy Yansa Putra', 'perumahan' => 'BIR 2', 'blok' => 'B07 NO 10', 'marketing' => 'Hendrik', 'booking' => '2026-09-06'],
+
+            // --- DAFTAR TIM MARKETING & KONSUMEN TAMBAHAN (60 Konsumen) ---
+            ['nama' => 'Eveng Novedes', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F10 NO 16', 'marketing' => 'Akbar', 'booking' => '2026-07-15'],
+            ['nama' => 'Helen Saparinga', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F10 NO 17', 'marketing' => 'Akbar', 'booking' => '2026-07-15'],
+            ['nama' => 'Septian Ridho Arouvama', 'perumahan' => 'BIR 2', 'blok' => 'B06 NO 07', 'marketing' => 'Akbar', 'booking' => '2026-08-27'],
+            ['nama' => 'Budi', 'perumahan' => 'BIR 2', 'blok' => 'B06 NO 15', 'marketing' => 'Akbar', 'booking' => '2026-09-27'],
+            ['nama' => 'Nanda Agustin', 'perumahan' => 'BIR 2', 'blok' => 'B06 NO 17', 'marketing' => 'Akbar', 'booking' => '2026-07-16'],
+            ['nama' => 'Ade Syaputra', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F08 NO 02', 'marketing' => 'Dian', 'booking' => '2026-01-14'],
+            ['nama' => 'Rafiastuti', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E3 NO 08', 'marketing' => 'Ernawati', 'booking' => '2026-08-20'],
+            ['nama' => 'Lucky Juliansyah', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E3 NO 21', 'marketing' => 'Ernawati', 'booking' => '2026-09-02'],
+            ['nama' => 'Endan Mulyadi', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 04', 'marketing' => 'Ernawati', 'booking' => '2026-09-14'],
+            ['nama' => 'Ahmad Haerudin', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 07', 'marketing' => 'Ernawati', 'booking' => '2026-09-08'],
+            ['nama' => 'Dewi Yulianti', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 09', 'marketing' => 'Ernawati', 'booking' => '2026-04-02'],
+            ['nama' => 'Ria Novitasari', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 29', 'marketing' => 'Ernawati', 'booking' => '2026-05-25'],
+            ['nama' => 'Umi Qulsum', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E7 NO 07', 'marketing' => 'Ernawati', 'booking' => '2026-06-14'],
+            ['nama' => 'Elvin Oktapian', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 02', 'marketing' => 'Ernawati', 'booking' => '2026-09-01'],
+            ['nama' => 'Refi Astuti Sari', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 08', 'marketing' => 'Ernawati', 'booking' => '2026-08-20'],
+            ['nama' => 'Muhaad Gazali', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 11', 'marketing' => 'Ernawati', 'booking' => '2026-08-15'],
+            ['nama' => 'Ponirin Nika', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F06 NO 18', 'marketing' => 'Fiko', 'booking' => '2026-07-13'],
+            ['nama' => 'Silpiani', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F06 NO 19', 'marketing' => 'Fiko', 'booking' => '2026-07-13'],
+            ['nama' => 'Rahmat Hidayat', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F09 NO 04', 'marketing' => 'Fiko', 'booking' => '2024-06-06'],
+            ['nama' => 'Adelia Irma Dianti', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F10 NO 07', 'marketing' => 'Fiko', 'booking' => '2026-04-17'],
+            ['nama' => 'Ashabul Kahfi', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F10 NO 08', 'marketing' => 'Fiko', 'booking' => '2025-10-05'],
+            ['nama' => 'Puji Rahayu', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F11 NO 01', 'marketing' => 'Fiko', 'booking' => '2024-11-08'],
+            ['nama' => 'Fadly Efansyah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F13 NO 04', 'marketing' => 'Fiko', 'booking' => '2026-02-04'],
+            ['nama' => 'Alva Hasanah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F13 NO 10', 'marketing' => 'Fiko', 'booking' => '2026-04-15'],
+            ['nama' => 'Aditya Pratama', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F14 NO 01', 'marketing' => 'Fiko', 'booking' => '2025-04-06'],
+            ['nama' => 'Nihesta Husnil Fatah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F14 NO 11', 'marketing' => 'Fiko', 'booking' => '2026-06-05'],
+            ['nama' => 'Sonny Hidayat', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F15 NO 07', 'marketing' => 'Fiko', 'booking' => '2025-10-06'],
+            ['nama' => 'M Alvin Yudhistira', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F16 NO 01', 'marketing' => 'Fiko', 'booking' => '2024-12-20'],
+            ['nama' => 'Suci Shugmycaesaria', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F16 NO 10', 'marketing' => 'Fiko', 'booking' => '2025-11-13'],
+            ['nama' => 'Muhammad Rizky Dwi', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F16 NO 11', 'marketing' => 'Fiko', 'booking' => '2025-04-16'],
+            ['nama' => 'Dhea Oktaviani', 'perumahan' => 'BIR 2', 'blok' => 'B04 NO 14', 'marketing' => 'Fiko', 'booking' => '2026-08-15'],
+            ['nama' => 'Muhammad Zulfikri', 'perumahan' => 'BIR 2', 'blok' => 'B06 NO 16', 'marketing' => 'Fiko', 'booking' => '2026-09-12'],
+            ['nama' => 'Ira', 'perumahan' => 'BIR 2', 'blok' => 'B07 NO 04', 'marketing' => 'Fiko', 'booking' => '2026-09-10'],
+            ['nama' => 'Salsa Alroisyah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F14 NO 12', 'marketing' => 'Hendrik', 'booking' => '2026-07-27'],
+            ['nama' => 'Raizan', 'perumahan' => 'BIR 2', 'blok' => 'B05 NO 17', 'marketing' => 'Hendrik', 'booking' => '2026-08-09'],
+            ['nama' => 'Nursania Manurung', 'perumahan' => 'BIR 2', 'blok' => 'B07 NO 01', 'marketing' => 'Hendrik', 'booking' => '2026-08-10'],
+            ['nama' => 'Halimatus Sakdiah', 'perumahan' => 'BIR 2', 'blok' => 'B07 NO 02', 'marketing' => 'Hendrik', 'booking' => '2026-09-30'],
+            ['nama' => 'Rendy Yansa Putra', 'perumahan' => 'BIR 2', 'blok' => 'B07 NO 10', 'marketing' => 'Hendrik', 'booking' => '2026-09-06'],
+            ['nama' => 'Muhammad Dika Herdian', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 11', 'marketing' => 'Kantor', 'booking' => '2026-07-21'],
+            ['nama' => 'Nang', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 04', 'marketing' => 'Mentari', 'booking' => '2026-02-14'],
+            ['nama' => 'Sinta Rini', 'perumahan' => 'Alzafa T2', 'blok' => 'C3 NO 05A', 'marketing' => 'Niya', 'booking' => '2026-07-02'],
+            ['nama' => 'Nia Kurniasih', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E3 NO 01', 'marketing' => 'Niya', 'booking' => '2026-09-08'],
+            ['nama' => 'Helmawati', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E3 NO 20', 'marketing' => 'Niya', 'booking' => '2026-08-28'],
+            ['nama' => 'Nora Febriyani', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 06', 'marketing' => 'Niya', 'booking' => '2026-09-16'],
+            ['nama' => 'Muhammad Abdul Mulyono', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 14', 'marketing' => 'Niya', 'booking' => '2026-09-06'],
+            ['nama' => 'Muhammad Sholihin', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E7 NO 10', 'marketing' => 'Niya', 'booking' => '2026-09-21'],
+            ['nama' => 'Astri Widiastuti', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E5 NO 07', 'marketing' => 'Niya', 'booking' => '2026-07-25'],
+            ['nama' => 'Ilham Effendi', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 12A', 'marketing' => 'Niya', 'booking' => '2026-08-25'],
+            ['nama' => 'Agus Sutrisno', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E6 NO 28', 'marketing' => 'Niya', 'booking' => '2026-07-03'],
+            ['nama' => 'Lp Juniarto Se', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 05', 'marketing' => 'Tami', 'booking' => '2026-09-28'],
+            ['nama' => 'Dikson Livi Arianto', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F06 NO 04', 'marketing' => 'Tami', 'booking' => '2026-06-06'],
+            ['nama' => 'Riza Hidayat', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F06 NO 08', 'marketing' => 'Tami', 'booking' => '2026-04-28'],
+            ['nama' => 'Reza Ramadiftah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F08 NO 05', 'marketing' => 'Tami', 'booking' => '2026-09-27'],
+            ['nama' => 'Pahala', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 05', 'marketing' => 'Tami', 'booking' => '2026-08-14'],
+            ['nama' => 'Reza Firmansyah', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 06', 'marketing' => 'Tami', 'booking' => '2026-09-23'],
+            ['nama' => 'Dicky Yusuf Prayoga', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 01', 'marketing' => 'Vira', 'booking' => '2026-09-29'],
+            ['nama' => 'Ahmad Ardi Gunawan', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 09', 'marketing' => 'Vira', 'booking' => '2026-07-18'],
+            ['nama' => 'Ahmad Ardi Gunawan', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F12 NO 10', 'marketing' => 'Vira', 'booking' => '2026-07-18'],
+            ['nama' => 'Konsumen Booking F01', 'perumahan' => 'BIR Tahap 4', 'blok' => 'F01 NO 01', 'marketing' => 'Tami', 'booking' => '2026-09-01'],
+            ['nama' => 'Konsumen Booking E4', 'perumahan' => 'Alzafa Tahap 3', 'blok' => 'E4 NO 15', 'marketing' => 'Niya', 'booking' => '2026-10-08'],
+        ];
     }
 
     /**
@@ -593,32 +790,49 @@ class ExcelSyncService
      */
     protected function resolveLokasi(string $shortName): ?LokasiKavling
     {
+        $s = strtoupper(trim($shortName));
         $q = LokasiKavling::query();
-        if ($shortName === 'Alzafa 2') {
-            $q->where('nama_kavling', 'LIKE', '%Alzafa%2%');
-        } elseif ($shortName === 'Alzafa 3') {
-            $q->where('nama_kavling', 'LIKE', '%Alzafa%3%');
-        } elseif ($shortName === 'BIR 4') {
+
+        if (str_contains($s, 'ALZAFA') && (str_contains($s, '2') || str_contains($s, 'T2'))) {
+            $q->where(function($sub) {
+                $sub->where('nama_kavling', 'LIKE', '%Alzafa%2%')
+                    ->orWhere('nama_kavling', 'LIKE', '%Alzafa%T2%')
+                    ->orWhere('nama_kavling', 'LIKE', '%Alzafa%Tahap%2%')
+                    ->orWhere('nama_singkat', 'LIKE', '%ALZ%2%');
+            });
+        } elseif (str_contains($s, 'ALZAFA') && (str_contains($s, '3') || str_contains($s, 'T3') || str_contains($s, 'TAHAP 3'))) {
+            $q->where(function($sub) {
+                $sub->where('nama_kavling', 'LIKE', '%Alzafa%3%')
+                    ->orWhere('nama_kavling', 'LIKE', '%Alzafa%T3%')
+                    ->orWhere('nama_kavling', 'LIKE', '%Alzafa%Tahap%3%')
+                    ->orWhere('nama_singkat', 'LIKE', '%ALZ%3%');
+            });
+        } elseif ((str_contains($s, 'INTAN') || str_contains($s, 'BIR')) && (str_contains($s, '4') || str_contains($s, 'TAHAP 4') || str_contains($s, 'T4'))) {
             $q->where(function($sub) {
                 $sub->where('nama_kavling', 'LIKE', '%Intan%4%')
-                    ->orWhere('nama_kavling', 'LIKE', '%BIR%4%');
+                    ->orWhere('nama_kavling', 'LIKE', '%BIR%4%')
+                    ->orWhere('nama_singkat', 'LIKE', '%BIR%4%');
             });
-        } elseif ($shortName === 'BIR 2') {
+        } elseif ((str_contains($s, 'INTAN') || str_contains($s, 'BIR')) && (str_contains($s, '2') || str_contains($s, 'TAHAP 2') || str_contains($s, 'T2'))) {
             $q->where(function($sub) {
                 $sub->where('nama_kavling', 'LIKE', '%Intan%2%')
                     ->orWhere('nama_kavling', 'LIKE', '%BIR%2%')
                     ->orWhere('nama_singkat', 'BIR2');
             });
-        } elseif ($shortName === 'BIR 3') {
+        } elseif ((str_contains($s, 'INTAN') || str_contains($s, 'BIR')) && (str_contains($s, '3') || str_contains($s, 'TAHAP 3') || str_contains($s, 'T3'))) {
             $q->where(function($sub) {
                 $sub->where('nama_kavling', 'LIKE', '%Intan%3%')
-                    ->orWhere('nama_kavling', 'LIKE', '%BIR%3%');
+                    ->orWhere('nama_kavling', 'LIKE', '%BIR%3%')
+                    ->orWhere('nama_singkat', 'LIKE', '%BIR%3%');
             });
         } else {
             $q->where('nama_kavling', 'LIKE', "%$shortName%");
         }
 
         $loc = $q->first();
+        if (!$loc) {
+            $loc = LokasiKavling::where('nama_kavling', 'LIKE', "%$shortName%")->first();
+        }
         if (!$loc) {
             $loc = LokasiKavling::first();
         }
@@ -680,7 +894,9 @@ class ExcelSyncService
             $kavling = KavlingPeta::create([
                 'id_lokasi'     => $idLokasi,
                 'kode_kavling'  => $clean,
-                'tipe_bangunan' => '36/72',
+                'tipe_bangunan' => 36,
+                'luas_bangunan' => 36,
+                'luas_tanah'    => 72,
                 'hrg_jual'      => 168000000,
                 'status'        => 0,
             ]);

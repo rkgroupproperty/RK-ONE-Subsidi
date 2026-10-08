@@ -78,6 +78,16 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="col-md-3 col-sm-6 col-12">
+                    <div class="info-box shadow-sm border">
+                        <span class="info-box-icon bg-info text-white" style="background:#0284c7 !important;"><i class="fas fa-user-tag"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Pemberkasan Marketing</span>
+                            <span class="info-box-number font-weight-bold">{{ $stats['mkt_synced'] ?? 0 }} Data</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Log Detail -->
