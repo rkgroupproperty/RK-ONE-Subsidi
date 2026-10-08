@@ -450,7 +450,7 @@
   /* Pipeline Penjualan - Connected Futuristic Stepper */
   .pipeline-track {
     display: grid;
-    grid-template-columns: repeat(8, minmax(130px, 1fr));
+    grid-template-columns: repeat(7, minmax(135px, 1fr));
     gap: 14px;
     overflow-x: auto;
     padding: 4px 4px 12px;
@@ -1102,8 +1102,8 @@
           <div class="kpi-icon-box green"><i class="fa-solid fa-cubes"></i></div>
           <div class="kpi-info">
             <div class="kpi-title">Total Unit</div>
-            <div class="kpi-num" style="color:#10b981">{{ $summaryMetrics['total_unit'] ?? 0 }}</div>
-            <div class="kpi-desc"><strong style="color:#2563eb">{{ $summaryMetrics['unit_terjual'] ?? 0 }} Terjual</strong> · {{ $summaryMetrics['unit_ready'] ?? 0 }} Ready</div>
+            <div class="kpi-num" style="color:#10b981">{{ $summaryMetrics['total_unit'] ?? 0 }} <small style="font-size:12px;font-weight:700">Unit</small></div>
+            <div class="kpi-desc">{{ $summaryMetrics['unit_ready'] ?? 0 }} Unit Ready Stok</div>
           </div>
         </article>
 
@@ -1117,11 +1117,11 @@
         </article>
 
         <article class="kpi-card kpi-purple">
-          <div class="kpi-icon-box purple"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+          <div class="kpi-icon-box purple"><i class="fa-solid fa-house-circle-check"></i></div>
           <div class="kpi-info">
-            <div class="kpi-title">Piutang Konsumen</div>
-            <div class="kpi-num money" style="color:#7c3aed">Rp {{ number_format($summaryMetrics['piutang'] ?? 0, 0, ',', '.') }}</div>
-            <div class="kpi-desc">Total {{ $summaryMetrics['piutang_customer'] ?? 0 }} Customer</div>
+            <div class="kpi-title">Unit Terjual</div>
+            <div class="kpi-num" style="color:#7c3aed">{{ $summaryMetrics['unit_terjual'] ?? 0 }} <small style="font-size:12px;font-weight:700">Unit</small></div>
+            <div class="kpi-desc"><strong style="color:#10b981">{{ !empty($summaryMetrics['total_unit']) ? round((($summaryMetrics['unit_terjual'] ?? 0) / $summaryMetrics['total_unit']) * 100, 1) : 0 }}%</strong> dari Kapasitas Total</div>
           </div>
         </article>
 
@@ -1192,13 +1192,6 @@
               <h3>Akad Kredit</h3>
               <div class="count-display">{{ $pipelineCounts['akad'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 3]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
-            </article>
-
-            <article class="pipeline-node p-bast">
-              <span class="pipeline-step-badge">Tahap 08</span>
-              <h3>BAST Unit</h3>
-              <div class="count-display">{{ $pipelineCounts['bast'] ?? 0 }}</div>
-              <a class="pipeline-action-btn" href="{{ route('bast.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
           </div>
         </div>
