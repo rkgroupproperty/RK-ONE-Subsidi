@@ -282,6 +282,8 @@ class BerandaController extends Controller
                 $sum += ($item[$mKey] ?? 0);
             }
             $monthlyTotals[$mNum] = $sum;
+        }
+
         $total2025 = 0;
         $total2026 = 0;
         foreach ($sumberMatrix as $src => $item) {
