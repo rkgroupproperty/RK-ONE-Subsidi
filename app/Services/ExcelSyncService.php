@@ -288,9 +288,10 @@ class ExcelSyncService
             $wawancara = Wawancara::firstOrCreate(
                 ['id_customer' => $customer->id],
                 [
-                    'id_bank_kpr'   => optional($bank)->id,
-                    'tgl_wawancara' => $item['sp3k'],
-                    'status'        => 2,
+                    'id_bank_kpr'       => optional($bank)->id,
+                    'tgl_wawancara'     => $item['sp3k'],
+                    'catatan_wawancara' => 'Sinkronisasi SP3K resmi dari Spreadsheet',
+                    'status'            => 2,
                 ]
             );
 
@@ -306,6 +307,8 @@ class ExcelSyncService
                     'tgl_terbit_sp3k' => $item['sp3k'],
                     'tgl_expired'     => $tglExp,
                     'no_sp3k'         => 'SP3K/' . strtoupper(Str::random(6)) . '/' . date('Y'),
+                    'catatan_acc'     => 'Disetujui dari SP3K Spreadsheet',
+                    'lampiran'        => '-',
                     'status'          => 1,
                 ]
             );
