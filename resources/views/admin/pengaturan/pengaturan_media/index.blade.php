@@ -221,8 +221,8 @@
                     $('.data-table').DataTable().ajax.reload();
                 },
                 error: function(xhr) {
+                    audio.play();
                     if (xhr.status === 422) {
-                        audio.play();
                         toastr.error("Ada inputan yang salah!", "GAGAL!", {
                             progressBar: true,
                             timeOut: 3500,
@@ -239,11 +239,18 @@
                                 val[0] + '</strong></span>'
                             );
                         });
-
-                        spinner.addClass('d-none');
-                        btnText.text('Simpan');
-                        submitBtn.prop('disabled', false);
+                    } else {
+                        let errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.message || "Gagal menyimpan berkas media!";
+                        toastr.error(errorMsg, "GAGAL!", {
+                            progressBar: true,
+                            timeOut: 4500,
+                            positionClass: "toast-bottom-right",
+                        });
                     }
+
+                    spinner.addClass('d-none');
+                    btnText.text('Simpan');
+                    submitBtn.prop('disabled', false);
                 }
             });
         });

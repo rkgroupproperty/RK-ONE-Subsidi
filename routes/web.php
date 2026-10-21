@@ -408,3 +408,19 @@ Route::get('/system/auto-sync-trigger/{secret}', function ($secret, \App\Service
     $result = $syncService->syncFromFile();
     return response()->json($result);
 })->name('system.auto-sync-trigger');
+
+Route::get('/system/komersil-status/{secret}', function ($secret, \App\Services\KomersilDatabaseService $service) {
+    if ($secret !== 'rk_komersil_setup_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+    $status = $service->getStatus();
+    return response()->json($status);
+})->name('system.komersil-status');
+
+Route::get('/system/setup-komersil/{secret}', function ($secret, \App\Services\KomersilDatabaseService $service) {
+    if ($secret !== 'rk_komersil_setup_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+    $result = $service->setupKomersilDatabase(!request()->has('skip_seed'));
+    return response()->json($result);
+})->name('system.setup-komersil');

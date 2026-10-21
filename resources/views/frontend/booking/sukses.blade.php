@@ -7,7 +7,7 @@
 <style>
      body {
             font-family: 'Inter', sans-serif !important;
-            background: url('{{ $bg ? asset("config_media/" . $bg->nama_file) : "" }}') no-repeat center center fixed !important;
+            background: url('{{ $bg && $bg->nama_file ? asset("config_media/" . $bg->nama_file) : asset("bg-login-perumahan.png") }}'), url('{{ asset("bg-login-perumahan.png") }}') no-repeat center center fixed !important;
             background-size: cover !important;
             min-height: 100vh;
         }

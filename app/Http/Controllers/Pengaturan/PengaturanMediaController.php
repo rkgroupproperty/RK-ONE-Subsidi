@@ -25,9 +25,16 @@ class PengaturanMediaController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('preview', function ($row) {
+                    if (empty($row->nama_file)) {
+                        return '<span class="badge badge-light text-muted p-2 border" style="font-size:11px;"><i class="fas fa-image mr-1"></i> Belum ada gambar</span>';
+                    }
+
                     $url = asset('config_media/' . $row->nama_file);
 
-                    return '<img src="' . $url . '" height="50">';
+                    return '<a href="' . $url . '" target="_blank" title="Klik untuk lihat ukuran penuh">
+                                <img src="' . $url . '" height="50" style="max-width:120px; object-fit:contain; border-radius:6px; border:1px solid #cbd5e1; background:#f8fafc; padding:2px;" 
+                                     onerror="this.onerror=null; this.parentElement.innerHTML=\'<span class=\\\'badge badge-warning text-dark p-1\\\' style=\\\'font-size:10px;\\\'><i class=\\\'fas fa-exclamation-triangle mr-1\\\'></i> File tidak ditemukan</span>\';">
+                            </a>';
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
                     $editUrl = route('pengaturan-media.edit', $row->id);
@@ -77,26 +84,57 @@ class PengaturanMediaController extends Controller
         try {
 
             if ($request->hasFile('nama_file')) {
-                if (! empty($data->nama_file) && file_exists(public_path('config_media/' . $data->nama_file))) {
-                    unlink(public_path('config_media/' . $data->nama_file));
+                // Pastikan direktori config_media ada dan memiliki izin tulis
+                $targetDir = public_path('config_media');
+                if (!file_exists($targetDir)) {
+                    @mkdir($targetDir, 0777, true);
+                }
+
+                // Hapus file lama jika ada
+                if (! empty($data->nama_file)) {
+                    $possibleOldPaths = [
+                        public_path('config_media/' . $data->nama_file),
+                        base_path('../config_media/' . $data->nama_file),
+                        base_path('../public_html/config_media/' . $data->nama_file),
+                    ];
+                    foreach ($possibleOldPaths as $oldPath) {
+                        if (file_exists($oldPath)) {
+                            @unlink($oldPath);
+                        }
+                    }
                 }
 
                 $nama_file = $request->file('nama_file');
-                $ext       = $nama_file->getClientOriginalExtension();
+                $ext       = strtolower($nama_file->getClientOriginalExtension());
                 $filename  = Str::random(25) . '.' . $ext;
-                $nama_file->move(public_path('config_media/'), $filename);
+                
+                // Simpan ke direktori utama
+                $nama_file->move($targetDir, $filename);
+
+                // Sinkronkan ke path publik cPanel jika terdeteksi
+                $cpanelDirs = [
+                    base_path('../config_media'),
+                    base_path('../public_html/config_media'),
+                ];
+                foreach ($cpanelDirs as $altDir) {
+                    if (file_exists($altDir) && is_dir($altDir)) {
+                        @copy($targetDir . '/' . $filename, $altDir . '/' . $filename);
+                    }
+                }
+
+                $data->update([
+                    'nama_file' => $filename,
+                ]);
             }
 
-            $db = [
-                'nama_file' => $filename,
-            ];
-
-            $data->update($db);
             $this->logEdit('Pengaturan Media', $data->id);
 
             DB::commit();
 
-            return response()->json(['status' => 'success']);
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Media berhasil diperbarui!',
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([

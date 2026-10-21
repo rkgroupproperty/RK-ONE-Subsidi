@@ -591,7 +591,7 @@
 
             if (imageName) {
                 let imageUrl = '/' + folder + '/' + imageName;
-                preview.html(`<img src="${imageUrl}" style="max-height: 100%; max-width: 100%;">`);
+                preview.html(`<img src="${imageUrl}" style="max-height: 100%; max-width: 100%; object-fit: contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color:#dc3545; font-size:12px;\\'><i class=\\'fas fa-exclamation-triangle mr-1\\'></i> File belum ada</span>';">`);
             } else {
                 preview.html('<span style="color: #6c757d;">Tidak ada berkas</span>');
             }

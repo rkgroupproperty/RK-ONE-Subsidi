@@ -61,3 +61,37 @@ Artisan::command('sync:excel', function (\App\Services\ExcelSyncService $syncSer
         $this->error("TERJADI ERROR: " . ($result['message'] ?? 'Unknown error'));
     }
 })->purpose('Sinkronisasi data Excel ke database');
+
+Artisan::command('komersil:status', function (\App\Services\KomersilDatabaseService $service) {
+    $this->info("=== STATUS DATABASE SUBSIDI & KOMERSIL ===");
+    $status = $service->getStatus();
+    $this->line("Database Subsidi  : " . ($status['subsidi']['connected'] ? "<fg=green>ONLINE</> ({$status['subsidi']['database']} - {$status['subsidi']['tables_count']} tabel)" : "<fg=red>OFFLINE: " . $status['subsidi']['error'] . "</>"));
+    $this->line("Database Komersil : " . ($status['komersil']['connected'] ? "<fg=green>ONLINE</> ({$status['komersil']['database']} - {$status['komersil']['tables_count']} tabel)" : "<fg=red>OFFLINE: " . $status['komersil']['error'] . "</>"));
+    if ($status['is_same_database']) {
+        $this->warn("PERINGATAN: Kedua koneksi mengarah ke database yang sama!");
+    } elseif ($status['ready_to_clone']) {
+        $this->info("Status: Siap untuk inisialisasi / cloning (komersil:setup-db)");
+    }
+})->purpose('Cek status koneksi Database Subsidi dan Database Komersil');
+
+Artisan::command('komersil:setup-db {--skip-seed : Jangan salin data master} {--force : Jalankan tanpa konfirmasi}', function (\App\Services\KomersilDatabaseService $service) {
+    $this->info("Menyiapkan struktur dan data Database Komersil...");
+    $skipSeed = $this->option('skip-seed');
+    $force = $this->option('force');
+
+    if (!$force && !$this->confirm('Lanjutkan inisialisasi tabel Database Komersil?')) {
+        $this->warn('Dibatalkan.');
+        return;
+    }
+
+    $result = $service->setupKomersilDatabase(!$skipSeed);
+    foreach ($result['logs'] as $log) {
+        $this->line("  " . $log);
+    }
+
+    if ($result['success']) {
+        $this->info("\nBERHASIL: " . $result['message']);
+    } else {
+        $this->error("\nGAGAL: " . $result['message']);
+    }
+})->purpose('Inisialisasi skema tabel dan seed master data ke Database Komersil');

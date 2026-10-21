@@ -183,7 +183,15 @@
     <section class="login-card">
       <div class="logo" aria-hidden="true">
         @if ($logo && $logo->nama_file)
-          <img src="{{ asset('config_media/' . $logo->nama_file) }}" alt="{{ $konfigurasi->nama_perusahaan ?? 'Logo' }}">
+          <img src="{{ asset('config_media/' . $logo->nama_file) }}" alt="{{ $konfigurasi->nama_perusahaan ?? 'Logo' }}"
+               onerror="this.onerror=null; this.style.display='none'; document.getElementById('default-logo-fallback').style.display='block';">
+          <div id="default-logo-fallback" style="display:none;">
+            <svg viewBox="0 0 180 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M23 85L89 28l68 57" stroke="#c99a45" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M52 77v-34h25v34M102 77V48h25v29" stroke="#d8ac5b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M26 93c31-14 87-14 127 0" stroke="#c99a45" stroke-width="7" stroke-linecap="round"/>
+            </svg>
+          </div>
         @else
           <svg viewBox="0 0 180 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M23 85L89 28l68 57" stroke="#c99a45" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
