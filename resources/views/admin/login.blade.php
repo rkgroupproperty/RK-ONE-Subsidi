@@ -12,6 +12,31 @@
       $bgLogin = \App\Models\PengaturanMedia::where('jenis_data', 'Background login')->first();
       $bgImage = $bgLogin && $bgLogin->nama_file ? asset('config_media/' . $bgLogin->nama_file) : asset('bg-login-perumahan.png');
       $initialAppType = session('app_type', 'subsidi');
+
+      // Daftar Foto & Teks Slideshow Halaman Login
+      // Catatan: Foto Slide 1 otomatis tersambung ke menu Pengaturan Media ("Background login")
+      $slides = [
+          [
+              'image' => $bgImage,
+              'title' => 'Find your sweet home',
+              'subtitle' => 'Wujudkan hunian impian keluarga tercinta dengan lingkungan asri, fasilitas lengkap & rasa aman.',
+          ],
+          [
+              'image' => 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1600&auto=format&fit=crop',
+              'title' => 'Modern Living & Comfort',
+              'subtitle' => 'Kawasan perumahan modern terintegrasi dengan aksesibilitas strategis dan tata ruang terbaik.',
+          ],
+          [
+              'image' => 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1600&auto=format&fit=crop',
+              'title' => 'Investasi Masa Depan',
+              'subtitle' => 'Kelola portofolio perumahan subsidi dan komersil dengan nilai investasi yang terus bertumbuh.',
+          ],
+          [
+              'image' => 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1600&auto=format&fit=crop',
+              'title' => 'Eksklusif & Terpercaya',
+              'subtitle' => 'Layanan profesional dari Tim RK Group Property untuk kepuasan dan kemudahan setiap konsumen.',
+          ],
+      ];
   @endphp
   <link rel="icon" href="{{ $faviconPath }}" />
   <link rel="shortcut icon" href="{{ $faviconPath }}" />
@@ -603,10 +628,9 @@
     <section class="visual-panel">
       <!-- Background Slides -->
       <div class="visual-slider-container">
-        <div class="visual-slide active" style="background-image: url('{{ $bgImage }}'), url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1600&auto=format&fit=crop');"></div>
-        <div class="visual-slide" style="background-image: url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1600&auto=format&fit=crop');"></div>
-        <div class="visual-slide" style="background-image: url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1600&auto=format&fit=crop');"></div>
-        <div class="visual-slide" style="background-image: url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1600&auto=format&fit=crop');"></div>
+        @foreach ($slides as $index => $slide)
+          <div class="visual-slide {{ $index === 0 ? 'active' : '' }}" style="background-image: url('{{ $slide['image'] }}');"></div>
+        @endforeach
       </div>
 
       <div class="visual-content-top">
@@ -623,28 +647,17 @@
       </div>
 
       <div class="visual-content-bottom">
-        <div class="text-slide-item active">
-          <h1 class="visual-headline">Find your sweet home</h1>
-          <p class="visual-subtext">Wujudkan hunian impian keluarga tercinta dengan lingkungan asri, fasilitas lengkap & rasa aman.</p>
-        </div>
-        <div class="text-slide-item">
-          <h1 class="visual-headline">Modern Living & Comfort</h1>
-          <p class="visual-subtext">Kawasan perumahan modern terintegrasi dengan aksesibilitas strategis dan tata ruang terbaik.</p>
-        </div>
-        <div class="text-slide-item">
-          <h1 class="visual-headline">Investasi Masa Depan</h1>
-          <p class="visual-subtext">Kelola portofolio perumahan subsidi dan komersil dengan nilai investasi yang terus bertumbuh.</p>
-        </div>
-        <div class="text-slide-item">
-          <h1 class="visual-headline">Eksklusif & Terpercaya</h1>
-          <p class="visual-subtext">Layanan profesional dari Tim RK Group Property untuk kepuasan dan kemudahan setiap konsumen.</p>
-        </div>
+        @foreach ($slides as $index => $slide)
+          <div class="text-slide-item {{ $index === 0 ? 'active' : '' }}">
+            <h1 class="visual-headline">{{ $slide['title'] }}</h1>
+            <p class="visual-subtext">{{ $slide['subtitle'] }}</p>
+          </div>
+        @endforeach
 
         <div class="visual-indicators">
-          <div class="slider-dot active" onclick="goToSlide(0)" title="Slide 1"></div>
-          <div class="slider-dot" onclick="goToSlide(1)" title="Slide 2"></div>
-          <div class="slider-dot" onclick="goToSlide(2)" title="Slide 3"></div>
-          <div class="slider-dot" onclick="goToSlide(3)" title="Slide 4"></div>
+          @foreach ($slides as $index => $slide)
+            <div class="slider-dot {{ $index === 0 ? 'active' : '' }}" onclick="goToSlide({{ $index }})" title="Slide {{ $index + 1 }}"></div>
+          @endforeach
         </div>
       </div>
     </section>
