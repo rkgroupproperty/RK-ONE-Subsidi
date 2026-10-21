@@ -27,8 +27,21 @@ class DynamicDatabaseMiddleware
         // 2. Tentukan nama koneksi target
         $targetConnection = ($appType === 'komersil') ? 'mysql_komersil' : 'mysql_subsidi';
 
-        // 3. Terapkan koneksi database aktif
+        // 3. Terapkan koneksi database aktif dengan fallback otomatis jika terjadi gangguan
         if (config("database.connections.{$targetConnection}")) {
+            if ($targetConnection === 'mysql_komersil') {
+                try {
+                    // Cek koneksi ke database Komersil
+                    DB::connection('mysql_komersil')->getPdo();
+                } catch (\Throwable $e) {
+                    // Jika database Komersil belum diberi hak akses / error, fallback aman ke Subsidi tanpa crash
+                    $targetConnection = 'mysql_subsidi';
+                    $appType = 'subsidi';
+                    session(['app_type' => 'subsidi']);
+                    session()->forget('komersil_unlocked');
+                }
+            }
+
             Config::set('database.default', $targetConnection);
             DB::setDefaultConnection($targetConnection);
         }

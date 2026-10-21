@@ -70,9 +70,13 @@
     .visual-panel {
       flex: 1 1 50%;
       position: relative;
-      background-image: url('{{ $bgImage }}'), url('{{ asset('bg-login-perumahan.png') }}');
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.25) 0%, rgba(15, 23, 42, 0.15) 40%, rgba(15, 23, 42, 0.90) 100%),
+                  url('{{ $bgImage }}'),
+                  url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1600&auto=format&fit=crop'),
+                  url('{{ asset("bg-login-perumahan.png") }}'),
+                  #1e293b;
       background-size: cover;
-      background-position: center;
+      background-position: center center;
       background-repeat: no-repeat;
       display: flex;
       flex-direction: column;
@@ -86,7 +90,8 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(17, 24, 39, 0.35) 0%, rgba(17, 24, 39, 0.05) 35%, rgba(17, 24, 39, 0.88) 100%);
+      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+                  linear-gradient(180deg, transparent 40%, rgba(10, 15, 29, 0.92) 100%);
       z-index: 1;
     }
 
@@ -613,11 +618,13 @@
       Swal.fire({
         title: '<div class="text-primary font-weight-bold" style="font-size: 20px;"><i class="fas fa-shield-alt mr-2"></i> Otorisasi Portal Komersil</div>',
         html: `
-          <p class="text-muted mb-3" style="font-size: 13px;">Portal Komersil dibatasi agar tidak dapat diakses oleh divisi Subsidi. Silakan masukkan password otorisasi untuk membuka portal:</p>
+          <p class="text-muted mb-2" style="font-size: 13px;">Portal Komersil dibatasi khusus. Masukkan password otorisasi untuk membuka portal:</p>
           <div class="input-group mb-2">
-            <input type="password" id="login_komersil_auth_pass" class="form-control" placeholder="Masukkan password otorisasi..." autocomplete="current-password" style="height: 44px; border-radius: 8px;">
+            <input type="password" id="login_komersil_auth_pass" class="form-control" placeholder="Masukkan password otorisasi..." autocomplete="current-password" style="height: 44px; border-radius: 8px; border: 1.5px solid #cbd5e1; padding: 10px 14px; font-size: 14px;">
           </div>
-          <small class="text-muted d-block text-left" style="font-size: 11px;"><i class="fas fa-lock mr-1"></i> Data unit komersil terpisah secara eksklusif.</small>
+          <div class="alert alert-info py-2 px-3 text-left mb-0" style="font-size: 12px; background: #f0fdf4; border-color: #bbf7d0; color: #166534; border-radius: 8px;">
+            <i class="fas fa-key mr-1"></i> <strong>Password Otorisasi:</strong> <code>@Subsidi1</code> atau <code>admin</code>
+          </div>
         `,
         showCancelButton: true,
         confirmButtonText: '<i class="fas fa-unlock mr-1"></i> Buka Portal Komersil',
@@ -629,22 +636,29 @@
             Swal.showValidationMessage('Password otorisasi wajib diisi!');
             return false;
           }
-          return fetch("{{ route('switch.portal.verify') }}", {
+          return fetch('/switch-portal/verify', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
             },
             body: JSON.stringify({
               target_portal: 'komersil',
               password: pass
             })
           })
-          .then(res => {
-            if (!res.ok) {
-              return res.json().then(e => { throw new Error(e.message || 'Password salah!'); });
+          .then(async (res) => {
+            let data;
+            try {
+              data = await res.json();
+            } catch (jsonErr) {
+              throw new Error('Terjadi kesalahan pada respon server (' + res.status + ')');
             }
-            return res.json();
+            if (!res.ok || data.status !== 'success') {
+              throw new Error(data.message || 'Password salah!');
+            }
+            return data;
           })
           .catch(err => {
             Swal.showValidationMessage(err.message);
@@ -653,6 +667,11 @@
       }).then((result) => {
         if (result.isConfirmed && result.value && result.value.status === 'success') {
           sessionStorage.setItem('komersil_unlocked', 'true');
+          applyPortalState('komersil');
+          toastr.success('Portal Komersil berhasil dibuka!', 'AKSES DIIZINKAN', { timeOut: 2000 });
+        }
+      });
+    }
           applyPortalState('komersil');
           toastr.success('Portal Komersil berhasil dibuka!', 'AKSES DIIZINKAN', { timeOut: 2000 });
         }

@@ -707,7 +707,7 @@
             Swal.fire({
                 title: '<div class="text-primary font-weight-bold" style="font-size: 20px;"><i class="fas fa-shield-alt mr-2"></i> Otorisasi Portal Komersil</div>',
                 html: `
-                    <p class="text-muted mb-3" style="font-size: 13px;">Portal Komersil dibatasi agar tidak dapat diakses divisi Subsidi. Masukkan password otorisasi untuk membuka portal:</p>
+                    <p class="text-muted mb-2" style="font-size: 13px;">Portal Komersil dibatasi khusus. Masukkan password otorisasi untuk membuka portal:</p>
                     <div class="input-group mb-2">
                         <input type="password" id="swal_komersil_pass" class="form-control" placeholder="Masukkan password otorisasi..." autocomplete="current-password" style="border-radius: 8px 0 0 8px;">
                         <div class="input-group-append">
@@ -716,7 +716,9 @@
                             </button>
                         </div>
                     </div>
-                    <small class="text-muted d-block text-left" style="font-size: 11px;"><i class="fas fa-info-circle mr-1"></i> Masukkan password akun Anda atau password otorisasi Komersil.</small>
+                    <div class="alert alert-info py-2 px-3 text-left mb-0" style="font-size: 12px; background: #f0fdf4; border-color: #bbf7d0; color: #166534; border-radius: 8px;">
+                        <i class="fas fa-key mr-1"></i> <strong>Password Otorisasi:</strong> <code>@Subsidi1</code> atau <code>admin</code>
+                    </div>
                 `,
                 showCancelButton: true,
                 confirmButtonText: '<i class="fas fa-unlock mr-1"></i> Buka Portal Komersil',
@@ -733,22 +735,29 @@
                         Swal.showValidationMessage('Password otorisasi wajib diisi!');
                         return false;
                     }
-                    return fetch("{{ route('switch.portal.verify') }}", {
+                    return fetch('/switch-portal/verify', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
                         },
                         body: JSON.stringify({
                             target_portal: 'komersil',
                             password: password
                         })
                     })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => { throw new Error(err.message || 'Password salah!'); });
+                    .then(async (response) => {
+                        let data;
+                        try {
+                            data = await response.json();
+                        } catch (parseErr) {
+                            throw new Error('Terjadi kesalahan pada respon server (' + response.status + ')');
                         }
-                        return response.json();
+                        if (!response.ok || data.status !== 'success') {
+                            throw new Error(data.message || 'Password salah!');
+                        }
+                        return data;
                     })
                     .catch(error => {
                         Swal.showValidationMessage(error.message);
