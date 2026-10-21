@@ -13,6 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->validateCsrfTokens(except: [
             'switch-portal/verify',
+            'switch-portal/*',
+            '/switch-portal/verify',
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\DynamicDatabaseMiddleware::class,
