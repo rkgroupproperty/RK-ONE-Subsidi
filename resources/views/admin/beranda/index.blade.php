@@ -988,11 +988,27 @@
       <!-- TOP HUB HEADER -->
       <header class="topbar">
         <div class="title-hub">
-          <div class="greeting-badge">
-            <span class="pulse-dot"></span> Real Estate Executive Hub
+          <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+            <div class="greeting-badge">
+              <span class="pulse-dot"></span> Real Estate Executive Hub
+            </div>
+            @if(($current_app_type ?? session('app_type', 'subsidi')) === 'komersil')
+              <span class="badge px-3 py-1 text-white font-weight-bold shadow-sm" style="border-radius: 9999px; background: linear-gradient(135deg, #0284c7, #0369a1); font-size: 11px; letter-spacing: 0.05em;">
+                <i class="fa-solid fa-city mr-1 text-warning"></i> PORTAL KOMERSIL
+              </span>
+            @else
+              <span class="badge px-3 py-1 text-white font-weight-bold shadow-sm" style="border-radius: 9999px; background: linear-gradient(135deg, #10b981, #059669); font-size: 11px; letter-spacing: 0.05em;">
+                <i class="fa-solid fa-house mr-1 text-warning"></i> PORTAL SUBSIDI
+              </span>
+            @endif
           </div>
-          <h1>Selamat Datang, {{ $username ?? 'Admin' }}</h1>
-          <p>Ringkasan performa penjualan dan monitoring unit aktif: <strong class="text-primary">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</strong></p>
+          <h1>
+            Selamat Datang, {{ $username ?? 'Admin' }}
+            <span style="font-size: 17px; font-weight: 700; color: {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'komersil' ? '#0284c7' : '#10b981' }}">
+              &bull; {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'komersil' ? 'Dashboard Komersil' : 'Dashboard Subsidi' }}
+            </span>
+          </h1>
+          <p>Ringkasan performa penjualan dan monitoring unit aktif portal <strong>{{ ($current_app_type ?? session('app_type', 'subsidi')) === 'komersil' ? 'Perumahan Komersil' : 'Perumahan Subsidi' }}</strong>: <strong class="text-primary">{{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }}</strong></p>
         </div>
 
         <div class="top-actions">

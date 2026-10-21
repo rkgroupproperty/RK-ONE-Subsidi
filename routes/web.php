@@ -130,6 +130,7 @@ Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar'])
 Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar']);
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('switch-portal/{type}', [AuthController::class, 'switchPortal'])->name('switch.portal');
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
     Route::get('admin/beranda/chart-data', [BerandaController::class, 'getChartData'])->name('beranda.chart-data');
     Route::get('admin/beranda/marketing-stats', [BerandaController::class, 'getMarketingStats'])->name('beranda.marketing-stats');

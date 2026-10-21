@@ -78,6 +78,103 @@
     .invalid-feedback{display:block;font-size:12px;color:#dc3545;margin-top:4px;font-weight:500}
     .spinner-border{display:inline-block;width:20px;height:20px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spinner-border .75s linear infinite}.d-none{display:none!important}
     @keyframes spinner-border{to{transform:rotate(360deg)}}
+
+    /* Portal Selector Styles (Subsidi vs Komersil) */
+    .portal-selector-container {
+      margin: 0 0 20px;
+    }
+    .portal-selector {
+      position: relative;
+      display: flex;
+      background: rgba(16, 46, 39, 0.08);
+      border: 1px solid rgba(201, 154, 69, 0.32);
+      border-radius: 16px;
+      padding: 4px;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+    }
+    .portal-glider {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: calc(50% - 4px);
+      height: calc(100% - 8px);
+      background: linear-gradient(135deg, var(--green-2), #08291f);
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(8, 41, 31, 0.3);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, box-shadow 0.3s ease;
+      z-index: 1;
+    }
+    .portal-option {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 14px;
+      border: 0;
+      background: transparent;
+      color: #3b5048;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      border-radius: 12px;
+      z-index: 2;
+      transition: color 0.25s ease;
+    }
+    .portal-option.active {
+      color: #fff;
+    }
+    .portal-svg {
+      transition: transform 0.25s ease;
+    }
+    .portal-option:hover .portal-svg {
+      transform: scale(1.1);
+    }
+    
+    /* Komersil mode styling */
+    body.mode-komersil .portal-glider {
+      transform: translateX(100%);
+      background: linear-gradient(135deg, #0284c7, #075985);
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.38);
+    }
+    body.mode-komersil .btn {
+      background: linear-gradient(135deg, #0284c7, #075985);
+      box-shadow: 0 14px 26px rgba(2, 132, 199, 0.28);
+    }
+    body.mode-komersil .login-title {
+      color: #0284c7;
+    }
+    body.mode-komersil .divider {
+      color: #0284c7;
+    }
+    body.mode-komersil .divider::before,
+    body.mode-komersil .divider::after {
+      background: linear-gradient(90deg, transparent, #0284c7, transparent);
+    }
+    body.mode-komersil .diamond {
+      border-color: #0284c7;
+    }
+    body.mode-komersil .icon-box {
+      background: #e0f2fe;
+      color: #0284c7;
+    }
+    body.mode-komersil .input-wrap:focus-within {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.15);
+    }
+    body.mode-komersil .portal-selector {
+      border-color: rgba(2, 132, 199, 0.35);
+      background: rgba(2, 132, 199, 0.07);
+    }
+    body.mode-komersil .footer {
+      border-top-color: rgba(2, 132, 199, 0.25);
+    }
+    body.mode-komersil .shield {
+      color: #0284c7;
+    }
     @media(max-width:640px){body{background-position:center}.page{padding:18px}.login-card{padding:30px 22px 24px;border-radius:22px}h1{font-size:36px}.brand-small{font-size:11px}.row{font-size:12px}.footer{text-align:center;flex-direction:column;gap:8px}}
   </style>
 </head>
@@ -99,9 +196,26 @@
       <h1>{{ $konfigurasi->nama_perusahaan ?? 'PERUMAHAN' }}</h1>
       <p class="tagline">Kelola data, tingkatkan penjualan, bangun kepercayaan</p>
       <div class="divider"><span></span><i class="diamond"></i><span></span></div>
-      <div class="login-title">LOGIN</div>
+
+      <!-- Pilihan Portal: Subsidi vs Komersil -->
+      <div class="portal-selector-container">
+        <div class="portal-selector" id="portalSelector">
+          <div class="portal-glider" id="portalGlider"></div>
+          <button type="button" class="portal-option active" id="btnSubsidi" onclick="setPortal('subsidi')">
+            <svg class="portal-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>SUBSIDI</span>
+          </button>
+          <button type="button" class="portal-option" id="btnKomersil" onclick="setPortal('komersil')">
+            <svg class="portal-svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>
+            <span>KOMERSIL</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="login-title" id="loginTitleText">LOGIN PORTAL SUBSIDI</div>
       <form id="formLogin" novalidate>
         @csrf
+        <input type="hidden" name="app_type" id="app_type_input" value="subsidi">
         <div class="field">
           <label for="username">Username</label>
           <div class="input-wrap">
@@ -154,6 +268,27 @@
     }
 
     var audio = new Audio('{{ asset('audio/notification.ogg') }}');
+
+    function setPortal(portal) {
+      const input = document.getElementById('app_type_input');
+      const btnSubsidi = document.getElementById('btnSubsidi');
+      const btnKomersil = document.getElementById('btnKomersil');
+      const title = document.getElementById('loginTitleText');
+      
+      if (input) input.value = portal;
+
+      if (portal === 'komersil') {
+        document.body.classList.add('mode-komersil');
+        if (btnKomersil) btnKomersil.classList.add('active');
+        if (btnSubsidi) btnSubsidi.classList.remove('active');
+        if (title) title.textContent = 'LOGIN PORTAL KOMERSIL';
+      } else {
+        document.body.classList.remove('mode-komersil');
+        if (btnSubsidi) btnSubsidi.classList.add('active');
+        if (btnKomersil) btnKomersil.classList.remove('active');
+        if (title) title.textContent = 'LOGIN PORTAL SUBSIDI';
+      }
+    }
 
     $(document).ready(function() {
       function refreshCsrfToken(callback) {
