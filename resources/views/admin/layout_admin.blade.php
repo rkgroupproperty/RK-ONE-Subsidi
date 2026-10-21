@@ -30,9 +30,11 @@
     <!-- Tempusdominus Bootstrap 4 -->
     <link rel="stylesheet"
         href="{{ asset('templates/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
-    <!-- Theme style -->
+    <!-- Theme style: AdminLTE CDN fallback & local asset -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="{{ asset('templates/dist/css/adminlte.min.css') }}">
     <!-- overlayScrollbars -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@1.13.1/css/OverlayScrollbars.min.css">
     <link rel="stylesheet" href="{{ asset('templates/plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
     <!-- Daterange picker -->
     <link rel="stylesheet" href="{{ asset('templates/plugins/daterangepicker/daterangepicker.css') }}">
@@ -61,50 +63,322 @@
             overflow-y: auto;
         }
 
+        /* ===== MODERN ULTRA-PREMIUM SIDEBAR STYLING ===== */
+        .main-sidebar {
+            background: linear-gradient(180deg, #090d16 0%, #0f172a 45%, #090d16 100%) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 4px 0 28px rgba(0, 0, 0, 0.35) !important;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .modern-brand-header {
+            background: rgba(255, 255, 255, 0.02) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding: 16px 14px !important;
+        }
+
+        .brand-logo-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 180px;
+            max-height: 50px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .brand-img {
+            max-height: 46px;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+        }
+
+        .brand-fallback-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .brand-company-name {
+            font-size: 13px;
+            letter-spacing: 0.05em;
+            color: #f8fafc;
+            line-height: 1.3;
+            text-transform: uppercase;
+        }
+
+        .portal-badge-pill {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.04em;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .portal-subsidi-badge {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3));
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+
+        .portal-komersil-badge {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(2, 132, 199, 0.3));
+            border: 1px solid rgba(14, 165, 233, 0.4);
+            color: #38bdf8;
+        }
+
+        /* User mini panel */
+        .user-panel-custom {
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+        }
+
+        .user-avatar-custom {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25));
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a5b4fc;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .status-indicator-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #10b981;
+            border: 2px solid #0f172a;
+        }
+
+        .user-name-text {
+            font-size: 13px;
+            line-height: 1.2;
+        }
+
+        .user-role-badge {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Modern Nav Links */
         .sidebar {
             position: relative;
-            padding-bottom: 60px;
+            padding-bottom: 75px;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
         }
 
         .sidebar .nav-sidebar {
-            padding-bottom: 30px;
+            padding-bottom: 75px;
         }
 
+        .modern-nav-link {
+            border-radius: 10px !important;
+            margin: 3px 6px !important;
+            padding: 9px 12px !important;
+            color: #94a3b8 !important;
+            font-size: 13.5px;
+            font-weight: 500;
+            display: flex !important;
+            align-items: center !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            border: 1px solid transparent;
+        }
+
+        .modern-nav-link:hover {
+            background: rgba(255, 255, 255, 0.06) !important;
+            color: #f8fafc !important;
+            transform: translateX(3px);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .modern-nav-link.active-gradient {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        .modern-nav-link.active-parent {
+            background: rgba(99, 102, 241, 0.15) !important;
+            color: #c7d2fe !important;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            font-weight: 600;
+        }
+
+        .nav-icon-box {
+            width: 30px;
+            height: 30px;
+            min-width: 30px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 11px;
+            font-size: 13px;
+            color: #818cf8;
+            transition: all 0.2s ease;
+        }
+
+        .modern-nav-link:hover .nav-icon-box {
+            background: rgba(255, 255, 255, 0.12);
+            color: #c7d2fe;
+            transform: scale(1.05);
+        }
+
+        .modern-nav-link.active-gradient .nav-icon-box {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+        }
+
+        .menu-title-text {
+            margin: 0 !important;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .angle-arrow {
+            font-size: 11px;
+            transition: transform 0.25s ease;
+            opacity: 0.7;
+        }
+
+        /* Treeview Submenu */
+        .modern-treeview {
+            margin-left: 20px !important;
+            padding-left: 8px !important;
+            border-left: 2px solid rgba(99, 102, 241, 0.25) !important;
+            margin-top: 4px;
+            margin-bottom: 6px;
+        }
+
+        .modern-sublink {
+            border-radius: 8px !important;
+            padding: 7px 12px !important;
+            margin: 2px 4px !important;
+            color: #94a3b8 !important;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex !important;
+            align-items: center !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .modern-sublink:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #f1f5f9 !important;
+            transform: translateX(3px);
+        }
+
+        .modern-sublink.active-sublink {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(124, 58, 237, 0.25)) !important;
+            color: #a5b4fc !important;
+            font-weight: 600;
+            border-left: 3px solid #6366f1;
+        }
+
+        .sublink-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            margin-right: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .modern-sublink:hover .sublink-dot {
+            background: #818cf8;
+            box-shadow: 0 0 6px rgba(129, 140, 248, 0.8);
+        }
+
+        .sublink-dot-active {
+            background: #6366f1 !important;
+            box-shadow: 0 0 8px #6366f1 !important;
+            transform: scale(1.3);
+        }
+
+        .sublink-title {
+            margin: 0 !important;
+        }
+
+        /* Fixed Bottom */
         .sidebar-fixed-bottom {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 250px;
-            background: #343a40;
-            border-top: 1px solid rgba(255, 255, 255, .1);
+            background: rgba(9, 13, 22, 0.95) !important;
+            backdrop-filter: blur(12px) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+            padding: 8px 12px;
             z-index: 1030;
         }
 
-        .sidebar-fixed-bottom .nav-link p {
-            margin: 0;
-            line-height: 1;
-        }
-
-        .sidebar-fixed-bottom .nav-icon {
-            margin-right: 10px;
-            line-height: 1;
-        }
-
-
-        .sidebar-fixed-bottom .nav-link {
-            color: #c2c7d0;
-            padding: 12px 16px;
+        .modern-panduan-link {
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8 !important;
+            padding: 8px 14px;
             display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
         }
 
-        .sidebar-fixed-bottom .nav-link:hover {
-            background-color: #6610f2;
-            color: #fff;
-        }
-
-        .sidebar-fixed-bottom .nav-icon {
-            margin-right: 10px;
+        .modern-panduan-link:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(124, 58, 237, 0.2));
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #e2e8f0 !important;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
         }
 
         .theme-switch {
@@ -300,28 +574,50 @@
 
         </nav>
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
-            <!-- Brand Logo -->
+            <!-- Brand Logo Header -->
             @php
                 $logo = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Aplikasi')->where('stt_aktif', 1)->first();
+                $konfigurasi = \App\Models\PengaturanProfil::first();
+                $activeAppType = $current_app_type ?? session('app_type', 'subsidi');
             @endphp
 
-            <a href="#"
-                class="brand-link d-flex flex-column align-items-center justify-content-center text-center py-2"
-                style="text-decoration: none;">
-                <img src="{{ asset('config_media/' . ($logo->nama_file ?? 'default.png')) }}" alt="Logo Aplikasi"
-                    class="brand-image">
-                @php
-                    $konfigurasi = \App\Models\PengaturanProfil::first();
-                @endphp
-
-                {{-- <span class="brand-text font-weight-light d-block">
-                    <strong>{{ $konfigurasi->nama_perusahaan ?? 'Template Aplikasi' }}</strong>
-                </span> --}}
-            </a>
-
+            <div class="brand-link modern-brand-header text-center py-3">
+                <a href="{{ route('beranda.index') }}" class="d-inline-flex flex-column align-items-center text-decoration-none">
+                    <div class="brand-logo-box mb-2">
+                        @if($logo && !empty($logo->nama_file))
+                            <img src="{{ asset('config_media/' . $logo->nama_file) }}" alt="Logo" class="brand-img"
+                                onerror="this.onerror=null; this.src='https://subsidi.rkgroupproperti.com/config_media/{{ $logo->nama_file }}';">
+                        @else
+                            <div class="brand-fallback-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                        @endif
+                    </div>
+                    <span class="brand-company-name font-weight-bold text-white tracking-wide">
+                        {{ $konfigurasi->nama_perusahaan ?? 'RK GROUP PROPERTY' }}
+                    </span>
+                    <span class="portal-badge-pill mt-2 {{ $activeAppType === 'komersil' ? 'portal-komersil-badge' : 'portal-subsidi-badge' }}">
+                        <i class="fas {{ $activeAppType === 'komersil' ? 'fa-city' : 'fa-home' }} mr-1"></i>
+                        {{ $activeAppType === 'komersil' ? 'PORTAL KOMERSIL' : 'PORTAL SUBSIDI' }}
+                    </span>
+                </a>
+            </div>
 
             <!-- Sidebar -->
-            <div class="sidebar">
+            <div class="sidebar modern-sidebar-content px-2">
+                <!-- User mini-widget -->
+                @if(Auth::check())
+                <div class="user-panel-custom mt-3 mb-2 d-flex align-items-center p-2">
+                    <div class="user-avatar-custom mr-3">
+                        <i class="fas fa-user-shield"></i>
+                        <span class="status-indicator-dot" title="Online"></span>
+                    </div>
+                    <div class="user-info-custom text-truncate">
+                        <div class="user-name-text text-white font-weight-bold text-truncate">{{ Auth::user()->name ?? Auth::user()->username }}</div>
+                        <div class="user-role-badge"><i class="fas fa-circle text-success mr-1" style="font-size: 7px;"></i> {{ Auth::user()->role->nama_role ?? 'Administrator' }}</div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
@@ -331,7 +627,21 @@
                         @php
                             use Illuminate\Support\Str;
                             use Illuminate\Support\Facades\Route as RouteFacade;
-                            $menus = session('getmenus', collect());
+                            $menus = session('getmenus');
+                            if (empty($menus) || (is_countable($menus) && count($menus) === 0)) {
+                                if (\Illuminate\Support\Facades\Auth::check()) {
+                                    $menus = \App\Models\Menu::where('id_parent', 0)
+                                        ->where('stt_aktif', 1)
+                                        ->with(['children' => function($q) {
+                                            $q->where('stt_aktif', 1)->orderBy('urutan', 'asc');
+                                        }])
+                                        ->orderBy('urutan', 'asc')
+                                        ->get();
+                                    session(['getmenus' => $menus]);
+                                } else {
+                                    $menus = collect();
+                                }
+                            }
                             $currentRoute = request()->route();
                             $currentRouteName = $currentRoute ? (string) $currentRoute->getName() : '';
                             $currentPrefix = $currentRouteName !== '' ? Str::before($currentRouteName, '.') : '';
@@ -380,27 +690,25 @@
                                 @endphp
                                 <li class="nav-item">
                                     <a href="{{ $hasMenuRoute ? route($menu->route_name) : '#' }}"
-                                        class="nav-link {{ $isActiveSingle ? '' : '' }}"
-                                        style="{{ $isActiveSingle ? 'background-color: #6610f2 !important; color: #ffffff !important;' : '' }}">
-                                        <i class="nav-icon fas {{ $menu->icon }}"
-                                            style="{{ $isActiveSingle ? 'color: #ffffff !important;' : '' }}"></i>
-                                        <p style="{{ $isActiveSingle ? 'color: #ffffff !important;' : '' }}">
-                                            {{ $menu->title }}</p>
+                                        class="nav-link modern-nav-link {{ $isActiveSingle ? 'active-gradient' : '' }}">
+                                        <div class="nav-icon-box">
+                                            <i class="fas {{ $menu->icon ?? 'fa-circle' }}"></i>
+                                        </div>
+                                        <p class="menu-title-text">{{ $menu->title }}</p>
                                     </a>
                                 </li>
                             @else
-                                <li class="nav-item {{ $isActiveParent ? 'menu-open' : '' }}">
-                                    <a href="#" class="nav-link {{ $isActiveParent ? 'active' : '' }}"
-                                        style="{{ $isActiveParent ? 'background-color: #6610f2 !important; color: #ffffff !important;' : '' }}">
-                                        <i class="nav-icon fas {{ $menu->icon }}"
-                                            style="{{ $isActiveParent ? 'color: #ffffff !important;' : '' }}"></i>
-                                        <p style="{{ $isActiveParent ? 'color: #ffffff !important;' : '' }}">
+                                <li class="nav-item has-treeview {{ $isActiveParent ? 'menu-open' : '' }}">
+                                    <a href="#" class="nav-link modern-nav-link {{ $isActiveParent ? 'active-parent' : '' }}">
+                                        <div class="nav-icon-box">
+                                            <i class="fas {{ $menu->icon ?? 'fa-folder' }}"></i>
+                                        </div>
+                                        <p class="menu-title-text">
                                             {{ $menu->title }}
-                                            <i class="right fas fa-angle-left"
-                                                style="{{ $isActiveParent ? 'color: #ffffff !important;' : '' }}"></i>
+                                            <i class="right fas fa-angle-left angle-arrow"></i>
                                         </p>
                                     </a>
-                                    <ul class="nav nav-treeview">
+                                    <ul class="nav nav-treeview modern-treeview">
                                         @foreach ($children as $child)
                                             @php
                                                 $childPrefix = !empty($child->route_name) ? Str::before($child->route_name, '.') : '';
@@ -412,9 +720,9 @@
                                             @endphp
                                             <li class="nav-item">
                                                 <a href="{{ RouteFacade::has($child->route_name) ? route($child->route_name) : '#' }}"
-                                                    class="nav-link {{ $isActiveChild ? 'active' : '' }}">
-                                                    <i class="far fa-circle nav-icon"></i>
-                                                    <p>{{ ($child->id == 95 || $child->route_name == 'proses-marketing.index') ? 'Pemberkasan Marketing' : $child->title }}</p>
+                                                    class="nav-link modern-sublink {{ $isActiveChild ? 'active-sublink' : '' }}">
+                                                    <span class="sublink-dot {{ $isActiveChild ? 'sublink-dot-active' : '' }}"></span>
+                                                    <p class="sublink-title">{{ ($child->id == 95 || $child->route_name == 'proses-marketing.index') ? 'Pemberkasan Marketing' : $child->title }}</p>
                                                 </a>
                                             </li>
                                         @endforeach
@@ -429,9 +737,9 @@
                     </ul>
                 </nav>
                 <div class="sidebar-fixed-bottom">
-                    <a href="{{ route('panduan-aplikasi.index') }}" target="_blank" class="nav-link">
-                        <i class="nav-icon fas fa-info-circle"></i>
-                        <p>Panduan Aplikasi</p>
+                    <a href="{{ route('panduan-aplikasi.index') }}" target="_blank" class="modern-panduan-link">
+                        <i class="fas fa-book-reader mr-1 text-primary"></i>
+                        <span>Panduan Aplikasi</span>
                     </a>
                 </div>
 
@@ -457,7 +765,12 @@
     <!-- ./wrapper -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-lite.min.js"></script>
     <!-- jQuery -->
-    <script src="{{ asset('templates/plugins/jquery/jquery.min.js') }}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        if (typeof jQuery === 'undefined') {
+            document.write('<script src="{{ asset('templates/plugins/jquery/jquery.min.js') }}"><\/script>');
+        }
+    </script>
     <!-- jQuery UI 1.11.4 -->
     <script src="{{ asset('templates/plugins/jquery-ui/jquery-ui.min.js') }}"></script>
     <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
@@ -465,7 +778,12 @@
         $.widget.bridge('uibutton', $.ui.button)
     </script>
     <!-- Bootstrap 4 -->
-    <script src="{{ asset('templates/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        if (typeof ($.fn.modal) === 'undefined') {
+            document.write('<script src="{{ asset('templates/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"><\/script>');
+        }
+    </script>
     <!-- Select2 -->
     <script src="{{ asset('templates/plugins/select2/js/select2.full.min.js') }}"></script>
     <!-- ChartJS -->
@@ -501,7 +819,12 @@
     <script src="{{ asset('templates/plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
     <!-- Page specific script -->
     <!-- AdminLTE App -->
-    <script src="{{ asset('templates/dist/js/adminlte.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+    <script>
+        if (typeof ($.fn.Layout) === 'undefined') {
+            document.write('<script src="{{ asset('templates/dist/js/adminlte.js') }}"><\/script>');
+        }
+    </script>
     <!-- AdminLTE for demo purposes -->
     {{-- <script src="{{ asset('templates/dist/js/demo.js') }}"></script> --}}
     <!-- AdminLTE dashboard demo (This is only for demo purposes) -->

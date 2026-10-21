@@ -480,28 +480,32 @@ Route::get('/system/setup-domain-sync/{secret}', function ($secret) {
     file_put_contents($targetPublicHtml . '/index.php', $newIndex);
     $log[] = "index.php berhasil dibuat di {$targetPublicHtml} mengarah ke Laravel core.";
 
-    // 2. Copy .htaccess
-    if (file_exists($subsidiPublicHtml . '/.htaccess')) {
-        copy($subsidiPublicHtml . '/.htaccess', $targetPublicHtml . '/.htaccess');
-        $log[] = ".htaccess berhasil disalin.";
-    }
+    // 2. Create custom .htaccess with asset proxy fallback
+    $htaccessContent = "<IfModule mod_rewrite.c>\n" .
+        "    <IfModule mod_negotiation.c>\n" .
+        "        Options -MultiViews -Indexes\n" .
+        "    </IfModule>\n\n" .
+        "    RewriteEngine On\n\n" .
+        "    # Redirect missing static assets to active domain if not found locally\n" .
+        "    RewriteCond %{REQUEST_FILENAME} !-f\n" .
+        "    RewriteRule ^(templates|assets|config_media|default|templateHomepage|konten|hasil|audio|svg)/(.*)$ https://subsidi.rkgroupproperti.com/$1/$2 [R=301,L]\n\n" .
+        "    # Handle Authorization Header\n" .
+        "    RewriteCond %{HTTP:Authorization} .\n" .
+        "    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]\n\n" .
+        "    # Redirect Trailing Slashes If Not A Folder...\n" .
+        "    RewriteCond %{REQUEST_FILENAME} !-d\n" .
+        "    RewriteCond %{REQUEST_URI} (.+)/$\n" .
+        "    RewriteRule ^ %1 [L,R=301]\n\n" .
+        "    # Send Requests To Front Controller...\n" .
+        "    RewriteCond %{REQUEST_FILENAME} !-d\n" .
+        "    RewriteCond %{REQUEST_FILENAME} !-f\n" .
+        "    RewriteRule ^ index.php [L]\n" .
+        "</IfModule>\n";
 
-    // 3. Symlink / copy asset directories
-    $assetFolders = ['assets', 'config_media', 'templates', 'audio', 'default', 'templateHomepage', 'konten', 'hasil', 'svg'];
-    foreach ($assetFolders as $folder) {
-        $src = $subsidiPublicHtml . '/' . $folder;
-        $dst = $targetPublicHtml . '/' . $folder;
-        if (file_exists($src) && !file_exists($dst)) {
-            $ok = @symlink($src, $dst);
-            if ($ok) {
-                $log[] = "Symlink dibuat untuk folder {$folder}.";
-            } else {
-                $log[] = "Symlink gagal untuk {$folder}.";
-            }
-        }
-    }
+    file_put_contents($targetPublicHtml . '/.htaccess', $htaccessContent);
+    $log[] = ".htaccess dengan fallback rewrite aset berhasil dibuat di {$targetPublicHtml}";
 
-    // 4. Copy static files
+    // 3. Copy static root files
     $staticFiles = ['bg-login-perumahan.png', 'favicon.ico', 'robots.txt'];
     foreach ($staticFiles as $file) {
         $src = $subsidiPublicHtml . '/' . $file;
