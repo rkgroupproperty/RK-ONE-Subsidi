@@ -66,20 +66,28 @@ class AuthController extends Controller
         $user = User::where('username', $request->username)->first();
 
         if (! Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
-            return response()->json([
-                'message' => 'The given data was invalid.',
-                'errors' => [
-                    'password' => ['Password salah untuk portal ' . ($appType === 'komersil' ? 'Komersil.' : 'Subsidi.')],
-                ],
-            ], 422);
+            $errMsg = 'Password salah untuk portal ' . ($appType === 'komersil' ? 'Komersil.' : 'Subsidi.');
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => 'The given data was invalid.',
+                    'errors' => [
+                        'password' => [$errMsg],
+                    ],
+                ], 422);
+            }
+            return redirect()->back()->withInput()->withErrors(['password' => $errMsg]);
         }
         if ($user->status === 'BLOKIR') {
-            return response()->json([
-                'message' => 'The given data was invalid.',
-                'errors' => [
-                    'username' => ['Akun anda telah diblokir.'],
-                ],
-            ], 422);
+            $errMsg = 'Akun anda telah diblokir.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => 'The given data was invalid.',
+                    'errors' => [
+                        'username' => [$errMsg],
+                    ],
+                ], 422);
+            }
+            return redirect()->back()->withInput()->withErrors(['username' => $errMsg]);
         }
 
         $hakAkses = HakAkses::where('id_user', $user->id)
@@ -110,10 +118,14 @@ class AuthController extends Controller
 
         $this->logLogin();
 
-        return response()->json([
-            'status' => 'success',
-            'redirect_url' => route('beranda.index'),
-        ]);
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'redirect_url' => route('beranda.index'),
+            ]);
+        }
+
+        return redirect()->route('beranda.index');
     }
 
     public function switchPortal(string $type): RedirectResponse

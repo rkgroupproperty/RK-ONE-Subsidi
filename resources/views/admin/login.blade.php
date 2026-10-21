@@ -721,8 +721,18 @@
 
   </div>
 
-  <script src="{{ asset('templates/plugins/jquery/jquery.min.js') }}"></script>
-  <script src="{{ asset('templates/plugins/toastr/toastr.min.js') }}"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    if (typeof jQuery === 'undefined') {
+      document.write('<script src="{{ asset('templates/plugins/jquery/jquery.min.js') }}"><\/script>');
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script>
+    if (typeof toastr === 'undefined') {
+      document.write('<script src="{{ asset('templates/plugins/toastr/toastr.min.js') }}"><\/script>');
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
@@ -804,11 +814,6 @@
       }).then((result) => {
         if (result.isConfirmed && result.value && result.value.status === 'success') {
           sessionStorage.setItem('komersil_unlocked', 'true');
-          applyPortalState('komersil');
-          toastr.success('Portal Komersil berhasil dibuka!', 'AKSES DIIZINKAN', { timeOut: 2000 });
-        }
-      });
-    }
           applyPortalState('komersil');
           toastr.success('Portal Komersil berhasil dibuka!', 'AKSES DIIZINKAN', { timeOut: 2000 });
         }
