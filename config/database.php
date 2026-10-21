@@ -87,7 +87,7 @@ return [
             'url' => env('DB_URL_KOMERSIL', env('DB_URL')),
             'host' => env('DB_HOST_KOMERSIL', env('DB_HOST', '127.0.0.1')),
             'port' => env('DB_PORT_KOMERSIL', env('DB_PORT', '3306')),
-            'database' => env('DB_DATABASE_KOMERSIL', env('DB_DATABASE', 'laravel')),
+            'database' => env('DB_DATABASE_KOMERSIL', 'u676044495_komersil'),
             'username' => env('DB_USERNAME_KOMERSIL', env('DB_USERNAME', 'root')),
             'password' => env('DB_PASSWORD_KOMERSIL', env('DB_PASSWORD', '')),
             'unix_socket' => env('DB_SOCKET', ''),

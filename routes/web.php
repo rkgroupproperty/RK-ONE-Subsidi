@@ -129,6 +129,8 @@ Route::group(['middleware' => 'guest'], function () {
 Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar']);
 Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar']);
 
+Route::post('switch-portal/verify', [AuthController::class, 'verifySwitchPortal'])->name('switch.portal.verify');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('switch-portal/{type}', [AuthController::class, 'switchPortal'])->name('switch.portal');
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
@@ -424,3 +426,95 @@ Route::get('/system/setup-komersil/{secret}', function ($secret, \App\Services\K
     $result = $service->setupKomersilDatabase(!request()->has('skip_seed'));
     return response()->json($result);
 })->name('system.setup-komersil');
+
+Route::get('/system/setup-domain-sync/{secret}', function ($secret) {
+    if ($secret !== 'rk_domain_setup_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+
+    $log = [];
+    $domainsDir = realpath(base_path('../../../'));
+    $subsidiPublicHtml = realpath(base_path('../'));
+    $laravelCore = realpath(base_path());
+
+    $targetDomainDir = $domainsDir ? $domainsDir . '/sistem.rkgroupproperti.com' : null;
+    $targetPublicHtml = $targetDomainDir ? $targetDomainDir . '/public_html' : null;
+
+    $log[] = "Root domains dir: {$domainsDir}";
+    $log[] = "Laravel Core: {$laravelCore}";
+    $log[] = "Subsidi public_html: {$subsidiPublicHtml}";
+    $log[] = "Target public_html: {$targetPublicHtml}";
+
+    if (!$targetPublicHtml || !file_exists($targetPublicHtml)) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Direktori sistem.rkgroupproperti.com/public_html belum ditemukan di server Hostinger.',
+            'log' => $log,
+        ]);
+    }
+
+    // 1. Create index.php pointing to shared Laravel core
+    $newIndex = "<?php\n\n" .
+        "use Illuminate\\Http\\Request;\n\n" .
+        "define('LARAVEL_START', microtime(true));\n\n" .
+        "if (file_exists('{$laravelCore}/storage/framework/maintenance.php')) {\n" .
+        "    require '{$laravelCore}/storage/framework/maintenance.php';\n" .
+        "}\n\n" .
+        "require '{$laravelCore}/vendor/autoload.php';\n\n" .
+        "(require_once '{$laravelCore}/bootstrap/app.php')\n" .
+        "    ->handleRequest(Request::capture());\n";
+
+    file_put_contents($targetPublicHtml . '/index.php', $newIndex);
+    $log[] = "index.php berhasil dibuat di {$targetPublicHtml} mengarah ke Laravel core.";
+
+    // 2. Copy .htaccess
+    if (file_exists($subsidiPublicHtml . '/.htaccess')) {
+        copy($subsidiPublicHtml . '/.htaccess', $targetPublicHtml . '/.htaccess');
+        $log[] = ".htaccess berhasil disalin.";
+    }
+
+    // 3. Symlink / copy asset directories
+    $assetFolders = ['assets', 'config_media', 'templates', 'audio', 'default', 'templateHomepage', 'konten', 'hasil', 'svg'];
+    foreach ($assetFolders as $folder) {
+        $src = $subsidiPublicHtml . '/' . $folder;
+        $dst = $targetPublicHtml . '/' . $folder;
+        if (file_exists($src) && !file_exists($dst)) {
+            $ok = @symlink($src, $dst);
+            if ($ok) {
+                $log[] = "Symlink dibuat untuk folder {$folder}.";
+            } else {
+                $log[] = "Symlink gagal untuk {$folder}.";
+            }
+        }
+    }
+
+    // 4. Copy static files
+    $staticFiles = ['bg-login-perumahan.png', 'favicon.ico', 'robots.txt'];
+    foreach ($staticFiles as $file) {
+        $src = $subsidiPublicHtml . '/' . $file;
+        $dst = $targetPublicHtml . '/' . $file;
+        if (file_exists($src) && !file_exists($dst)) {
+            @copy($src, $dst);
+            $log[] = "File {$file} berhasil disalin.";
+        }
+    }
+
+    // 5. Update APP_URL in .env
+    $envFile = base_path('.env');
+    if (file_exists($envFile)) {
+        $env = file_get_contents($envFile);
+        if (str_contains($env, 'APP_URL=')) {
+            $env = preg_replace('/APP_URL=.*/', 'APP_URL=https://sistem.rkgroupproperti.com', $env);
+        } else {
+            $env .= "\nAPP_URL=https://sistem.rkgroupproperti.com\n";
+        }
+        file_put_contents($envFile, $env);
+        $log[] = "APP_URL di .env berhasil diubah menjadi https://sistem.rkgroupproperti.com.";
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Domain sistem.rkgroupproperti.com berhasil dihubungkan ke sistem!',
+        'log' => $log,
+    ]);
+})->name('system.setup-domain-sync');

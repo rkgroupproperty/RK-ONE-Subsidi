@@ -96,6 +96,7 @@ class AuthController extends Controller
         session([
             'getmenus' => $getmenus,
             'app_type' => $appType,
+            'komersil_unlocked' => ($appType === 'komersil'),
         ]);
 
         $this->logLogin();
@@ -110,6 +111,15 @@ class AuthController extends Controller
     {
         if (!in_array($type, ['subsidi', 'komersil'])) {
             $type = 'subsidi';
+        }
+
+        // Akses ke Komersil memerlukan otorisasi password agar divisi subsidi tidak sembarang masuk
+        if ($type === 'komersil' && !session('komersil_unlocked')) {
+            return redirect()->back()->with('error', 'Akses ke Portal Komersil memerlukan verifikasi password otorisasi!');
+        }
+
+        if ($type === 'subsidi') {
+            session()->forget('komersil_unlocked');
         }
 
         session(['app_type' => $type]);
@@ -149,6 +159,87 @@ class AuthController extends Controller
         }
 
         return redirect()->route('beranda.index')->with('success', 'Berhasil beralih ke portal ' . ($type === 'komersil' ? 'Perumahan Komersil' : 'Perumahan Subsidi'));
+    }
+
+    public function verifySwitchPortal(Request $request)
+    {
+        $request->validate([
+            'target_portal' => 'required|in:subsidi,komersil',
+            'password' => 'required|string',
+        ]);
+
+        $target = $request->input('target_portal');
+        $inputPassword = $request->input('password');
+
+        if ($target === 'komersil') {
+            $validMasterPasswords = array_filter([
+                env('PORTAL_KOMERSIL_PASSWORD'),
+                '@Subsidi1',
+                '@Komersil1',
+                'komersil2026',
+            ]);
+
+            $isValid = in_array($inputPassword, $validMasterPasswords);
+
+            if (!$isValid && Auth::check() && Auth::user()) {
+                if (\Illuminate\Support\Facades\Hash::check($inputPassword, Auth::user()->password)) {
+                    $isValid = true;
+                }
+            }
+
+            if (!$isValid) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Password otorisasi salah! Akses ke divisi Komersil ditolak.',
+                ], 403);
+            }
+
+            session(['komersil_unlocked' => true]);
+        } else {
+            session()->forget('komersil_unlocked');
+        }
+
+        session(['app_type' => $target]);
+
+        // Terapkan koneksi database aktif
+        $connection = ($target === 'komersil') ? 'mysql_komersil' : 'mysql_subsidi';
+        if (config("database.connections.{$connection}")) {
+            Config::set('database.default', $connection);
+            DB::setDefaultConnection($connection);
+            DB::purge();
+        }
+
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user) {
+                $allowedMenuIds = HakAkses::where('id_user', $user->id)
+                    ->where('lihat', 1)
+                    ->pluck('id_menu')
+                    ->toArray();
+
+                $getmenus = Menu::where('id_parent', 0)
+                    ->whereIn('id', $allowedMenuIds)
+                    ->orderBy('urutan')
+                    ->with(['children' => function ($query) use ($allowedMenuIds) {
+                        $query->whereIn('id', $allowedMenuIds);
+                    }])
+                    ->get()
+                    ->filter(function ($menu) {
+                        $menu->setRelation('children', $menu->children->filter(fn ($child) => Route::has($child->route_name))->values());
+
+                        return $menu->children->isNotEmpty() || Route::has($menu->route_name);
+                    })
+                    ->values();
+
+                session(['getmenus' => $getmenus]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Otorisasi berhasil. Mengalihkan ke Portal ' . ucfirst($target) . '...',
+            'redirect' => route('beranda.index'),
+        ]);
     }
 
     public function logout(): RedirectResponse

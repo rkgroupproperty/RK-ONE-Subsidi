@@ -253,20 +253,20 @@
                                 <i class="fas fa-home mr-2 text-warning"></i> PORTAL SUBSIDI
                             </button>
                         @endif
-                        <div class="dropdown-menu shadow border-0" aria-labelledby="portalSwitcher" style="border-radius: 12px; min-width: 220px;">
+                        <div class="dropdown-menu shadow border-0" aria-labelledby="portalSwitcher" style="border-radius: 12px; min-width: 230px;">
                             <h6 class="dropdown-header text-uppercase font-weight-bold text-muted" style="font-size: 11px; letter-spacing: 0.05em;">Pindah Portal Database:</h6>
                             <a class="dropdown-item d-flex align-items-center py-2 {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'subsidi' ? 'bg-light font-weight-bold' : '' }}" href="{{ route('switch.portal', 'subsidi') }}">
                                 <span class="badge badge-success mr-2 p-1"><i class="fas fa-home"></i></span>
                                 <div>
                                     <div style="font-size: 13px; color: #15803d;">Perumahan Subsidi</div>
-                                    <small class="text-muted d-block" style="font-size: 10px;">Database: Subsidi</small>
+                                    <small class="text-muted d-block" style="font-size: 10px;">Database: Subsidi (Publik)</small>
                                 </div>
                             </a>
-                            <a class="dropdown-item d-flex align-items-center py-2 {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'komersil' ? 'bg-light font-weight-bold' : '' }}" href="{{ route('switch.portal', 'komersil') }}">
-                                <span class="badge badge-info mr-2 p-1"><i class="fas fa-city"></i></span>
+                            <a class="dropdown-item d-flex align-items-center py-2 {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'komersil' ? 'bg-light font-weight-bold' : '' }}" href="javascript:void(0)" onclick="handleSwitchToKomersil()">
+                                <span class="badge badge-info mr-2 p-1"><i class="fas fa-lock"></i></span>
                                 <div>
-                                    <div style="font-size: 13px; color: #0369a1;">Perumahan Komersil</div>
-                                    <small class="text-muted d-block" style="font-size: 10px;">Database: Komersil</small>
+                                    <div style="font-size: 13px; color: #0369a1;">Perumahan Komersil <i class="fas fa-shield-alt text-warning ml-1" style="font-size: 11px;" title="Perlu Password Otorisasi"></i></div>
+                                    <small class="text-muted d-block" style="font-size: 10px;">Database: Komersil (Terkunci PIN)</small>
                                 </div>
                             </a>
                         </div>
@@ -697,6 +697,89 @@
                 sessionStorage.removeItem('success');
             }
         });
+
+        function handleSwitchToKomersil() {
+            @if (($current_app_type ?? session('app_type', 'subsidi')) === 'komersil')
+                toastr.info("Anda sudah berada di Portal Komersil.");
+                return;
+            @endif
+
+            Swal.fire({
+                title: '<div class="text-primary font-weight-bold" style="font-size: 20px;"><i class="fas fa-shield-alt mr-2"></i> Otorisasi Portal Komersil</div>',
+                html: `
+                    <p class="text-muted mb-3" style="font-size: 13px;">Portal Komersil dibatasi agar tidak dapat diakses divisi Subsidi. Masukkan password otorisasi untuk membuka portal:</p>
+                    <div class="input-group mb-2">
+                        <input type="password" id="swal_komersil_pass" class="form-control" placeholder="Masukkan password otorisasi..." autocomplete="current-password" style="border-radius: 8px 0 0 8px;">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleSwalPass()" style="border-radius: 0 8px 8px 0;">
+                                <i class="fas fa-eye" id="swalPassIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block text-left" style="font-size: 11px;"><i class="fas fa-info-circle mr-1"></i> Masukkan password akun Anda atau password otorisasi Komersil.</small>
+                `,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-unlock mr-1"></i> Buka Portal Komersil',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#0284c7',
+                customClass: {
+                    confirmButton: 'btn btn-primary px-4',
+                    cancelButton: 'btn btn-secondary px-3'
+                },
+                buttonsStyling: false,
+                preConfirm: () => {
+                    const password = document.getElementById('swal_komersil_pass').value;
+                    if (!password) {
+                        Swal.showValidationMessage('Password otorisasi wajib diisi!');
+                        return false;
+                    }
+                    return fetch("{{ route('switch.portal.verify') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            target_portal: 'komersil',
+                            password: password
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.message || 'Password salah!'); });
+                        }
+                        return response.json();
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(error.message);
+                    });
+                }
+            }).then((result) => {
+                if (result.isConfirmed && result.value && result.value.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Otorisasi Berhasil',
+                        text: 'Mengalihkan ke Portal Komersil...',
+                        timer: 1200,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = result.value.redirect || "{{ route('beranda.index') }}";
+                    });
+                }
+            });
+        }
+
+        function toggleSwalPass() {
+            const input = document.getElementById('swal_komersil_pass');
+            const icon = document.getElementById('swalPassIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
     </script>
 
     @stack('scripts')
