@@ -6,133 +6,194 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
        body {
-            font-family: 'Inter', sans-serif !important;
-            background: url('{{ $bg && $bg->nama_file ? asset("config_media/" . $bg->nama_file) : asset("bg-login-perumahan.png") }}'), url('{{ asset("bg-login-perumahan.png") }}') no-repeat center center fixed !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.85) 100%),
+                        url('{{ $bg && $bg->nama_file ? asset("config_media/" . $bg->nama_file) : asset("bg-login-perumahan.png") }}'),
+                        url('{{ asset("bg-login-perumahan.png") }}') no-repeat center center fixed !important;
             background-size: cover !important;
             min-height: 100vh;
+            color: #0f172a;
         }
 
         .booking-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding-bottom: 40px;
+            max-width: 1140px;
+            margin: 25px auto;
+            padding: 0 16px 50px;
         }
 
         .booking-card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 24px;
+            box-shadow: 0 25px 70px -10px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.12);
             overflow: hidden;
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(14px);
+            background: rgba(255, 255, 255, 0.98);
         }
 
         .booking-header {
-           background: linear-gradient(135deg, #0d3b66 0%, #1e5fa8 50%, #3a86ff 100%);
-            padding: 24px 30px;
+            background: linear-gradient(135deg, #090d16 0%, #1e1b4b 55%, #0f172a 100%);
+            padding: 34px 28px 28px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .booking-header::before {
+            content: "";
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.28) 0%, transparent 70%);
+            pointer-events: none;
         }
 
         .booking-logo {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 14px;
-            padding: 10px 14px;
-            margin-bottom: 14px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 16px;
+            padding: 10px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+            z-index: 1;
         }
 
         .booking-logo img {
-            max-width: 110px;
-            max-height: 72px;
+            max-width: 120px;
+            max-height: 60px;
             width: auto;
             height: auto;
             object-fit: contain;
         }
 
         .booking-header h4 {
-            color: #fff;
-            font-weight: 700;
+            color: #ffffff;
+            font-weight: 800;
             margin: 0;
-            font-size: 1.2rem;
-            letter-spacing: 0.5px;
+            font-size: 1.5rem;
+            letter-spacing: -0.01em;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
-        .booking-header p {
-            color: rgba(255, 255, 255, 0.8);
-            margin: 4px 0 0;
-            font-size: 0.85rem;
+        .booking-header-subtitle {
+            color: #94a3b8;
+            margin: 6px 0 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-siteplan-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 24px;
+            border-radius: 50px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: #ffffff !important;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(124, 58, 237, 0.35));
+            border: 1px solid rgba(165, 180, 252, 0.4);
+            backdrop-filter: blur(8px);
+            text-decoration: none !important;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-siteplan-pill:hover {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
         }
 
         .booking-body {
-            padding: 30px;
+            padding: 34px 38px;
         }
 
         /* Stage Sections */
         .stage-section {
-            margin-bottom: 28px;
+            margin-bottom: 32px;
         }
 
         .stage-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 18px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e8f5e9;
+            gap: 14px;
+            margin-bottom: 22px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
         }
 
         .stage-number {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #0d3b66, #3a86ff);
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
             color: #fff;
-            border-radius: 50%;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            font-size: 0.85rem;
+            font-weight: 800;
+            font-size: 0.95rem;
             flex-shrink: 0;
         }
 
         .stage-title {
-            font-weight: 600;
-            font-size: 1rem;
-            color: #0d3b66;
+            font-weight: 700;
+            font-size: 1.12rem;
+            color: #0f172a;
             margin: 0;
+            letter-spacing: -0.01em;
         }
 
         /* Form Controls */
         .form-group {
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
 
         .form-group label {
-            font-weight: 500;
-            font-size: 0.85rem;
-            color: #374151;
-            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: #334155;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
         }
 
         .form-control {
-            border-radius: 8px !important;
-            border: 1.5px solid #d1d5db !important;
-            padding: 8px 12px;
-            font-size: 16px;
+            border-radius: 10px !important;
+            border: 1.5px solid #e2e8f0 !important;
+            background: #ffffff !important;
+            padding: 9px 14px;
+            font-size: 14.5px;
+            color: #0f172a;
             transition: all 0.2s ease;
         }
 
         .select2-container--bootstrap4 .select2-selection--single {
-            border-radius: 8px !important;
-            border: 1.5px solid #d1d5db !important;
-            height: 38px !important;
-            padding: 0 12px !important;
+            border-radius: 10px !important;
+            border: 1.5px solid #e2e8f0 !important;
+            height: 42px !important;
+            padding: 0 14px !important;
             display: flex !important;
             align-items: center !important;
-            font-size: 16px;
+            font-size: 14.5px;
+            background: #ffffff !important;
             transition: all 0.2s ease;
         }
 
@@ -323,17 +384,22 @@
 
         /* Submit Button */
         .btn-submit {
-            background: #1e5fa8;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             border: none;
             color: #fff;
-            padding: 10px 40px;
+            padding: 12px 42px;
             border-radius: 12px;
-            transition: all 0.3s ease;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+            transition: all 0.25s ease;
         }
 
         .btn-submit:hover {
             transform: translateY(-2px);
-            background: #0d3b66;
+            background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+            box-shadow: 0 12px 28px rgba(99, 102, 241, 0.45);
             color: #fff;
         }
 
@@ -426,14 +492,15 @@
             <div class="booking-card">
                 <div class="booking-header">
                     <div class="booking-logo">
-                        <img src="{{ asset('config_media/' . ($logo->nama_file ?? 'default.png')) }}" alt="Logo Login">
+                        <img src="{{ asset('config_media/' . ($logo->nama_file ?? 'default.png')) }}" alt="Logo Login"
+                            onerror="this.onerror=null; this.src='https://subsidi.rkgroupproperti.com/config_media/{{ $logo->nama_file ?? 'default.png' }}';">
                     </div>
-                    <h4 class="fw-bold">Form Data Customer (Booking)</h4>
-                     <div class="mt-2 text-center">
-                        <a href="{{ route('public.siteplan.index') }}" target="_blank"
-                            class="badge text-white px-3 py-2 shadow-sm"
-                            style="border-radius: 50rem; font-weight: 600; font-size: 0.75rem; transition: all 0.3s; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);">
-                            <i class="fas fa-map mr-1"></i> Lihat Siteplan
+                    <h4>Form Data Customer (Booking)</h4>
+                    <p class="booking-header-subtitle">Sistem Pemesanan Unit & Manajemen Properti RK Group</p>
+                    <div class="mt-1 text-center">
+                        <a href="{{ route('public.siteplan.index') }}" target="_blank" class="btn-siteplan-pill">
+                            <i class="fas fa-map-marked-alt text-warning"></i>
+                            <span>Buka Siteplan Interaktif</span>
                         </a>
                     </div>
                 </div>

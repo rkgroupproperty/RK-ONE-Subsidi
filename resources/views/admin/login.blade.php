@@ -45,12 +45,78 @@
     body {
       min-height: 100vh;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #23252a;
+      position: relative;
+      background: #090d16;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 24px 16px;
       color: #111827;
+      overflow-x: hidden;
+    }
+
+    /* Ambient Living Background */
+    .bg-ambient-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+      background: radial-gradient(circle at 10% 15%, rgba(79, 70, 229, 0.28) 0%, transparent 45%),
+                  radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.22) 0%, transparent 45%),
+                  radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.16) 0%, transparent 55%),
+                  linear-gradient(135deg, #090d16 0%, #0f172a 40%, #1e1b4b 75%, #0b0f19 100%);
+    }
+
+    .bg-ambient-photo {
+      position: fixed;
+      inset: -25px;
+      z-index: 0;
+      background: url('{{ $bgImage }}'),
+                  url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1800&auto=format&fit=crop'),
+                  url('{{ asset("bg-login-perumahan.png") }}');
+      background-position: center center;
+      background-size: cover;
+      filter: blur(28px) brightness(0.40) saturate(1.25);
+      opacity: 0.70;
+      transform: scale(1.04);
+      animation: ambientPulse 14s ease-in-out infinite alternate;
+    }
+
+    @keyframes ambientPulse {
+      0% { transform: scale(1.02) rotate(0deg); opacity: 0.60; }
+      100% { transform: scale(1.07) rotate(1deg); opacity: 0.80; }
+    }
+
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.40;
+      animation: orbFloat 14s ease-in-out infinite alternate;
+    }
+
+    .ambient-orb-1 {
+      width: 480px;
+      height: 480px;
+      top: -120px;
+      left: -90px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+    }
+
+    .ambient-orb-2 {
+      width: 520px;
+      height: 520px;
+      bottom: -140px;
+      right: -100px;
+      background: linear-gradient(135deg, #0284c7, #10b981);
+      animation-delay: -6s;
+    }
+
+    @keyframes orbFloat {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(35px, 45px) scale(1.08); }
+      100% { transform: translate(-25px, 25px) scale(0.95); }
     }
 
     /* Container Card matching Image Reference */
@@ -62,22 +128,17 @@
       border-radius: 28px;
       overflow: hidden;
       display: flex;
-      box-shadow: 0 25px 65px -15px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.65), 0 0 50px rgba(99, 102, 241, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       position: relative;
+      z-index: 1;
     }
 
-    /* Left Visual Panel */
+    /* Left Visual Panel with Slideshow */
     .visual-panel {
       flex: 1 1 50%;
       position: relative;
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.25) 0%, rgba(15, 23, 42, 0.15) 40%, rgba(15, 23, 42, 0.90) 100%),
-                  url('{{ $bgImage }}'),
-                  url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1600&auto=format&fit=crop'),
-                  url('{{ asset("bg-login-perumahan.png") }}'),
-                  #1e293b;
-      background-size: cover;
-      background-position: center center;
-      background-repeat: no-repeat;
+      background: #0f172a;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -86,18 +147,42 @@
       overflow: hidden;
     }
 
-    .visual-panel::before {
+    .visual-slider-container {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .visual-slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transform: scale(1.06);
+      transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 6s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .visual-slide.active {
+      opacity: 1;
+      transform: scale(1.0);
+      z-index: 1;
+    }
+
+    .visual-slide::before {
       content: "";
       position: absolute;
       inset: 0;
       background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
-                  linear-gradient(180deg, transparent 40%, rgba(10, 15, 29, 0.92) 100%);
+                  linear-gradient(180deg, rgba(15, 23, 42, 0.3) 0%, rgba(15, 23, 42, 0.1) 40%, rgba(10, 15, 29, 0.92) 100%);
       z-index: 1;
     }
 
     .visual-content-top {
       position: relative;
-      z-index: 2;
+      z-index: 3;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -111,7 +196,7 @@
       backdrop-filter: blur(8px);
       padding: 6px 14px 6px 8px;
       border-radius: 50px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
     }
 
     .visual-brand-icon {
@@ -142,47 +227,74 @@
 
     .visual-content-bottom {
       position: relative;
-      z-index: 2;
-      max-width: 420px;
+      z-index: 3;
+      max-width: 440px;
+    }
+
+    .text-slide-item {
+      display: none;
+      animation: fadeInSlide 0.8s ease forwards;
+    }
+
+    .text-slide-item.active {
+      display: block;
+    }
+
+    @keyframes fadeInSlide {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .visual-headline {
-      font-size: 36px;
+      font-size: 34px;
       font-weight: 800;
-      line-height: 1.15;
+      line-height: 1.18;
       margin-bottom: 12px;
       color: #ffffff;
       letter-spacing: -0.02em;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     }
 
     .visual-subtext {
       font-size: 14px;
-      line-height: 1.5;
-      color: rgba(255, 255, 255, 0.88);
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.92);
       margin-bottom: 24px;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
     }
 
     .visual-indicators {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
     }
 
-    .dot-pill {
-      width: 30px;
-      height: 6px;
-      background: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-    }
-
-    .dot-circle {
-      width: 6px;
-      height: 6px;
+    .slider-dot {
+      width: 8px;
+      height: 8px;
       background: rgba(255, 255, 255, 0.45);
       border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .slider-dot:hover {
+      background: rgba(255, 255, 255, 0.8);
+      transform: scale(1.2);
+    }
+
+    .slider-dot.active {
+      width: 30px;
+      height: 8px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.85);
     }
 
     /* Right Form Panel */
@@ -478,10 +590,25 @@
 </head>
 <body>
 
+  <!-- Dynamic Ambient Living Background Layers -->
+  <div class="bg-ambient-layer">
+    <div class="bg-ambient-photo"></div>
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+  </div>
+
   <div class="login-container-card">
     
-    <!-- LEFT PANEL: Hero Image with Tagline -->
+    <!-- LEFT PANEL: Hero Image with Automatic Slideshow -->
     <section class="visual-panel">
+      <!-- Background Slides -->
+      <div class="visual-slider-container">
+        <div class="visual-slide active" style="background-image: url('{{ $bgImage }}'), url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1600&auto=format&fit=crop');"></div>
+        <div class="visual-slide" style="background-image: url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1600&auto=format&fit=crop');"></div>
+        <div class="visual-slide" style="background-image: url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1600&auto=format&fit=crop');"></div>
+        <div class="visual-slide" style="background-image: url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1600&auto=format&fit=crop');"></div>
+      </div>
+
       <div class="visual-content-top">
         <div class="visual-brand-badge">
           <div class="visual-brand-icon">
@@ -496,12 +623,28 @@
       </div>
 
       <div class="visual-content-bottom">
-        <h1 class="visual-headline">Find your sweet home</h1>
-        <p class="visual-subtext">Schedule visit in just a few clicks & kelola portofolio perumahan subsidi dan komersil secara terintegrasi.</p>
+        <div class="text-slide-item active">
+          <h1 class="visual-headline">Find your sweet home</h1>
+          <p class="visual-subtext">Wujudkan hunian impian keluarga tercinta dengan lingkungan asri, fasilitas lengkap & rasa aman.</p>
+        </div>
+        <div class="text-slide-item">
+          <h1 class="visual-headline">Modern Living & Comfort</h1>
+          <p class="visual-subtext">Kawasan perumahan modern terintegrasi dengan aksesibilitas strategis dan tata ruang terbaik.</p>
+        </div>
+        <div class="text-slide-item">
+          <h1 class="visual-headline">Investasi Masa Depan</h1>
+          <p class="visual-subtext">Kelola portofolio perumahan subsidi dan komersil dengan nilai investasi yang terus bertumbuh.</p>
+        </div>
+        <div class="text-slide-item">
+          <h1 class="visual-headline">Eksklusif & Terpercaya</h1>
+          <p class="visual-subtext">Layanan profesional dari Tim RK Group Property untuk kepuasan dan kemudahan setiap konsumen.</p>
+        </div>
+
         <div class="visual-indicators">
-          <div class="dot-pill"></div>
-          <div class="dot-circle"></div>
-          <div class="dot-circle"></div>
+          <div class="slider-dot active" onclick="goToSlide(0)" title="Slide 1"></div>
+          <div class="slider-dot" onclick="goToSlide(1)" title="Slide 2"></div>
+          <div class="slider-dot" onclick="goToSlide(2)" title="Slide 3"></div>
+          <div class="slider-dot" onclick="goToSlide(3)" title="Slide 4"></div>
         </div>
       </div>
     </section>
@@ -517,8 +660,8 @@
         </div>
 
         <div class="form-header">
-          <h2 class="form-title">Welcome Back!</h2>
-          <p class="form-subtitle">Sign in your account untuk mengakses sistem</p>
+          <h2 class="form-title" style="font-size: 21px; line-height: 1.3; font-weight: 800; color: #0f172a;">Managemen Sistem Penjualan RK Group Property</h2>
+          <p class="form-subtitle mt-1" style="font-size: 13.5px; color: #64748b;">Sign in your account untuk mengakses sistem</p>
         </div>
 
         <form id="loginForm" method="POST" action="{{ route('admin.loginPost') }}" novalidate>
@@ -571,8 +714,8 @@
         </div>
       </div>
 
-      <div class="footer-clean">
-        Don't have any account? <a href="javascript:void(0)" onclick="hubungiAdmin()">Hubungi Admin</a>
+      <div class="footer-clean" style="font-size: 13px; color: #64748b; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <i class="fas fa-shield-alt text-primary"></i> Di Kelola Oleh <strong style="color: #0f172a;">Tim Marcom & Digital RK Group</strong>
       </div>
     </section>
 
@@ -769,6 +912,50 @@
         }
       });
     });
+
+    // ===== Automated Luxury Property Slideshow =====
+    let currentSlideIndex = 0;
+    const slides = document.querySelectorAll('.visual-slide');
+    const textSlides = document.querySelectorAll('.text-slide-item');
+    const dots = document.querySelectorAll('.slider-dot');
+    const totalSlides = slides.length;
+    let slideTimer = null;
+
+    function showSlide(index) {
+      if (index >= totalSlides) index = 0;
+      if (index < 0) index = totalSlides - 1;
+
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+      });
+
+      textSlides.forEach((text, i) => {
+        text.classList.toggle('active', i === index);
+      });
+
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+      });
+
+      currentSlideIndex = index;
+    }
+
+    function nextSlide() {
+      showSlide((currentSlideIndex + 1) % totalSlides);
+    }
+
+    function goToSlide(index) {
+      showSlide(index);
+      resetSlideTimer();
+    }
+
+    function resetSlideTimer() {
+      if (slideTimer) clearInterval(slideTimer);
+      slideTimer = setInterval(nextSlide, 4500);
+    }
+
+    // Initialize auto-rotation
+    resetSlideTimer();
   </script>
 </body>
 </html>
