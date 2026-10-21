@@ -124,6 +124,7 @@ Route::get('/siteplan/{id}', [KontenController::class, 'siteplan'])->name('konte
 Route::group(['middleware' => 'guest'], function () {
     Route::get('admin/login', [AuthController::class, 'getLogin'])->name('login');
     Route::post('admin/post-login', [AuthController::class, 'postLogin'])->name('admin.loginPost');
+    Route::post('login', [AuthController::class, 'postLogin'])->name('login.post');
 });
 
 Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar']);

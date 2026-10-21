@@ -516,7 +516,7 @@
           <p class="form-subtitle">Sign in your account untuk mengakses sistem</p>
         </div>
 
-        <form id="loginForm" method="POST" action="{{ route('login.post') }}" novalidate>
+        <form id="loginForm" method="POST" action="{{ route('admin.loginPost') }}" novalidate>
           @csrf
           <input type="hidden" name="app_type" id="inputAppType" value="{{ $initialAppType }}">
 
