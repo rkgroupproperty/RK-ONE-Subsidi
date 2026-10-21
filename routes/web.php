@@ -130,7 +130,19 @@ Route::group(['middleware' => 'guest'], function () {
 Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar']);
 Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar']);
 
-Route::post('switch-portal/verify', [AuthController::class, 'verifySwitchPortal'])->name('switch.portal.verify');
+Route::match(['get', 'post'], 'switch-portal/verify', [AuthController::class, 'verifySwitchPortal'])->name('switch.portal.verify');
+
+Route::get('/system/clear-cache/{secret}', function ($secret) {
+    if ($secret !== 'rk_clear_2026') {
+        abort(403);
+    }
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Cache Laravel berhasil dibersihkan!',
+        'output' => \Illuminate\Support\Facades\Artisan::output(),
+    ]);
+})->name('system.clear-cache');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('switch-portal/{type}', [AuthController::class, 'switchPortal'])->name('switch.portal');

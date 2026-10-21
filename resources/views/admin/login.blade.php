@@ -636,17 +636,11 @@
             Swal.showValidationMessage('Password otorisasi wajib diisi!');
             return false;
           }
-          return fetch('/switch-portal/verify', {
-            method: 'POST',
+          return fetch('/switch-portal/verify?target_portal=komersil&password=' + encodeURIComponent(pass), {
+            method: 'GET',
             headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-              target_portal: 'komersil',
-              password: pass
-            })
+              'Accept': 'application/json'
+            }
           })
           .then(async (res) => {
             let data;
