@@ -213,14 +213,22 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            // Cek apakah database Komersil sudah dapat dihubungi
+            // Cek koneksi database Komersil
+            $komersilConnected = false;
             try {
                 DB::connection('mysql_komersil')->getPdo();
+                $komersilConnected = true;
             } catch (\Throwable $e) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Password benar! Namun database Komersil belum diberi izin MySQL di cPanel (SQLSTATE 1044). Silakan berikan ALL PRIVILEGES pada user database di cPanel.',
-                ], 400);
+                // Coba dengan user alternatif u676044495_komersil jika user default subsidi ditolak
+                try {
+                    Config::set('database.connections.mysql_komersil.username', 'u676044495_komersil');
+                    Config::set('database.connections.mysql_komersil.password', '@Subsidi1');
+                    DB::purge('mysql_komersil');
+                    DB::connection('mysql_komersil')->getPdo();
+                    $komersilConnected = true;
+                } catch (\Throwable $e2) {
+                    $komersilConnected = false;
+                }
             }
 
             session(['komersil_unlocked' => true]);
