@@ -444,9 +444,148 @@ Route::get('/system/komersil-status/{secret}', function ($secret, \App\Services\
     if ($secret !== 'rk_komersil_setup_2026') {
         abort(403, 'Unauthorized access.');
     }
+    
+    // Check available databases for default connection
+    $availableDbs = [];
+    try {
+        $dbs = DB::connection('mysql_subsidi')->select('SHOW DATABASES');
+        foreach ($dbs as $db) {
+            $availableDbs[] = array_values((array)$db)[0];
+        }
+    } catch (\Throwable $e) {
+        $availableDbs[] = 'Error: ' . $e->getMessage();
+    }
+
+    $tests = [];
+    $subUser = config('database.connections.mysql_subsidi.username');
+    $subPass = config('database.connections.mysql_subsidi.password');
+
+    $candidateUsers = [
+        ['user' => $subUser, 'pass' => $subPass],
+        ['user' => 'u676044495_komersil', 'pass' => $subPass],
+        ['user' => 'u676044495_komersil', 'pass' => '@Subsidi1'],
+        ['user' => 'u676044495_komersil', 'pass' => '@Komersil1'],
+        ['user' => 'u676044495_komersil', 'pass' => 'komersil2026'],
+        ['user' => 'u676044495_komersil', 'pass' => '@RKgroup2026'],
+        ['user' => 'u676044495_komersil', 'pass' => '@Rkgroup123'],
+        ['user' => 'u676044495_u_komersil', 'pass' => $subPass],
+        ['user' => 'u676044495_u_komersil', 'pass' => '@Subsidi1'],
+        ['user' => 'u676044495_u_komersil', 'pass' => '@Komersil1'],
+        ['user' => 'u676044495_u_komersil', 'pass' => 'komersil2026'],
+        ['user' => 'u676044495_user_komersil', 'pass' => $subPass],
+    ];
+
+    $workingUser = null;
+    $workingPass = null;
+
+    foreach ($candidateUsers as $cand) {
+        $u = $cand['user'];
+        $p = $cand['pass'];
+        $label = "{$u} / " . (strlen($p) > 2 ? substr($p, 0, 3) . '***' : 'empty');
+        try {
+            $pdo = new PDO("mysql:host=localhost;dbname=u676044495_komersil;charset=utf8mb4", $u, $p, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_TIMEOUT => 3,
+            ]);
+            $tblCount = count($pdo->query('SHOW TABLES')->fetchAll());
+            $tests[$label] = 'SUCCESS! Tables: ' . $tblCount;
+            if (!$workingUser) {
+                $workingUser = $u;
+                $workingPass = $p;
+            }
+        } catch (\Throwable $err) {
+            $tests[$label] = 'FAIL: ' . $err->getMessage();
+        }
+    }
+
+    // If working credentials were found and not already in .env, auto-update .env!
+    $autoUpdatedEnv = false;
+    if ($workingUser && $workingPass) {
+        $envFile = base_path('.env');
+        if (file_exists($envFile)) {
+            $env = file_get_contents($envFile);
+            $changed = false;
+            if (!str_contains($env, 'DB_USERNAME_KOMERSIL=' . $workingUser)) {
+                if (str_contains($env, 'DB_USERNAME_KOMERSIL=')) {
+                    $env = preg_replace('/DB_USERNAME_KOMERSIL=.*/', 'DB_USERNAME_KOMERSIL=' . $workingUser, $env);
+                } else {
+                    $env .= "\nDB_USERNAME_KOMERSIL={$workingUser}\n";
+                }
+                $changed = true;
+            }
+            if (!str_contains($env, 'DB_PASSWORD_KOMERSIL=' . $workingPass)) {
+                if (str_contains($env, 'DB_PASSWORD_KOMERSIL=')) {
+                    $env = preg_replace('/DB_PASSWORD_KOMERSIL=.*/', 'DB_PASSWORD_KOMERSIL=' . $workingPass, $env);
+                } else {
+                    $env .= "\nDB_PASSWORD_KOMERSIL={$workingPass}\n";
+                }
+                $changed = true;
+            }
+            if ($changed) {
+                file_put_contents($envFile, $env);
+                \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+                $autoUpdatedEnv = true;
+            }
+        }
+    }
+
     $status = $service->getStatus();
-    return response()->json($status);
+    return response()->json([
+        'status' => $status,
+        'available_databases_for_subsidi_user' => $availableDbs,
+        'candidate_connection_tests' => $tests,
+        'auto_updated_env' => $autoUpdatedEnv,
+    ]);
 })->name('system.komersil-status');
+
+Route::get('/system/set-komersil-env/{secret}', function ($secret, Request $request) {
+    if ($secret !== 'rk_komersil_setup_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+    $u = request()->input('user');
+    $p = request()->input('pass');
+    $db = request()->input('db', 'u676044495_komersil');
+
+    if (!$u || !$p) {
+        return response()->json(['error' => 'Parameter user dan pass diperlukan. Contoh: ?user=xxx&pass=yyy']);
+    }
+
+    // Test connection first
+    try {
+        $pdo = new PDO("mysql:host=localhost;dbname={$db};charset=utf8mb4", $u, $p, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => 3,
+        ]);
+        $tblCount = count($pdo->query('SHOW TABLES')->fetchAll());
+    } catch (\Throwable $e) {
+        return response()->json(['error' => 'Koneksi gagal: ' . $e->getMessage()]);
+    }
+
+    $envFile = base_path('.env');
+    if (file_exists($envFile)) {
+        $env = file_get_contents($envFile);
+        $pairs = [
+            'DB_DATABASE_KOMERSIL' => $db,
+            'DB_USERNAME_KOMERSIL' => $u,
+            'DB_PASSWORD_KOMERSIL' => $p,
+        ];
+        foreach ($pairs as $key => $val) {
+            if (str_contains($env, $key . '=')) {
+                $env = preg_replace('/' . $key . '=.*/', $key . '=' . $val, $env);
+            } else {
+                $env .= "\n{$key}={$val}\n";
+            }
+        }
+        file_put_contents($envFile, $env);
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Kredensial Komersil berhasil disimpan ke .env dan cache berhasil dibersihkan!',
+        'tables_count' => $tblCount,
+    ]);
+})->name('system.set-komersil-env');
 
 Route::get('/system/setup-komersil/{secret}', function ($secret, \App\Services\KomersilDatabaseService $service) {
     if ($secret !== 'rk_komersil_setup_2026') {

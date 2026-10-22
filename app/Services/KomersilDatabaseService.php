@@ -210,6 +210,89 @@ class KomersilDatabaseService
                 $logs[] = "Selesai menyalin data master ({$seededTables} tabel master tersalin).";
             }
 
+            // Inisialisasi 2 Proyek Khusus Komersil: The Ammaia Hills dan Avana Hills
+            $logs[] = "Menginisialisasi proyek khusus Komersil (The Ammaia Hills & Avana Hills)...";
+            if (count($dstConn->select("SHOW TABLES LIKE 'lokasi_kavling'")) > 0) {
+                $dstConn->table('lokasi_kavling')->truncate();
+                $dstConn->table('lokasi_kavling')->insert([
+                    [
+                        'id' => 1,
+                        'nama_kavling' => 'The Ammaia Hills',
+                        'nama_singkat' => 'TAH',
+                        'alamat' => 'The Ammaia Hills',
+                        'urutan' => 1,
+                        'stt_tampil' => 1,
+                        'is_cluster' => 0,
+                        'header' => '',
+                        'no_kwitansi' => 'TAH',
+                        'no_bast' => 'TAH',
+                        'no_ppjb' => 'TAH',
+                        'reset_nomor' => 1,
+                    ],
+                    [
+                        'id' => 2,
+                        'nama_kavling' => 'Avana Hills',
+                        'nama_singkat' => 'AVH',
+                        'alamat' => 'Avana Hills',
+                        'urutan' => 2,
+                        'stt_tampil' => 1,
+                        'is_cluster' => 0,
+                        'header' => '',
+                        'no_kwitansi' => 'AVH',
+                        'no_bast' => 'AVH',
+                        'no_ppjb' => 'AVH',
+                        'reset_nomor' => 1,
+                    ],
+                ]);
+                $logs[] = "Berhasil membuat 2 proyek perumahan komersil: 1. The Ammaia Hills, 2. Avana Hills.";
+            }
+
+            // Reset semua data customer, transaksi, booking, berkas, dan pipeline menjadi 0
+            $logs[] = "Mereset semua tabel data transaksi dan customer menjadi 0 (clean slate)...";
+            $tablesToReset = [
+                'customer',
+                'customer_tempo',
+                'pengajuan_hold',
+                'transaksi',
+                'pembayaran',
+                'kavling_peta',
+                'kavling',
+                'arsip_customer',
+                'berkas_customer',
+                'pindah_unit',
+                'ganti_nama',
+                'pembelian_cancel',
+                'sppr',
+                'wawancara',
+                'akad',
+                'akad_detail',
+                'bast',
+                'ppjb',
+                'balik_nama',
+                'marketing_offline',
+                'log_aktivitas',
+                'retensi',
+                'pemasukan',
+                'pengeluaran',
+                'hutang',
+                'piutang',
+                'mutasi_saldo',
+                'legalitas_bphtb_ssp',
+                'legalitas_listrik_air',
+                'kavling_foto',
+                'master_svg',
+                'lokasi_kavling_perusahaan',
+            ];
+
+            $resetCount = 0;
+            foreach ($tablesToReset as $resetTable) {
+                if (count($dstConn->select("SHOW TABLES LIKE '{$resetTable}'")) > 0) {
+                    $dstConn->table($resetTable)->truncate();
+                    $resetCount++;
+                }
+            }
+            $logs[] = "Berhasil mengosongkan {$resetCount} tabel transaksi dan customer (seluruh data Komersil bernilai 0).";
+
             // Re-enable foreign key checks
             $dstConn->statement('SET FOREIGN_KEY_CHECKS = 1;');
             $logs[] = "Foreign key checks diaktifkan kembali.";
