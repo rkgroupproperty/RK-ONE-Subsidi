@@ -618,6 +618,14 @@ Route::get('/system/setup-komersil/{secret}', function ($secret, \App\Services\K
     return response()->json($result);
 })->name('system.setup-komersil');
 
+Route::get('/system/seed-siteplan/{secret}', function ($secret, \App\Services\KomersilDatabaseService $service) {
+    if ($secret !== 'rk_siteplan_seed_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+    $result = $service->seedAvanaHillsSiteplan();
+    return response()->json($result);
+})->name('system.seed-siteplan');
+
 Route::get('/system/setup-domain-sync/{secret}', function ($secret) {
     if ($secret !== 'rk_domain_setup_2026') {
         abort(403, 'Unauthorized access.');
