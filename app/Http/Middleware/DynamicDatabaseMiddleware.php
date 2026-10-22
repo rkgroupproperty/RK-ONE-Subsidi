@@ -16,7 +16,17 @@ class DynamicDatabaseMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Dapatkan portal yang dipilih (default: 'subsidi')
+        // 1. Dapatkan portal yang dipilih (bisa dari query param ?portal=, session, atau host)
+        $portalQuery = $request->query('portal');
+        if ($portalQuery && in_array($portalQuery, ['subsidi', 'komersil'])) {
+            session(['app_type' => $portalQuery]);
+        }
+
+        $host = $request->getHost();
+        if (str_starts_with($host, 'komersil.')) {
+            session(['app_type' => 'komersil']);
+        }
+
         $appType = session('app_type');
 
         if (!$appType || !in_array($appType, ['subsidi', 'komersil'])) {

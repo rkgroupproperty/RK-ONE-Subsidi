@@ -18,7 +18,7 @@ class PublicSiteplanController extends Controller
      */
      public function index()
     {
-        $lokasiKavling = LokasiKavling::with(['kavlingPeta.customer.progres', 'kavlingPeta.progres'])
+        $lokasiKavling = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres', 'kavlingPeta.progres'])
             ->orderBy('urutan', 'asc')
             ->get();
 
