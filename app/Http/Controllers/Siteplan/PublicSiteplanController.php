@@ -18,6 +18,12 @@ class PublicSiteplanController extends Controller
      */
      public function index()
     {
+        if (session('app_type') === 'komersil') {
+            if (KavlingPeta::where('id_lokasi', 2)->count() == 0 || \App\Models\MasterSVG::where('id_lokasi', 2)->doesntExist()) {
+                app(\App\Services\KomersilDatabaseService::class)->seedAvanaHillsSiteplan();
+            }
+        }
+
         $lokasiKavling = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres', 'kavlingPeta.progres'])
             ->orderBy('urutan', 'asc')
             ->get();

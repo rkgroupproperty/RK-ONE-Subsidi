@@ -278,6 +278,35 @@
             fill: #ffffff !important;
         }
 
+        /* Styling interaktif kavling */
+        polygon.kavling-poly, path.kavling-poly {
+            transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+        }
+
+        /* Unit belum terjual (putih #ffffff) dibuat transparan agar gambar denah & nomor lot terlihat jelas tanpa bertumpuk */
+        polygon.kavling-poly[style*="#ffffff"],
+        polygon.kavling-poly[style*="#FFFFFF"],
+        polygon.kavling-poly[style*="fill:#ffffff"],
+        polygon.kavling-poly[style*="fill: #ffffff"],
+        path.kavling-poly[style*="#ffffff"],
+        path.kavling-poly[style*="#FFFFFF"],
+        path.kavling-poly[style*="fill:#ffffff"],
+        path.kavling-poly[style*="fill: #ffffff"] {
+            fill: transparent !important;
+            stroke: rgba(37, 99, 235, 0.35) !important;
+            stroke-width: 1px !important;
+        }
+
+        /* Efek hover interaktif */
+        polygon.kavling-poly:hover,
+        path.kavling-poly:hover {
+            fill: rgba(59, 130, 246, 0.45) !important;
+            stroke: #1d4ed8 !important;
+            stroke-width: 2.5px !important;
+            filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.7));
+            cursor: pointer !important;
+        }
+
         @media (max-width: 768px) {
             .siteplan-container {
                 padding: 15px 10px;
@@ -315,11 +344,14 @@
             </div>
 
             <div class="siteplan-body">
+                @php
+                    $activeLokasiId = request('id_lokasi') ?? ($lokasiKavling->first()->id ?? 1);
+                @endphp
                 {{-- Tabs Perumahan --}}
                 <ul class="nav nav-tabs" id="siteplan-tabs" role="tablist">
                     @foreach ($lokasiKavling as $index => $kav)
                         <li class="nav-item">
-                            <a class="nav-link {{ $index == 0 ? 'active' : '' }}" id="tab-{{ $kav->id }}"
+                            <a class="nav-link {{ $kav->id == $activeLokasiId ? 'active' : '' }}" id="tab-{{ $kav->id }}"
                                 data-toggle="pill" href="#pane-{{ $kav->id }}" role="tab">
                                 {{ $kav->nama_kavling }}
                             </a>
@@ -329,7 +361,7 @@
 
                 <div class="tab-content" id="siteplan-tabContent">
                     @foreach ($lokasiKavling as $index => $kav)
-                        <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}" id="pane-{{ $kav->id }}"
+                        <div class="tab-pane fade {{ $kav->id == $activeLokasiId ? 'show active' : '' }}" id="pane-{{ $kav->id }}"
                             role="tabpanel">
 
                             {{-- Action Toolbar: Zoom In, Zoom Out, Reset & Download Denah --}}
@@ -565,6 +597,20 @@
                 });
             });
         }
+
+        // Support direct hash tab switching (e.g., #custom-tabs-four-2 or #pane-2)
+        $(document).ready(function() {
+            let hash = window.location.hash;
+            if (hash) {
+                let match = hash.match(/\d+/);
+                if (match) {
+                    let id = match[0];
+                    if ($('#tab-' + id).length) {
+                        $('#tab-' + id).tab('show');
+                    }
+                }
+            }
+        });
     </script>
     <script src="{{ asset('assets/svg_1.js') }}?v={{ time() }}"></script>
 @endpush
