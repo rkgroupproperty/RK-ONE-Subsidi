@@ -530,11 +530,26 @@ Route::get('/system/komersil-status/{secret}', function ($secret, \App\Services\
     }
 
     $status = $service->getStatus();
+    
+    $komersilProjects = [];
+    $komersilStats = [];
+    try {
+        $komersilProjects = DB::connection('mysql_komersil')->table('lokasi_kavling')->select('id', 'nama_kavling', 'nama_singkat', 'urutan', 'stt_tampil')->get();
+        $komersilStats = [
+            'customers' => DB::connection('mysql_komersil')->table('customer')->count(),
+            'transaksi' => DB::connection('mysql_komersil')->table('transaksi')->count(),
+            'pengajuan_hold' => DB::connection('mysql_komersil')->table('pengajuan_hold')->count(),
+            'kavling_peta' => DB::connection('mysql_komersil')->table('kavling_peta')->count(),
+            'pembayaran' => DB::connection('mysql_komersil')->table('pembayaran')->count(),
+        ];
+    } catch (\Throwable $e) {
+        $komersilStats['error'] = $e->getMessage();
+    }
+
     return response()->json([
         'status' => $status,
-        'available_databases_for_subsidi_user' => $availableDbs,
-        'candidate_connection_tests' => $tests,
-        'auto_updated_env' => $autoUpdatedEnv,
+        'komersil_projects' => $komersilProjects,
+        'komersil_stats' => $komersilStats,
     ]);
 })->name('system.komersil-status');
 
