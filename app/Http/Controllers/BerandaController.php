@@ -108,6 +108,12 @@ class BerandaController extends Controller
                 + BAST::whereHas('customer', fn ($query) => $query->where('stt_arsip', 0))->count(),
         ];
 
+        if (session('app_type') === 'komersil') {
+            if (KavlingPeta::where('id_lokasi', 2)->count() == 0 || \App\Models\MasterSVG::where('id_lokasi', 2)->doesntExist()) {
+                app(\App\Services\KomersilDatabaseService::class)->seedAvanaHillsSiteplan();
+            }
+        }
+
         $totalUnit = KavlingPeta::count();
         $unitTerjual = Customer::where('stt_arsip', 0)->count();
         $unitReady = KavlingPeta::where('status', 0)->count();

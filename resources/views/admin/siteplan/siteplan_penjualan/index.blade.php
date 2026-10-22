@@ -117,11 +117,14 @@
                         <!-- ================================================================================================== -->
 
                         <div class="card card-primary card-outline card-outline-tabs">
+                            @php
+                                $activeLokasiId = request('id_lokasi') ?? ($lokasiKavling->first()->id ?? 1);
+                            @endphp
                             <div class="card-header p-0 border-bottom-0">
                                 <ul class="nav nav-tabs" id="custom-tabs-four-tab" role="tablist">
                                     @foreach ($lokasiKavling as $index => $kav)
                                         <li class="nav-item">
-                                            <a class="nav-link {{ $index == 0 ? 'active' : '' }}"
+                                            <a class="nav-link {{ $kav->id == $activeLokasiId ? 'active' : '' }}"
                                                 id="custom-tabs-four-{{ $kav->id }}-tab" data-toggle="pill"
                                                 href="#custom-tabs-four-{{ $kav->id }}" role="tab">
                                                 {{ $kav->nama_kavling }}
@@ -134,7 +137,7 @@
                             <div class="card-body">
                                 <div class="tab-content" id="custom-tabs-four-tabContent">
                                     @foreach ($lokasiKavling as $index => $kav)
-                                        <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}"
+                                        <div class="tab-pane fade {{ $kav->id == $activeLokasiId ? 'show active' : '' }}"
                                             id="custom-tabs-four-{{ $kav->id }}" role="tabpanel">
 
                                             <a href="{{ route('siteplan-penjualan.cetak.pdf', $kav->id) }}" target="_blank"

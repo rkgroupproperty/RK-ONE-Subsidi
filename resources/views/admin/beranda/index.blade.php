@@ -1413,7 +1413,7 @@
             </div>
           </div>
           <div class="project-cta-actions">
-            <a href="{{ route('public.siteplan.index') }}" class="btn-luxury-siteplan">
+            <a href="{{ route('siteplan-penjualan.index', ['id_lokasi' => 1]) }}" class="btn-luxury-siteplan">
               <i class="fa-solid fa-map-location-dot"></i> Siteplan Interaktif
             </a>
             <a href="{{ route('kavling.index', ['id_lokasi' => 1]) }}" class="btn-luxury-units">
@@ -1445,7 +1445,7 @@
             </div>
           </div>
           <div class="project-cta-actions">
-            <a href="{{ route('public.siteplan.index') }}" class="btn-luxury-siteplan">
+            <a href="{{ route('siteplan-penjualan.index', ['id_lokasi' => 2]) }}" class="btn-luxury-siteplan">
               <i class="fa-solid fa-map-location-dot"></i> Siteplan Interaktif
             </a>
             <a href="{{ route('kavling.index', ['id_lokasi' => 2]) }}" class="btn-luxury-units">
