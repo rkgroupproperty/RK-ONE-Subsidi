@@ -375,10 +375,8 @@
 
                                             if ($pt->customer) {
                                                 $warna = $pt->customer->progres->warna ?? '#ffffff';
-                                            } else {
-                                                if ($pt->status == 1) {
-                                                    $warna = '#42f202';
-                                                }
+                                            } elseif ($pt->status == 2) {
+                                                $warna = '#42f202';
                                             }
                                         @endphp
 

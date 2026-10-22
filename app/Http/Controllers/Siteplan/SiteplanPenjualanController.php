@@ -80,7 +80,7 @@ class SiteplanPenjualanController extends Controller
 
             if ($pt->customer) {
                 $warna = $pt->customer->progres->warna ?? '#ffffff';
-            } elseif ($pt->status == 1) {
+            } elseif ($pt->status == 2) {
                 $warna = '#42f202';
             }
 

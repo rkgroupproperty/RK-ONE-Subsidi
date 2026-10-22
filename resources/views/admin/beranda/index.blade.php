@@ -1383,6 +1383,11 @@
       </div>
 
       @if(($current_app_type ?? session('app_type', 'subsidi')) === 'komersil')
+      @php
+          $projectList = collect($projectStats ?? []);
+          $tah = $projectList->firstWhere('kode', 'TAH') ?? $projectList->firstWhere('id', 1) ?? ($projectStats[0] ?? []);
+          $avh = $projectList->firstWhere('kode', 'AVH') ?? $projectList->firstWhere('id', 2) ?? ($projectStats[1] ?? []);
+      @endphp
       <!-- LUXURY DUAL-PROJECT PORTFOLIO SHOWCASE (THE AMMAIA HILLS & AVANA HILLS) -->
       <section class="komersil-hero-showcase">
         <!-- Project 1: The Ammaia Hills -->
@@ -1396,15 +1401,15 @@
           <div class="project-quick-stats">
             <div class="stat-mini-box">
               <div class="stat-mini-label">Total Unit</div>
-              <div class="stat-mini-value" style="color: #38bdf8;">{{ $projectStats[0]['total_terjual'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
+              <div class="stat-mini-value" style="color: #38bdf8;">{{ $tah['total_unit'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
             </div>
             <div class="stat-mini-box">
               <div class="stat-mini-label">Booking</div>
-              <div class="stat-mini-value" style="color: #4ade80;">{{ $projectStats[0]['booking'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Cust</small></div>
+              <div class="stat-mini-value" style="color: #4ade80;">{{ $tah['booking'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Cust</small></div>
             </div>
             <div class="stat-mini-box">
               <div class="stat-mini-label">Terjual</div>
-              <div class="stat-mini-value" style="color: #fbbf24;">{{ $projectStats[0]['total_terjual'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
+              <div class="stat-mini-value" style="color: #fbbf24;">{{ $tah['terjual'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
             </div>
           </div>
           <div class="project-cta-actions">
@@ -1428,15 +1433,15 @@
           <div class="project-quick-stats">
             <div class="stat-mini-box">
               <div class="stat-mini-label">Total Unit</div>
-              <div class="stat-mini-value" style="color: #38bdf8;">{{ $projectStats[1]['total_terjual'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
+              <div class="stat-mini-value" style="color: #38bdf8;">{{ $avh['total_unit'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
             </div>
             <div class="stat-mini-box">
               <div class="stat-mini-label">Booking</div>
-              <div class="stat-mini-value" style="color: #4ade80;">{{ $projectStats[1]['booking'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Cust</small></div>
+              <div class="stat-mini-value" style="color: #4ade80;">{{ $avh['booking'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Cust</small></div>
             </div>
             <div class="stat-mini-box">
               <div class="stat-mini-label">Terjual</div>
-              <div class="stat-mini-value" style="color: #fbbf24;">{{ $projectStats[1]['total_terjual'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
+              <div class="stat-mini-value" style="color: #fbbf24;">{{ $avh['terjual'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
             </div>
           </div>
           <div class="project-cta-actions">
