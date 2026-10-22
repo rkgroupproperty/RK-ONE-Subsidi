@@ -19,7 +19,7 @@ class PublicSiteplanController extends Controller
      public function index()
     {
         if (session('app_type') === 'komersil') {
-            if (KavlingPeta::where('id_lokasi', 2)->count() == 0 || \App\Models\MasterSVG::where('id_lokasi', 2)->doesntExist()) {
+            if (KavlingPeta::whereIn('id_lokasi', [1, 2])->count() < 105 || \App\Models\MasterSVG::whereIn('id_lokasi', [1, 2])->count() < 2) {
                 app(\App\Services\KomersilDatabaseService::class)->seedAvanaHillsSiteplan();
             }
         }

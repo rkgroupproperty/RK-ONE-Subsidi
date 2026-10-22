@@ -66,6 +66,7 @@
         /* Styling interaktif kavling */
         polygon.kavling-poly, path.kavling-poly {
             transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+            vector-effect: non-scaling-stroke;
         }
         /* Unit belum terjual (putih #ffffff) dibuat transparan agar gambar denah & nomor lot terlihat jelas tanpa bertumpuk */
         polygon.kavling-poly[style*="#ffffff"],

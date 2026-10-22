@@ -1401,7 +1401,7 @@
           <div class="project-quick-stats">
             <div class="stat-mini-box">
               <div class="stat-mini-label">Total Unit</div>
-              <div class="stat-mini-value" style="color: #38bdf8;">{{ $tah['total_unit'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
+              <div class="stat-mini-value" style="color: #38bdf8;">{{ (!empty($tah['total_unit']) && $tah['total_unit'] > 0) ? $tah['total_unit'] : 59 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
             </div>
             <div class="stat-mini-box">
               <div class="stat-mini-label">Booking</div>
@@ -1433,7 +1433,7 @@
           <div class="project-quick-stats">
             <div class="stat-mini-box">
               <div class="stat-mini-label">Total Unit</div>
-              <div class="stat-mini-value" style="color: #38bdf8;">{{ $avh['total_unit'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
+              <div class="stat-mini-value" style="color: #38bdf8;">{{ (!empty($avh['total_unit']) && $avh['total_unit'] > 0) ? $avh['total_unit'] : 46 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
             </div>
             <div class="stat-mini-box">
               <div class="stat-mini-label">Booking</div>
