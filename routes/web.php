@@ -536,11 +536,19 @@ Route::get('/system/komersil-status/{secret}', function ($secret, \App\Services\
     try {
         $komersilProjects = DB::connection('mysql_komersil')->table('lokasi_kavling')->select('id', 'nama_kavling', 'nama_singkat', 'urutan', 'stt_tampil')->get();
         $komersilStats = [
-            'customers' => DB::connection('mysql_komersil')->table('customer')->count(),
-            'transaksi' => DB::connection('mysql_komersil')->table('transaksi')->count(),
-            'pengajuan_hold' => DB::connection('mysql_komersil')->table('pengajuan_hold')->count(),
-            'kavling_peta' => DB::connection('mysql_komersil')->table('kavling_peta')->count(),
-            'pembayaran' => DB::connection('mysql_komersil')->table('pembayaran')->count(),
+            'total_projects' => DB::connection('mysql_komersil')->table('lokasi_kavling')->count(),
+            'total_customers' => DB::connection('mysql_komersil')->table('customer')->count(),
+            'total_hold_booking' => DB::connection('mysql_komersil')->table('pengajuan_hold')->count(),
+            'total_units_kavling' => DB::connection('mysql_komersil')->table('kavling_peta')->count(),
+            'total_sppr' => DB::connection('mysql_komersil')->table('sppr')->count(),
+            'total_wawancara' => DB::connection('mysql_komersil')->table('wawancara')->count(),
+            'total_akad' => DB::connection('mysql_komersil')->table('akad')->count(),
+            'total_bast' => DB::connection('mysql_komersil')->table('bast')->count(),
+            'total_ppjb' => DB::connection('mysql_komersil')->table('ppjb')->count(),
+            'total_pemasukan' => DB::connection('mysql_komersil')->table('pemasukan')->count(),
+            'total_pengeluaran' => DB::connection('mysql_komersil')->table('pengeluaran')->count(),
+            'total_hutang' => DB::connection('mysql_komersil')->table('hutang')->count(),
+            'total_piutang' => DB::connection('mysql_komersil')->table('piutang')->count(),
         ];
     } catch (\Throwable $e) {
         $komersilStats['error'] = $e->getMessage();
