@@ -515,36 +515,17 @@
                         <i class="fas fa-bars"></i>
                     </a>
                 </li>
-                <!-- Portal Indicator & Quick Switcher -->
+                <!-- Portal Indicator (Static Display, Hidden Switcher) -->
                 <li class="nav-item ml-2">
-                    <div class="dropdown">
-                        @if(($current_app_type ?? session('app_type', 'subsidi')) === 'komersil')
-                            <button class="btn btn-sm btn-info dropdown-toggle font-weight-bold px-3 py-1 shadow-sm d-flex align-items-center text-white" style="border-radius: 20px; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(255,255,255,0.4);" type="button" id="portalSwitcher" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-city mr-2 text-warning"></i> PORTAL KOMERSIL
-                            </button>
-                        @else
-                            <button class="btn btn-sm btn-success dropdown-toggle font-weight-bold px-3 py-1 shadow-sm d-flex align-items-center text-white" style="border-radius: 20px; background: linear-gradient(135deg, #10b981, #059669); border: 1px solid rgba(255,255,255,0.4);" type="button" id="portalSwitcher" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-home mr-2 text-warning"></i> PORTAL SUBSIDI
-                            </button>
-                        @endif
-                        <div class="dropdown-menu shadow border-0" aria-labelledby="portalSwitcher" style="border-radius: 12px; min-width: 230px;">
-                            <h6 class="dropdown-header text-uppercase font-weight-bold text-muted" style="font-size: 11px; letter-spacing: 0.05em;">Pindah Portal Database:</h6>
-                            <a class="dropdown-item d-flex align-items-center py-2 {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'subsidi' ? 'bg-light font-weight-bold' : '' }}" href="{{ route('switch.portal', 'subsidi') }}">
-                                <span class="badge badge-success mr-2 p-1"><i class="fas fa-home"></i></span>
-                                <div>
-                                    <div style="font-size: 13px; color: #15803d;">Perumahan Subsidi</div>
-                                    <small class="text-muted d-block" style="font-size: 10px;">Database: Subsidi (Publik)</small>
-                                </div>
-                            </a>
-                            <a class="dropdown-item d-flex align-items-center py-2 {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'komersil' ? 'bg-light font-weight-bold' : '' }}" href="{{ route('switch.portal', 'komersil') }}">
-                                <span class="badge badge-info mr-2 p-1"><i class="fas fa-city"></i></span>
-                                <div>
-                                    <div style="font-size: 13px; color: #0369a1;">Perumahan Komersil</div>
-                                    <small class="text-muted d-block" style="font-size: 10px;">Portal & Database Komersil</small>
-                                </div>
-                            </a>
+                    @if(($current_app_type ?? session('app_type', 'subsidi')) === 'komersil')
+                        <div class="portal-badge-indicator font-weight-bold px-3 py-1 shadow-sm d-flex align-items-center text-white" style="border-radius: 20px; background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid rgba(255,255,255,0.4); font-size: 11.5px; letter-spacing: 0.5px; cursor: default;">
+                            <i class="fas fa-city mr-2 text-warning"></i> PORTAL KOMERSIL
                         </div>
-                    </div>
+                    @else
+                        <div class="portal-badge-indicator font-weight-bold px-3 py-1 shadow-sm d-flex align-items-center text-white" style="border-radius: 20px; background: linear-gradient(135deg, #10b981, #059669); border: 1px solid rgba(255,255,255,0.4); font-size: 11.5px; letter-spacing: 0.5px; cursor: default;">
+                            <i class="fas fa-home mr-2 text-warning"></i> PORTAL SUBSIDI
+                        </div>
+                    @endif
                 </li>
             </ul>
 
