@@ -536,11 +536,11 @@
                                     <small class="text-muted d-block" style="font-size: 10px;">Database: Subsidi (Publik)</small>
                                 </div>
                             </a>
-                            <a class="dropdown-item d-flex align-items-center py-2 {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'komersil' ? 'bg-light font-weight-bold' : '' }}" href="javascript:void(0)" onclick="handleSwitchToKomersil()">
-                                <span class="badge badge-info mr-2 p-1"><i class="fas fa-lock"></i></span>
+                            <a class="dropdown-item d-flex align-items-center py-2 {{ ($current_app_type ?? session('app_type', 'subsidi')) === 'komersil' ? 'bg-light font-weight-bold' : '' }}" href="{{ route('switch.portal', 'komersil') }}">
+                                <span class="badge badge-info mr-2 p-1"><i class="fas fa-city"></i></span>
                                 <div>
-                                    <div style="font-size: 13px; color: #0369a1;">Perumahan Komersil <i class="fas fa-shield-alt text-warning ml-1" style="font-size: 11px;" title="Perlu Password Otorisasi"></i></div>
-                                    <small class="text-muted d-block" style="font-size: 10px;">Database: Komersil (Terkunci PIN)</small>
+                                    <div style="font-size: 13px; color: #0369a1;">Perumahan Komersil</div>
+                                    <small class="text-muted d-block" style="font-size: 10px;">Portal & Database Komersil</small>
                                 </div>
                             </a>
                         </div>
@@ -1020,92 +1020,6 @@
                 sessionStorage.removeItem('success');
             }
         });
-
-        function handleSwitchToKomersil() {
-            @if (($current_app_type ?? session('app_type', 'subsidi')) === 'komersil')
-                toastr.info("Anda sudah berada di Portal Komersil.");
-                return;
-            @endif
-
-            Swal.fire({
-                title: '<div class="text-primary font-weight-bold" style="font-size: 20px;"><i class="fas fa-shield-alt mr-2"></i> Otorisasi Portal Komersil</div>',
-                html: `
-                    <p class="text-muted mb-2" style="font-size: 13px;">Portal Komersil dibatasi khusus. Masukkan password otorisasi untuk membuka portal:</p>
-                    <div class="input-group mb-2">
-                        <input type="password" id="swal_komersil_pass" class="form-control" placeholder="Masukkan password otorisasi..." autocomplete="current-password" style="border-radius: 8px 0 0 8px;">
-                        <div class="input-group-append">
-                            <button class="btn btn-outline-secondary" type="button" onclick="toggleSwalPass()" style="border-radius: 0 8px 8px 0;">
-                                <i class="fas fa-eye" id="swalPassIcon"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="alert alert-info py-2 px-3 text-left mb-0" style="font-size: 12px; background: #f0fdf4; border-color: #bbf7d0; color: #166534; border-radius: 8px;">
-                        <i class="fas fa-key mr-1"></i> <strong>Password Otorisasi:</strong> <code>@Subsidi1</code> atau <code>admin</code>
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonText: '<i class="fas fa-unlock mr-1"></i> Buka Portal Komersil',
-                cancelButtonText: 'Batal',
-                confirmButtonColor: '#0284c7',
-                customClass: {
-                    confirmButton: 'btn btn-primary px-4',
-                    cancelButton: 'btn btn-secondary px-3'
-                },
-                buttonsStyling: false,
-                preConfirm: () => {
-                    const password = document.getElementById('swal_komersil_pass').value;
-                    if (!password) {
-                        Swal.showValidationMessage('Password otorisasi wajib diisi!');
-                        return false;
-                    }
-                    return fetch('/switch-portal/verify?target_portal=komersil&password=' + encodeURIComponent(password), {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(async (response) => {
-                        let data;
-                        try {
-                            data = await response.json();
-                        } catch (parseErr) {
-                            throw new Error('Terjadi kesalahan pada respon server (' + response.status + ')');
-                        }
-                        if (!response.ok || data.status !== 'success') {
-                            throw new Error(data.message || 'Password salah!');
-                        }
-                        return data;
-                    })
-                    .catch(error => {
-                        Swal.showValidationMessage(error.message);
-                    });
-                }
-            }).then((result) => {
-                if (result.isConfirmed && result.value && result.value.status === 'success') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Otorisasi Berhasil',
-                        text: 'Mengalihkan ke Portal Komersil...',
-                        timer: 1200,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.href = result.value.redirect || "{{ route('beranda.index') }}";
-                    });
-                }
-            });
-        }
-
-        function toggleSwalPass() {
-            const input = document.getElementById('swal_komersil_pass');
-            const icon = document.getElementById('swalPassIcon');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fas fa-eye-slash';
-            } else {
-                input.type = 'password';
-                icon.className = 'fas fa-eye';
-            }
-        }
     </script>
 
     @stack('scripts')

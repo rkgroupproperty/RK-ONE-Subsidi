@@ -34,16 +34,8 @@ class DynamicDatabaseMiddleware
                     // Cek koneksi ke database Komersil
                     DB::connection('mysql_komersil')->getPdo();
                 } catch (\Throwable $e) {
-                    try {
-                        // Coba dengan kredensial alternatif user database komersil
-                        Config::set('database.connections.mysql_komersil.username', 'u676044495_komersil');
-                        Config::set('database.connections.mysql_komersil.password', '@Subsidi1');
-                        DB::purge('mysql_komersil');
-                        DB::connection('mysql_komersil')->getPdo();
-                    } catch (\Throwable $e2) {
-                        // Fallback koneksi database ke subsidi agar aplikasi tidak crash, namun portal UI tetap Komersil
-                        $targetConnection = 'mysql_subsidi';
-                    }
+                    // Fallback koneksi database ke subsidi agar aplikasi tidak crash, namun portal UI tetap Komersil
+                    $targetConnection = 'mysql_subsidi';
                 }
             }
 

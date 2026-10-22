@@ -33,16 +33,15 @@ class AuthController extends Controller
 
         // Terapkan koneksi database sesuai pilihan portal sebelum autentikasi
         $connection = ($appType === 'komersil') ? 'mysql_komersil' : 'mysql_subsidi';
-        if (config("database.connections.{$connection}")) {
-            if ($connection === 'mysql_komersil') {
-                try {
-                    DB::connection('mysql_komersil')->getPdo();
-                } catch (\Throwable $e) {
-                    $connection = 'mysql_subsidi';
-                    $appType = 'subsidi';
-                    session(['app_type' => 'subsidi']);
-                }
+        if ($connection === 'mysql_komersil') {
+            try {
+                DB::connection('mysql_komersil')->getPdo();
+            } catch (\Throwable $e) {
+                // Jika database Komersil belum dihubungkan, gunakan fallback koneksi tanpa merubah pilihan portal
+                $connection = 'mysql_subsidi';
             }
+        }
+        if (config("database.connections.{$connection}")) {
             Config::set('database.default', $connection);
             DB::setDefaultConnection($connection);
             DB::purge();
@@ -134,19 +133,19 @@ class AuthController extends Controller
             $type = 'subsidi';
         }
 
-        // Akses ke Komersil memerlukan otorisasi password agar divisi subsidi tidak sembarang masuk
-        if ($type === 'komersil' && !session('komersil_unlocked')) {
-            return redirect()->back()->with('error', 'Akses ke Portal Komersil memerlukan verifikasi password otorisasi!');
-        }
-
-        if ($type === 'subsidi') {
-            session()->forget('komersil_unlocked');
-        }
-
         session(['app_type' => $type]);
 
         // Arahkan koneksi database aktif
         $connection = ($type === 'komersil') ? 'mysql_komersil' : 'mysql_subsidi';
+        if ($connection === 'mysql_komersil') {
+            try {
+                DB::connection('mysql_komersil')->getPdo();
+            } catch (\Throwable $e) {
+                // Fallback koneksi database ke subsidi agar tidak error
+                $connection = 'mysql_subsidi';
+            }
+        }
+
         if (config("database.connections.{$connection}")) {
             Config::set('database.default', $connection);
             DB::setDefaultConnection($connection);

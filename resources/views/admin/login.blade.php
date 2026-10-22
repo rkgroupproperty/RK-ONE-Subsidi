@@ -771,73 +771,11 @@ $slides = [
       }
     });
 
-    // Portal Switching with Authorization Security
+    // Portal Switching without Password Barrier
     let currentPortal = "{{ $initialAppType }}";
 
     function setPortal(type) {
-      if (type === 'komersil') {
-        // Cek apakah Komersil sudah di-unlock pada sesi ini
-        const isUnlocked = sessionStorage.getItem('komersil_unlocked') === 'true';
-        if (!isUnlocked) {
-          promptKomersilAuth();
-          return;
-        }
-      }
-
       applyPortalState(type);
-    }
-
-    function promptKomersilAuth() {
-      Swal.fire({
-        title: '<div class="text-primary font-weight-bold" style="font-size: 20px;"><i class="fas fa-shield-alt mr-2"></i> Otorisasi Portal Komersil</div>',
-        html: `
-          <p class="text-muted mb-2" style="font-size: 13px;">Portal Komersil dibatasi khusus. Masukkan password otorisasi untuk membuka portal:</p>
-          <div class="input-group mb-2">
-            <input type="password" id="login_komersil_auth_pass" class="form-control" placeholder="Masukkan password otorisasi..." autocomplete="current-password" style="height: 44px; border-radius: 8px; border: 1.5px solid #cbd5e1; padding: 10px 14px; font-size: 14px;">
-          </div>
-          <div class="alert alert-info py-2 px-3 text-left mb-0" style="font-size: 12px; background: #f0fdf4; border-color: #bbf7d0; color: #166534; border-radius: 8px;">
-            <i class="fas fa-key mr-1"></i> <strong>Password Otorisasi:</strong> <code>@Subsidi1</code> atau <code>admin</code>
-          </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="fas fa-unlock mr-1"></i> Buka Portal Komersil',
-        cancelButtonText: 'Batal',
-        confirmButtonColor: '#0284c7',
-        preConfirm: () => {
-          const pass = document.getElementById('login_komersil_auth_pass').value;
-          if (!pass) {
-            Swal.showValidationMessage('Password otorisasi wajib diisi!');
-            return false;
-          }
-          return fetch('/switch-portal/verify?target_portal=komersil&password=' + encodeURIComponent(pass), {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json'
-            }
-          })
-          .then(async (res) => {
-            let data;
-            try {
-              data = await res.json();
-            } catch (jsonErr) {
-              throw new Error('Terjadi kesalahan pada respon server (' + res.status + ')');
-            }
-            if (!res.ok || data.status !== 'success') {
-              throw new Error(data.message || 'Password salah!');
-            }
-            return data;
-          })
-          .catch(err => {
-            Swal.showValidationMessage(err.message);
-          });
-        }
-      }).then((result) => {
-        if (result.isConfirmed && result.value && result.value.status === 'success') {
-          sessionStorage.setItem('komersil_unlocked', 'true');
-          applyPortalState('komersil');
-          toastr.success('Portal Komersil berhasil dibuka!', 'AKSES DIIZINKAN', { timeOut: 2000 });
-        }
-      });
     }
 
     function applyPortalState(type) {
