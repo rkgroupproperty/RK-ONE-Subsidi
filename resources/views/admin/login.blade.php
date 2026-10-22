@@ -15,28 +15,35 @@
 
       // Daftar Foto & Teks Slideshow Halaman Login
       // Catatan: Foto Slide 1 otomatis tersambung ke menu Pengaturan Media ("Background login")
-      $slides = [
-          [
-              'image' => $bgImage,
-              'title' => 'Find your sweet home',
-              'subtitle' => 'Wujudkan hunian impian keluarga tercinta dengan lingkungan asri, fasilitas lengkap & rasa aman.',
-          ],
-          [
-              'image' => 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1600&auto=format&fit=crop',
-              'title' => 'Modern Living & Comfort',
-              'subtitle' => 'Kawasan perumahan modern terintegrasi dengan aksesibilitas strategis dan tata ruang terbaik.',
-          ],
-          [
-              'image' => 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1600&auto=format&fit=crop',
-              'title' => 'Investasi Masa Depan',
-              'subtitle' => 'Kelola portofolio perumahan subsidi dan komersil dengan nilai investasi yang terus bertumbuh.',
-          ],
-          [
-              'image' => 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1600&auto=format&fit=crop',
-              'title' => 'Eksklusif & Terpercaya',
-              'subtitle' => 'Layanan profesional dari Tim RK Group Property untuk kepuasan dan kemudahan setiap konsumen.',
-          ],
-      ];
+     
+$slides = [
+    [
+        'image' => $bgImage,
+        'title' => 'Find your sweet home',
+        'subtitle' => 'Wujudkan hunian impian keluarga tercinta dengan lingkungan asri, fasilitas lengkap & rasa aman.',
+    ],
+    [
+        'image' => 'https://subsidi.rkgroupproperti.com/config_media/86721873-9c19-47f6-94a4-a64a3ca22888.jpg',
+        'title' => 'Hunian Impian Keluarga',
+        'subtitle' => 'Temukan hunian yang nyaman untuk membangun masa depan bersama keluarga.',
+    ],
+    [
+        'image' => 'https://subsidi.rkgroupproperti.com/config_media/ChatGPT%20Image%20Jul%2016,%202026,%2002_42_39%20PM.png',
+        'title' => 'Modern Living & Comfort',
+        'subtitle' => 'Kawasan perumahan modern terintegrasi dengan aksesibilitas strategis dan tata ruang terbaik.',
+    ],
+    [
+        'image' => 'https://subsidi.rkgroupproperti.com/config_media/GqjTUratYCqKgxZqxw1Wl7grR.jpeg',
+        'title' => 'Investasi Masa Depan',
+        'subtitle' => 'Kelola portofolio perumahan subsidi dan komersil dengan nilai investasi yang terus bertumbuh.',
+    ],
+    [
+        'image' => 'https://subsidi.rkgroupproperti.com/config_media/WhatsApp%20Image%202025-08-05%20at%2011.55.27%20(1).webp',
+        'title' => 'Eksklusif & Terpercaya',
+        'subtitle' => 'Layanan profesional dari Tim RK Group Property untuk kepuasan dan kemudahan setiap konsumen.',
+    ],
+];
+
   @endphp
   <link rel="icon" href="{{ $faviconPath }}" />
   <link rel="shortcut icon" href="{{ $faviconPath }}" />
