@@ -144,6 +144,22 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
     ]);
 })->name('system.clear-cache');
 
+Route::get('/system/git-pull/{secret}', function ($secret) {
+    if ($secret !== 'rk_git_pull_2026') {
+        abort(403);
+    }
+    $output = [];
+    $code = 0;
+    @exec('cd ' . base_path() . ' && git pull origin main 2>&1', $output, $code);
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return response()->json([
+        'status' => $code === 0 ? 'success' : 'info',
+        'code' => $code,
+        'output' => $output,
+        'head' => trim(@shell_exec('cd ' . base_path() . ' && git log -1 --oneline 2>&1') ?? '')
+    ]);
+})->name('system.git-pull');
+
 Route::middleware(['auth'])->group(function () {
     Route::get('switch-portal/{type}', [AuthController::class, 'switchPortal'])->name('switch.portal');
     Route::get('admin/beranda', [BerandaController::class, 'index'])->name('beranda.index');
