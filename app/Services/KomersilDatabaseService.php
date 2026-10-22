@@ -539,27 +539,30 @@ class KomersilDatabaseService
             
             $points = "$p1x,$p1y $p2x,$p2y $p3x,$p3y $p4x,$p4y";
 
-            $tipe = 'Tipe 75 (6X16)';
+            $tipeLabel = 'Tipe 75 (6X16)';
+            $tipe = 75;
             $lb = 75;
             $lt = 96;
             $lebar = 6;
             $panjang = 16;
-            $daya = '2200 VA';
+            $daya = 2200;
             $harga = 685000000;
             
             if (in_array($code, ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'B1', 'B2', 'B3', 'B4'])) {
-                $tipe = 'Tipe 125 (7X16)';
+                $tipeLabel = 'Tipe 125 (7X16)';
+                $tipe = 125;
                 $lb = 125;
                 $lt = 112;
                 $lebar = 7;
-                $daya = '3500 VA';
+                $daya = 3500;
                 $harga = 985000000;
             } elseif (in_array($code, ['A11', 'A12', 'A12A', 'A14', 'A15', 'A16', 'A17', 'A18', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11', 'B12', 'B12A', 'B14'])) {
-                $tipe = 'Tipe 96 (6X16)';
+                $tipeLabel = 'Tipe 96 (6X16)';
+                $tipe = 96;
                 $lb = 96;
                 $lt = 96;
                 $lebar = 6;
-                $daya = '2200 VA';
+                $daya = 2200;
                 $harga = 795000000;
             }
             
@@ -585,6 +588,7 @@ class KomersilDatabaseService
                 'jenis_map' => 'polygon',
                 'map' => $points,
                 'matrik' => '',
+                'keterangan' => $tipeLabel,
                 'status' => 1,
                 'stt_cicilan' => 0,
             ];
