@@ -414,7 +414,9 @@
                                         @endphp
 
                                         <a href="javascript:void(0);" class="detail-button {{ $pt->siteplan_text_color === '#ffffff' ? 'text-white-svg' : '' }}"
-                                            data-url="{{ route('public.siteplan.show', $pt->id) }}">
+                                            data-url="{{ route('public.siteplan.show', $pt->id) }}"
+                                            data-kavling="{{ $pt->kode_kavling }}"
+                                            title="{{ $pt->kode_kavling }}">
                                             {!! str_replace(
                                                 ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
                                                 [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],

@@ -178,6 +178,8 @@
                                                     @if ($pt->jenis_map == 'polygon')
                                                         <a href="javascript:void(0);" class="detail-button"
                                                             data-id="{{ $pt->id }}"
+                                                            data-kavling="{{ $pt->kode_kavling }}"
+                                                            title="{{ $pt->kode_kavling }}"
                                                             data-url="{{ route('siteplan-penjualan.show', $pt->id) }}">
                                                             {!! str_replace(
                                                                 ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
@@ -185,9 +187,23 @@
                                                                 $kav->masterSvg->polygon_svg,
                                                             ) !!}
                                                         </a>
+                                                    @elseif ($pt->jenis_map == 'polyline')
+                                                        <a href="javascript:void(0);" class="detail-button"
+                                                            data-id="{{ $pt->id }}"
+                                                            data-kavling="{{ $pt->kode_kavling }}"
+                                                            title="{{ $pt->kode_kavling }}"
+                                                            data-url="{{ route('siteplan-penjualan.show', $pt->id) }}">
+                                                            {!! str_replace(
+                                                                ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
+                                                                [$pt->map, $warna, $pt->matrik, $pt->kode_kavling],
+                                                                $kav->masterSvg->polyline_svg ?? $kav->masterSvg->polygon_svg,
+                                                            ) !!}
+                                                        </a>
                                                     @elseif ($pt->jenis_map == 'path')
                                                         <a href="javascript:void(0);" class="detail-button"
                                                             data-id="{{ $pt->id }}"
+                                                            data-kavling="{{ $pt->kode_kavling }}"
+                                                            title="{{ $pt->kode_kavling }}"
                                                             data-url="{{ route('siteplan-penjualan.show', $pt->id) }}">
                                                             {!! str_replace(
                                                                 ['[[1]]', '[[2]]', '[[3]]', '[[4]]'],
