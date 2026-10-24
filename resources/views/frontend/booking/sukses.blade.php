@@ -213,11 +213,11 @@
 
                             <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-2">
                                 @if ($bookingId)
-                                    <a href="{{ route('booking.kwitansi-sementara', $bookingId) }}" target="_blank" class="btn btn-warning text-dark font-weight-bold px-4 py-2 mr-sm-2 mb-2 mb-sm-0 shadow-sm" style="border-radius: 12px; font-size: 0.95rem;">
+                                    <a href="{{ route('booking.kwitansi-sementara', ['id' => $bookingId, 'portal' => ($portalType ?? 'subsidi')]) }}" target="_blank" class="btn btn-warning text-dark font-weight-bold px-4 py-2 mr-sm-2 mb-2 mb-sm-0 shadow-sm" style="border-radius: 12px; font-size: 0.95rem;">
                                         <i class="fas fa-file-download mr-1"></i> Download Kwitansi Sementara
                                     </a>
                                 @endif
-                                <a href="{{ route('booking') }}" class="btn-submit py-2 px-4" style="text-decoration: none;">
+                                <a href="{{ $returnUrl ?? route('booking') }}" class="btn-submit py-2 px-4" style="text-decoration: none;">
                                     <svg class="me-2" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
                                     </svg>

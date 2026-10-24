@@ -400,8 +400,8 @@ class KomersilDatabaseService
                         'path_svg' => '<path d="[[1]]" class="kavling-poly" data-kode="[[4]]" style="fill:[[2]];cursor:pointer;"><title>[[4]]</title></path>',
                         'footer_svg' => '</svg>',
                         'body_svg' => '',
-                        'lebar' => 1170,
-                        'tinggi' => 1572,
+                        'lebar' => 8264,
+                        'tinggi' => 11695,
                         'ukuran_dashboard' => 100,
                     ]
                 );
@@ -484,7 +484,7 @@ class KomersilDatabaseService
                 'map' => '3246.12,7834.36 3488.06,7706.83 3065.15,6770.37 2823.21,6897.89 3246.12,7834.36',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -505,7 +505,7 @@ class KomersilDatabaseService
                 'map' => '3488.06,7706.83 3729.99,7579.31 3307.08,6642.84 3065.15,6770.37 3488.06,7706.83',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -526,7 +526,7 @@ class KomersilDatabaseService
                 'map' => '3729.99,7579.31 3971.93,7451.78 3549.02,6515.31 3307.08,6642.84 3729.99,7579.31',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -547,7 +547,7 @@ class KomersilDatabaseService
                 'map' => '3971.93,7451.78 4213.86,7324.25 3790.95,6387.78 3549.02,6515.31 3971.93,7451.78',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -568,7 +568,7 @@ class KomersilDatabaseService
                 'map' => '4213.86,7324.25 4455.8,7196.72 4032.89,6260.26 3790.95,6387.78 4213.86,7324.25',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -589,7 +589,7 @@ class KomersilDatabaseService
                 'map' => '4455.8,7196.72 4697.73,7069.2 4274.82,6132.73 4032.89,6260.26 4455.8,7196.72',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -610,7 +610,7 @@ class KomersilDatabaseService
                 'map' => '4743.45,6075.63 4837.75,6007.1 5043.49,5733.02 4949.19,5801.54 4743.45,6075.63',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -631,7 +631,7 @@ class KomersilDatabaseService
                 'map' => '4837.75,6007.1 4932.05,5938.58 5137.79,5664.49 5043.49,5733.02 4837.75,6007.1',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -652,7 +652,7 @@ class KomersilDatabaseService
                 'map' => '4932.05,5938.58 5026.34,5870.06 5232.08,5595.97 5137.79,5664.49 4932.05,5938.58',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -673,7 +673,7 @@ class KomersilDatabaseService
                 'map' => '5026.34,5870.06 5120.64,5801.54 5326.38,5527.45 5232.08,5595.97 5026.34,5870.06',
                 'matrik' => '',
                 'keterangan' => 'Luna 93/117',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -694,7 +694,7 @@ class KomersilDatabaseService
                 'map' => '2823.21,6897.89 3113.53,6744.86 2896.36,6276.63 2606.04,6429.66 2823.21,6897.89',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -715,7 +715,7 @@ class KomersilDatabaseService
                 'map' => '3113.53,6744.86 3403.85,6591.83 3186.68,6123.59 2896.36,6276.63 3113.53,6744.86',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -736,7 +736,7 @@ class KomersilDatabaseService
                 'map' => '3403.85,6591.83 3694.18,6438.79 3477.01,5970.56 3186.68,6123.59 3403.85,6591.83',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -757,7 +757,7 @@ class KomersilDatabaseService
                 'map' => '3694.18,6438.79 3984.5,6285.76 3767.33,5817.53 3477.01,5970.56 3694.18,6438.79',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -778,7 +778,7 @@ class KomersilDatabaseService
                 'map' => '3984.5,6285.76 4274.82,6132.73 4057.65,5664.49 3767.33,5817.53 3984.5,6285.76',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -799,7 +799,7 @@ class KomersilDatabaseService
                 'map' => '4171.95,5310.46 4286.25,5241.94 4491.99,4956.43 4377.69,5024.95 4171.95,5310.46',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -820,7 +820,7 @@ class KomersilDatabaseService
                 'map' => '4286.25,5241.94 4400.55,5173.42 4606.29,4887.91 4491.99,4956.43 4286.25,5241.94',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -841,7 +841,7 @@ class KomersilDatabaseService
                 'map' => '4400.55,5173.42 4514.85,5104.9 4720.59,4819.39 4606.29,4887.91 4400.55,5173.42',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -862,7 +862,7 @@ class KomersilDatabaseService
                 'map' => '4514.85,5104.9 4629.15,5036.38 4834.89,4750.87 4720.59,4819.39 4514.85,5104.9',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -883,7 +883,7 @@ class KomersilDatabaseService
                 'map' => '4629.15,5036.38 4743.45,4967.85 4949.19,4682.34 4834.89,4750.87 4629.15,5036.38',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -904,7 +904,7 @@ class KomersilDatabaseService
                 'map' => '4295.78,4406.35 4400.55,4339.73 4606.29,4054.22 4501.52,4120.84 4295.78,4406.35',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -925,7 +925,7 @@ class KomersilDatabaseService
                 'map' => '4191,4472.97 4295.78,4406.35 4501.52,4120.84 4396.74,4187.46 4191,4472.97',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -946,7 +946,7 @@ class KomersilDatabaseService
                 'map' => '4086.23,4539.59 4191,4472.97 4396.74,4187.46 4291.97,4254.08 4086.23,4539.59',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -967,7 +967,7 @@ class KomersilDatabaseService
                 'map' => '3981.45,4606.21 4086.23,4539.59 4291.97,4254.08 4187.19,4320.7 3981.45,4606.21',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -988,7 +988,7 @@ class KomersilDatabaseService
                 'map' => '3876.68,4672.83 3981.45,4606.21 4187.19,4320.7 4082.42,4387.32 3876.68,4672.83',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1009,7 +1009,7 @@ class KomersilDatabaseService
                 'map' => '3771.9,4739.45 3876.68,4672.83 4082.42,4387.32 3977.64,4453.94 3771.9,4739.45',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1030,7 +1030,7 @@ class KomersilDatabaseService
                 'map' => '3137.54,5670.2 3371.85,5550.29 3223.26,5196.26 2988.95,5316.17 3137.54,5670.2',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1051,7 +1051,7 @@ class KomersilDatabaseService
                 'map' => '2903.22,5790.12 3137.54,5670.2 2988.95,5316.17 2754.63,5436.09 2903.22,5790.12',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1072,7 +1072,7 @@ class KomersilDatabaseService
                 'map' => '2668.91,5910.03 2903.22,5790.12 2754.63,5436.09 2520.32,5556 2668.91,5910.03',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1093,7 +1093,7 @@ class KomersilDatabaseService
                 'map' => '2434.59,6029.95 2668.91,5910.03 2520.32,5556 2286,5675.91 2434.59,6029.95',
                 'matrik' => '',
                 'keterangan' => 'Ivy 65/91',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1114,7 +1114,7 @@ class KomersilDatabaseService
                 'map' => '2034.54,5139.16 2346.96,4975.47 2186.94,4632.86 1874.52,4796.55 2034.54,5139.16',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1135,7 +1135,7 @@ class KomersilDatabaseService
                 'map' => '2346.96,4975.47 2659.38,4811.77 2499.36,4469.16 2186.94,4632.86 2346.96,4975.47',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1156,7 +1156,7 @@ class KomersilDatabaseService
                 'map' => '2659.38,4811.77 2971.8,4648.08 2811.78,4305.47 2499.36,4469.16 2659.38,4811.77',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1177,7 +1177,7 @@ class KomersilDatabaseService
                 'map' => '3143.25,4396.84 3265.71,4315.26 3494.31,4029.75 3371.85,4111.33 3143.25,4396.84',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1198,7 +1198,7 @@ class KomersilDatabaseService
                 'map' => '3265.71,4315.26 3388.18,4233.69 3616.78,3948.18 3494.31,4029.75 3265.71,4315.26',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1219,7 +1219,7 @@ class KomersilDatabaseService
                 'map' => '3388.18,4233.69 3510.64,4152.11 3739.24,3866.6 3616.78,3948.18 3388.18,4233.69',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1240,7 +1240,7 @@ class KomersilDatabaseService
                 'map' => '3510.64,4152.11 3633.11,4070.54 3861.71,3785.03 3739.24,3866.6 3510.64,4152.11',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1261,7 +1261,7 @@ class KomersilDatabaseService
                 'map' => '3633.11,4070.54 3755.57,3988.97 3984.17,3703.46 3861.71,3785.03 3633.11,4070.54',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1282,7 +1282,7 @@ class KomersilDatabaseService
                 'map' => '3755.57,3988.97 3878.04,3907.39 4106.64,3621.88 3984.17,3703.46 3755.57,3988.97',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1303,7 +1303,7 @@ class KomersilDatabaseService
                 'map' => '3878.04,3907.39 4000.5,3825.82 4229.1,3540.31 4106.64,3621.88 3878.04,3907.39',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/97.5',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1324,7 +1324,7 @@ class KomersilDatabaseService
                 'map' => '2286,4396.84 2329.43,4153.58 1715.64,4174.14 1668.78,4431.1 2286,4396.84',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1345,7 +1345,7 @@ class KomersilDatabaseService
                 'map' => '2329.43,4153.58 2372.87,3910.33 1762.51,3917.18 1715.64,4174.14 2329.43,4153.58',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1366,7 +1366,7 @@ class KomersilDatabaseService
                 'map' => '2372.87,3910.33 2416.3,3667.07 1809.37,3660.22 1762.51,3917.18 2372.87,3910.33',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1387,7 +1387,7 @@ class KomersilDatabaseService
                 'map' => '2416.3,3667.07 2459.74,3423.82 1856.23,3403.26 1809.37,3660.22 2416.3,3667.07',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1408,7 +1408,7 @@ class KomersilDatabaseService
                 'map' => '2459.74,3423.82 2503.17,3180.57 1903.1,3146.31 1856.23,3403.26 2459.74,3423.82',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1429,7 +1429,7 @@ class KomersilDatabaseService
                 'map' => '2503.17,3180.57 2546.6,2937.31 1949.96,2889.35 1903.1,3146.31 2503.17,3180.57',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1450,7 +1450,7 @@ class KomersilDatabaseService
                 'map' => '2546.6,2937.31 2590.04,2694.06 1996.82,2632.39 1949.96,2889.35 2546.6,2937.31',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1471,7 +1471,7 @@ class KomersilDatabaseService
                 'map' => '2590.04,2694.06 2633.47,2450.81 2043.68,2375.43 1996.82,2632.39 2590.04,2694.06',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1492,7 +1492,7 @@ class KomersilDatabaseService
                 'map' => '2633.47,2450.81 2676.91,2207.55 2090.55,2118.48 2043.68,2375.43 2633.47,2450.81',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1513,7 +1513,7 @@ class KomersilDatabaseService
                 'map' => '2676.91,2207.55 2720.34,1964.3 2137.41,1861.52 2090.55,2118.48 2676.91,2207.55',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1534,7 +1534,7 @@ class KomersilDatabaseService
                 'map' => '2720.34,1964.3 2954.66,2023.31 2687.96,1079.22 2308.86,970.73 2720.34,1964.3',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1555,7 +1555,7 @@ class KomersilDatabaseService
                 'map' => '2954.66,2023.31 3188.97,2082.31 3067.05,1187.72 2687.96,1079.22 2954.66,2023.31',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1576,7 +1576,7 @@ class KomersilDatabaseService
                 'map' => '3188.97,2082.31 3423.29,2141.32 3446.15,1296.21 3067.05,1187.72 3188.97,2082.31',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1597,7 +1597,7 @@ class KomersilDatabaseService
                 'map' => '3423.29,2141.32 3657.6,2200.32 3825.24,1404.7 3446.15,1296.21 3423.29,2141.32',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1618,7 +1618,7 @@ class KomersilDatabaseService
                 'map' => '3657.6,2200.32 3891.92,2259.33 4204.34,1513.2 3825.24,1404.7 3657.6,2200.32',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1639,7 +1639,7 @@ class KomersilDatabaseService
                 'map' => '3891.92,2259.33 4126.23,2318.33 4583.43,1621.69 4204.34,1513.2 3891.92,2259.33',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1660,7 +1660,7 @@ class KomersilDatabaseService
                 'map' => '4126.23,2318.33 4404.36,2504.86 4724.4,1895.78 4583.43,1621.69 4126.23,2318.33',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1681,7 +1681,7 @@ class KomersilDatabaseService
                 'map' => '4404.36,2504.86 4682.49,2691.4 4865.37,2169.87 4724.4,1895.78 4404.36,2504.86',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
             [
@@ -1702,7 +1702,7 @@ class KomersilDatabaseService
                 'map' => '4682.49,2691.4 4960.62,2877.93 5006.34,2443.96 4865.37,2169.87 4682.49,2691.4',
                 'matrik' => '',
                 'keterangan' => 'Zora 75/98',
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ],
         ];
@@ -1827,7 +1827,7 @@ class KomersilDatabaseService
                 'map' => $points,
                 'matrik' => '',
                 'keterangan' => $tipeLabel,
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ];
         }
@@ -1888,7 +1888,7 @@ class KomersilDatabaseService
                 'map' => $points,
                 'matrik' => '',
                 'keterangan' => $tipeLabel,
-                'status' => 1,
+                'status' => 0,
                 'stt_cicilan' => 0,
             ];
         }

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Booking RK One Subsidi')
+@section('title', $portalTitle ?? 'Booking RK One')
 
 @push('styles')
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -495,18 +495,29 @@
                         <img src="{{ asset('config_media/' . ($logo->nama_file ?? 'default.png')) }}" alt="Logo Login"
                             onerror="this.onerror=null; this.src='https://subsidi.rkgroupproperti.com/config_media/{{ $logo->nama_file ?? 'default.png' }}';">
                     </div>
-                    <h4>Form Data Customer (Booking)</h4>
+                    <div class="mb-2">
+                        <span class="badge {{ ($portalType ?? 'subsidi') === 'komersil' ? 'badge-warning text-dark' : 'badge-primary text-white' }} px-3 py-1 font-weight-bold" style="font-size: 0.85rem; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+                            <i class="fas {{ ($portalType ?? 'subsidi') === 'komersil' ? 'fa-building' : 'fa-home' }} mr-1"></i> {{ $portalBadge ?? 'Portal Subsidi' }}
+                        </span>
+                    </div>
+                    <h4>{{ $portalTitle ?? 'Form Data Customer (Booking)' }}</h4>
                     <p class="booking-header-subtitle">Sistem Pemesanan Unit & Manajemen Properti RK Group</p>
-                    <div class="mt-1 text-center">
-                        <a href="{{ route('public.siteplan.index') }}" target="_blank" class="btn-siteplan-pill">
+                    <div class="mt-2 text-center d-flex justify-content-center align-items-center gap-2 flex-wrap" style="gap: 10px;">
+                        <a href="{{ $siteplanUrl ?? route('public.siteplan.index') }}" target="_blank" class="btn-siteplan-pill">
                             <i class="fas fa-map-marked-alt text-warning"></i>
-                            <span>Buka Siteplan Interaktif</span>
+                            <span>Buka Siteplan Interaktif ({{ ($portalType ?? 'subsidi') === 'komersil' ? 'Komersil' : 'Subsidi' }})</span>
                         </a>
+                        @if(isset($switchUrl))
+                            <a href="{{ $switchUrl }}" class="btn btn-sm btn-outline-light" style="border-radius: 50px; padding: 7px 18px; font-weight: 600; font-size: 0.82rem; border-color: rgba(255,255,255,0.4); backdrop-filter: blur(4px);">
+                                <i class="fas fa-exchange-alt mr-1"></i> {{ $switchLabel ?? 'Ganti Portal' }}
+                            </a>
+                        @endif
                     </div>
                 </div>
                 <div class="booking-body">
                     <form id="formData" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="portal_type" value="{{ $portalType ?? 'subsidi' }}">
                       <div class="stage-section">
                             <div class="stage-header">
                                 <div class="stage-number">1</div>
@@ -1024,6 +1035,7 @@
 
             const routeGetKavling = "{{ route('booking.getKavling', ':id') }}";
             const routeGetHarga = "{{ route('booking.getHargaKavling', ':id') }}";
+            const currentPortal = "{{ $portalType ?? 'subsidi' }}";
 
             $('#id_lokasi').on('change', function() {
                 let idLokasi = $(this).val();
@@ -1031,11 +1043,12 @@
                 $('#total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');
 
                 if (idLokasi) {
-                    const urlKavling = routeGetKavling.replace(':id', idLokasi);
+                    const urlKavling = routeGetKavling.replace(':id', idLokasi) + '?portal=' + currentPortal;
                     $.get(urlKavling, function(data) {
                         let options = '<option value=""></option>';
                         data.forEach(function(item) {
-                            options += `<option value="${item.id}">${item.kode_kavling}</option>`;
+                            let typeInfo = item.tipe_bangunan ? ` (${item.tipe_bangunan})` : '';
+                            options += `<option value="${item.id}">${item.kode_kavling}${typeInfo}</option>`;
                         });
                         $('#id_kavling').html(options).val('').trigger('change.select2');
                     }).fail(function() {
@@ -1048,7 +1061,7 @@
                 let idKavling = $(this).val();
 
                 if (idKavling) {
-                    const urlHarga = routeGetHarga.replace(':id', idKavling);
+                    const urlHarga = routeGetHarga.replace(':id', idKavling) + '?portal=' + currentPortal;
                     $.get(urlHarga, function(data) {
                         let hargaJual = 0;
                         if (data.rincian_biaya && data.rincian_biaya.length) {
@@ -1057,7 +1070,13 @@
                             });
                             hargaJual = hr ? hr.nilai : data.total_harga;
                         }
-                        $('#total_harga').val(hargaJual ? hargaJual.toLocaleString('id-ID') : '').attr('placeholder', '0');
+                        if (!hargaJual && data.total_harga) {
+                            hargaJual = data.total_harga;
+                        }
+                        if (!hargaJual && data.hrg_jual) {
+                            hargaJual = data.hrg_jual;
+                        }
+                        $('#total_harga').val(hargaJual ? Number(hargaJual).toLocaleString('id-ID') : '').attr('placeholder', '0');
                     });
                 } else {
                     $('#total_harga').val('').attr('placeholder', 'Pilih kavling terlebih dahulu');

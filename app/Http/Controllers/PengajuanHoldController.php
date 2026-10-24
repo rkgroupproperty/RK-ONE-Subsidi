@@ -356,23 +356,125 @@ class PengajuanHoldController extends Controller
     {
         Carbon::setLocale('id');
 
-        $marketing = MarketingOffline::where('status', 1)->orderBy('nama_marketing', 'asc')->get();
-        $bank      = Bank::all();
-        $progres   = ProgresListPenjualan::all();
-        $lokasi    = LokasiKavling::all();
-        $bg        = PengaturanMedia::where('jenis_data', 'Background booking')->first();
+        $type = $request->query('type') ?? $request->query('portal') ?? session('app_type');
+        $host = strtolower($request->getHost());
+
+        if ($type === 'komersil' || str_contains($host, 'sistem.') || str_starts_with($host, 'komersil.')) {
+            return $this->bookingKomersil($request);
+        }
+
+        return $this->bookingSubsidi($request);
+    }
+
+    public function bookingSubsidi(Request $request)
+    {
+        Carbon::setLocale('id');
+        session(['app_type' => 'subsidi']);
+
+        $targetConn = 'mysql_subsidi';
+        try {
+            DB::connection($targetConn)->getPdo();
+        } catch (\Throwable $e) {
+            $targetConn = 'mysql';
+        }
+
+        $marketing = MarketingOffline::on($targetConn)->where('status', 1)->orderBy('nama_marketing', 'asc')->get();
+        $bank      = Bank::on($targetConn)->get();
+        $progres   = ProgresListPenjualan::on($targetConn)->get();
+        $lokasi    = LokasiKavling::on($targetConn)
+            ->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills'])
+            ->where('stt_tampil', 1)
+            ->orderBy('urutan')
+            ->get();
+        $bg        = PengaturanMedia::on($targetConn)->where('jenis_data', 'Background booking')->first();
         $tgl       = Carbon::now()->translatedFormat('j F Y');
 
-        return view('frontend.booking.index', compact('marketing', 'lokasi', 'progres', 'bank', 'tgl', 'bg'));
+        $portalType  = 'subsidi';
+        $portalTitle = 'Form Data Customer (Booking) - Perumahan Subsidi';
+        $portalBadge = 'Portal Subsidi';
+        $siteplanUrl = 'https://subsidi.rkgroupproperti.com/siteplan';
+        $switchUrl   = route('booking.komersil');
+        $switchLabel = 'Beralih ke Booking Komersil';
+
+        return view('frontend.booking.index', compact(
+            'marketing', 'lokasi', 'progres', 'bank', 'tgl', 'bg',
+            'portalType', 'portalTitle', 'portalBadge', 'siteplanUrl', 'switchUrl', 'switchLabel'
+        ));
+    }
+
+    public function bookingKomersil(Request $request)
+    {
+        Carbon::setLocale('id');
+        session(['app_type' => 'komersil']);
+
+        $targetConn = 'mysql_komersil';
+        try {
+            DB::connection($targetConn)->getPdo();
+        } catch (\Throwable $e) {
+            $targetConn = 'mysql';
+        }
+
+        $marketing = MarketingOffline::on($targetConn)->where('status', 1)->orderBy('nama_marketing', 'asc')->get();
+        $bank      = Bank::on($targetConn)->get();
+        $progres   = ProgresListPenjualan::on($targetConn)->get();
+        $lokasi    = LokasiKavling::on($targetConn)
+            ->where('stt_tampil', 1)
+            ->orderBy('urutan')
+            ->get();
+        $bg        = PengaturanMedia::on($targetConn)->where('jenis_data', 'Background booking')->first();
+        $tgl       = Carbon::now()->translatedFormat('j F Y');
+
+        $portalType  = 'komersil';
+        $portalTitle = 'Form Data Customer (Booking) - Perumahan Komersil';
+        $portalBadge = 'Portal Komersil';
+        $siteplanUrl = 'https://sistem.rkgroupproperti.com/siteplan';
+        $switchUrl   = route('booking.subsidi');
+        $switchLabel = 'Beralih ke Booking Subsidi';
+
+        return view('frontend.booking.index', compact(
+            'marketing', 'lokasi', 'progres', 'bank', 'tgl', 'bg',
+            'portalType', 'portalTitle', 'portalBadge', 'siteplanUrl', 'switchUrl', 'switchLabel'
+        ));
     }
 
     public function bookingSukses(Request $request)
     {
-        $bg = PengaturanMedia::where('jenis_data', 'Background booking')->first();
-        $bookingId = $request->get('id') ?? session('booking_id');
-        $booking = $bookingId ? PengajuanHold::with(['lokasi', 'kavling', 'marketing'])->find($bookingId) : null;
+        $portalType = $request->get('portal') ?? $request->get('type') ?? session('app_type');
+        $host = strtolower($request->getHost());
+        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.'));
+        $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
 
-        return view('frontend.booking.sukses', compact('bg', 'booking'));
+        $bg = null;
+        try {
+            $bg = PengaturanMedia::on($targetConn)->where('jenis_data', 'Background booking')->first();
+        } catch (\Throwable $e) {}
+
+        if (!$bg) {
+            $bg = PengaturanMedia::where('jenis_data', 'Background booking')->first();
+        }
+
+        $bookingId = $request->get('id') ?? session('booking_id');
+        $booking = null;
+        if ($bookingId) {
+            try {
+                $booking = PengajuanHold::on($targetConn)->with(['lokasi', 'kavling', 'marketing'])->find($bookingId);
+            } catch (\Throwable $e) {}
+
+            if (!$booking) {
+                $altConn = ($targetConn === 'mysql_komersil') ? 'mysql_subsidi' : 'mysql_komersil';
+                try {
+                    $booking = PengajuanHold::on($altConn)->with(['lokasi', 'kavling', 'marketing'])->find($bookingId);
+                } catch (\Throwable $e) {}
+            }
+
+            if (!$booking) {
+                $booking = PengajuanHold::with(['lokasi', 'kavling', 'marketing'])->find($bookingId);
+            }
+        }
+
+        $returnUrl = $isKomersil ? route('booking.komersil') : route('booking.subsidi');
+
+        return view('frontend.booking.sukses', compact('bg', 'booking', 'portalType', 'returnUrl'));
     }
 
     public function upload(Request $request, $id)
@@ -481,36 +583,111 @@ class PengajuanHoldController extends Controller
 
     public function getKavling($id)
     {
-        $kavling = KavlingPeta::where('id_lokasi', $id)
+        $idInt = (int)$id;
+        $portalType = request('portal') ?? request('type') ?? session('app_type');
+        $host = strtolower(request()->getHost());
+
+        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.') || in_array($idInt, [1, 2]));
+        $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+
+        try {
+            DB::connection($targetConn)->getPdo();
+        } catch (\Throwable $e) {
+            $targetConn = 'mysql';
+        }
+
+        $kavling = KavlingPeta::on($targetConn)
+            ->where('id_lokasi', $id)
             ->where(function ($query) {
-                $query->where('status', 0)
+                $query->whereIn('status', [0, 1])
                     ->orWhereNull('status');
             })
-            ->get(['id', 'kode_kavling']);
+            ->where(function ($query) {
+                $query->whereNull('id_customer')
+                    ->orWhere('id_customer', 0);
+            })
+            ->orderBy('id', 'asc')
+            ->get(['id', 'kode_kavling', 'luas_tanah', 'tipe_bangunan', 'hrg_jual']);
+
+        // Fallback jika tidak ada data di koneksi target
+        if ($kavling->isEmpty()) {
+            $altConn = ($targetConn === 'mysql_komersil') ? 'mysql_subsidi' : 'mysql_komersil';
+            try {
+                $kavling = KavlingPeta::on($altConn)
+                    ->where('id_lokasi', $id)
+                    ->where(function ($query) {
+                        $query->whereIn('status', [0, 1])
+                            ->orWhereNull('status');
+                    })
+                    ->where(function ($query) {
+                        $query->whereNull('id_customer')
+                            ->orWhere('id_customer', 0);
+                    })
+                    ->orderBy('id', 'asc')
+                    ->get(['id', 'kode_kavling', 'luas_tanah', 'tipe_bangunan', 'hrg_jual']);
+            } catch (\Throwable $e) {}
+        }
 
         return response()->json($kavling);
     }
 
     public function getHargaKavling($id)
     {
-        $data = KavlingPeta::findOrFail($id);
+        $portalType = request('portal') ?? request('type') ?? session('app_type');
+        $host = strtolower(request()->getHost());
+        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.'));
+        $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+
+        try {
+            DB::connection($targetConn)->getPdo();
+        } catch (\Throwable $e) {
+            $targetConn = 'mysql';
+        }
+
+        $data = null;
+        try {
+            $data = KavlingPeta::on($targetConn)->find($id);
+        } catch (\Throwable $e) {}
+
+        if (!$data) {
+            $altConn = ($targetConn === 'mysql_komersil') ? 'mysql_subsidi' : 'mysql_komersil';
+            try {
+                $data = KavlingPeta::on($altConn)->find($id);
+            } catch (\Throwable $e) {}
+        }
+
+        if (!$data) {
+            return response()->json(['error' => 'Kavling tidak ditemukan'], 404);
+        }
 
         $rincian = $data->rincian_biaya ?? [];
         $total   = collect($rincian)->sum('nilai');
 
-        $formatted = [];
-        foreach ($rincian as $item) {
-            $formatted[] = [
-                'nama'   => $item['nama'] ?? '',
-                'nilai'  => (int) ($item['nilai'] ?? 0),
-                'format' => number_format((int) ($item['nilai'] ?? 0), 0, ',', '.'),
+        if ($total <= 0 && $data->hrg_jual > 0) {
+            $total = (int)$data->hrg_jual;
+            $formatted = [
+                [
+                    'nama'   => 'Harga Jual ' . ($data->kode_kavling ?? 'Unit'),
+                    'nilai'  => (int)$data->hrg_jual,
+                    'format' => number_format((int)$data->hrg_jual, 0, ',', '.'),
+                ]
             ];
+        } else {
+            $formatted = [];
+            foreach ($rincian as $item) {
+                $formatted[] = [
+                    'nama'   => $item['nama'] ?? '',
+                    'nilai'  => (int) ($item['nilai'] ?? 0),
+                    'format' => number_format((int) ($item['nilai'] ?? 0), 0, ',', '.'),
+                ];
+            }
         }
 
         return response()->json([
             'rincian_biaya' => $rincian,
             'total_harga'   => $total,
             'formatted'     => $formatted,
+            'hrg_jual'      => (int)$data->hrg_jual,
         ]);
     }
 
@@ -622,8 +799,40 @@ class PengajuanHoldController extends Controller
             'foto_pemohon.max'           => 'Foto pemohon maksimal 2 MB.',
         ]);
 
-        $kavling = KavlingPeta::find($request->id_kavling);
-        if ($kavling && collect($kavling->rincian_biaya ?? [])->sum('nilai') <= 0) {
+        $portalType = $request->input('portal_type') ?? $request->query('portal') ?? session('app_type');
+        $host = strtolower($request->getHost());
+        $idLokasiInt = (int)$request->id_lokasi;
+        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.') || in_array($idLokasiInt, [1, 2]));
+        $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+
+        try {
+            DB::connection($targetConn)->getPdo();
+        } catch (\Throwable $e) {
+            $targetConn = 'mysql';
+        }
+
+        $kavling = KavlingPeta::on($targetConn)->find($request->id_kavling);
+        if (!$kavling) {
+            $altConn = ($targetConn === 'mysql_komersil') ? 'mysql_subsidi' : 'mysql_komersil';
+            try {
+                $altKavling = KavlingPeta::on($altConn)->find($request->id_kavling);
+                if ($altKavling) {
+                    $kavling = $altKavling;
+                    $targetConn = $altConn;
+                    $isKomersil = ($targetConn === 'mysql_komersil');
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        $hargaKav = 0;
+        if ($kavling) {
+            $hargaKav = collect($kavling->rincian_biaya ?? [])->sum('nilai');
+            if ($hargaKav <= 0) {
+                $hargaKav = (int)($kavling->hrg_jual ?? 0);
+            }
+        }
+
+        if ($kavling && $hargaKav <= 0) {
             return response()->json([
                 'errors' => [
                     'id_kavling' => ['Harga kavling belum ditentukan.'],
@@ -631,7 +840,7 @@ class PengajuanHoldController extends Controller
             ], 422);
         }
 
-        DB::beginTransaction();
+        DB::connection($targetConn)->beginTransaction();
         try {
 
             $folder = public_path('assets/booking');
@@ -655,9 +864,9 @@ class PengajuanHoldController extends Controller
                 $fileNames[$file] = $request->hasFile($file) ? $this->simpanFile($request->file($file), $folder) : null;
             }
 
-            $no_registrasi = $this->generateNoRegistrasi();
+            $no_registrasi = $this->generateNoRegistrasi($targetConn);
 
-            $pengajuan = PengajuanHold::create([
+            $pengajuan = PengajuanHold::on($targetConn)->create([
                 'no_registrasi'     => $no_registrasi,
                 'tgl_booking'       => $request->tanggal ?? Carbon::now()->format('Y-m-d'),
                 'nama_lengkap'      => $request->nama_lengkap,
@@ -696,26 +905,29 @@ class PengajuanHoldController extends Controller
                 'stt_reg'           => 1,
             ]);
 
-            KavlingPeta::find($request->id_kavling)->update(['status' => 1]);
+            KavlingPeta::on($targetConn)->where('id', $request->id_kavling)->update(['status' => 1]);
 
-            DB::commit();
+            DB::connection($targetConn)->commit();
+
+            $lokasiItem = LokasiKavling::on($targetConn)->find($request->id_lokasi);
+            $kavlingItem = KavlingPeta::on($targetConn)->find($request->id_kavling);
 
             session([
                 'booking_id'    => $pengajuan->id,
                 'no_registrasi' => $pengajuan->no_registrasi,
                 'nama'          => $request->nama_lengkap,
-                'lokasi'        => LokasiKavling::find($request->id_lokasi)->nama_kavling,
-                'blok'          => KavlingPeta::find($request->id_kavling)->kode_kavling,
+                'lokasi'        => $lokasiItem->nama_kavling ?? '',
+                'blok'          => $kavlingItem->kode_kavling ?? '',
             ]);
 
             return response()->json([
                 'status'       => 'success',
                 'message'      => 'Booking berhasil.',
                 'booking_id'   => $pengajuan->id,
-                'redirect_url' => route('booking.sukses', ['id' => $pengajuan->id]),
+                'redirect_url' => route('booking.sukses', ['id' => $pengajuan->id, 'portal' => ($isKomersil ? 'komersil' : 'subsidi')]),
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection($targetConn)->rollBack();
             Log::info($e->getMessage());
 
             return response()->json([
@@ -762,9 +974,10 @@ class PengajuanHoldController extends Controller
         return null;
     }
 
-    private function generateNoRegistrasi()
+    private function generateNoRegistrasi($conn = null)
     {
-        $latest = PengajuanHold::orderBy('no_registrasi', 'desc')->first();
+        $query = $conn ? PengajuanHold::on($conn) : PengajuanHold::query();
+        $latest = $query->orderBy('no_registrasi', 'desc')->first();
 
         if (! $latest || ! preg_match('/^\d{3}$/', $latest->no_registrasi)) {
             return '001';
@@ -1096,7 +1309,27 @@ class PengajuanHoldController extends Controller
      */
     public function cetakKwitansiSementara($id)
     {
-        $booking = PengajuanHold::with(['lokasi', 'kavling', 'marketing'])->findOrFail($id);
+        $portalType = request('portal') ?? request('type') ?? session('app_type');
+        $host = strtolower(request()->getHost());
+        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.'));
+        $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+
+        $booking = null;
+        try {
+            $booking = PengajuanHold::on($targetConn)->with(['lokasi', 'kavling', 'marketing'])->find($id);
+        } catch (\Throwable $e) {}
+
+        if (!$booking) {
+            $altConn = ($targetConn === 'mysql_komersil') ? 'mysql_subsidi' : 'mysql_komersil';
+            try {
+                $booking = PengajuanHold::on($altConn)->with(['lokasi', 'kavling', 'marketing'])->find($id);
+            } catch (\Throwable $e) {}
+        }
+
+        if (!$booking) {
+            $booking = PengajuanHold::with(['lokasi', 'kavling', 'marketing'])->findOrFail($id);
+        }
+
         $konfigurasi = DB::table('konfigurasi')->first();
         $profil = \App\Models\PengaturanProfil::first();
         $media = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Rekap')->orWhere('jenis_data', 'Logo Aplikasi')->first();

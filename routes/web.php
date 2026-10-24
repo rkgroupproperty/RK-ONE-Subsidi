@@ -103,6 +103,8 @@ Route::get('/', function () {
 });
 
 Route::get('/booking', [PengajuanHoldController::class, 'booking'])->name('booking');
+Route::get('/booking/subsidi', [PengajuanHoldController::class, 'bookingSubsidi'])->name('booking.subsidi');
+Route::get('/booking/komersil', [PengajuanHoldController::class, 'bookingKomersil'])->name('booking.komersil');
 Route::get('/booking-sukses', [PengajuanHoldController::class, 'bookingSukses'])->name('booking.sukses');
 Route::get('/booking/kwitansi-sementara/{id}', [PengajuanHoldController::class, 'cetakKwitansiSementara'])->name('booking.kwitansi-sementara');
 Route::get('siteplan', [PublicSiteplanController::class, 'index'])->name('public.siteplan.index');
