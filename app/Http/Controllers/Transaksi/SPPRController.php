@@ -88,15 +88,27 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
             $blok = '';
             $no = '';
             if ($customer->kavling) {
-                if ($customer->lokasi && $customer->lokasi->is_cluster) {
-                    $blok = $customer->kavling->cluster ?? '';
-                    $no = $customer->kavling->no ?? '';
-                } else {
-                    $kode = $customer->kavling->kode_kavling ?? '';
-                    $parts = explode('-', $kode);
-                    $blok = $parts[0] ?? $kode;
-                    $no = $parts[1] ?? '';
+                $kav = $customer->kavling;
+                $blok = $kav->blok ?: '';
+                $no = $kav->no ?: '';
+
+                if (!$blok || !$no) {
+                    $kode = trim($kav->kode_kavling ?? '');
+                    if (str_contains($kode, '-')) {
+                        $parts = explode('-', $kode, 2);
+                        if (!$blok) $blok = $parts[0];
+                        if (!$no) $no = $parts[1] ?? '';
+                    } elseif (preg_match('/^([a-zA-Z\s]+)\s*(\d+)$/', $kode, $m)) {
+                        if (!$blok) $blok = trim($m[1]);
+                        if (!$no) $no = trim($m[2]);
+                    } else {
+                        if (!$blok) $blok = $kode;
+                        if (!$no) $no = '-';
+                    }
                 }
+            }
+            if (!$no) {
+                $no = '-';
             }
 
             return response()->json([
@@ -139,7 +151,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
             'luas_bangunan' => 'required|numeric',
             'luas_tanah' => 'required|numeric',
             'blok' => 'required',
-            'no' => 'required',
+            'no' => 'nullable',
             'harga_jual' => 'required|numeric',
             'asumsi_plafon_kpr' => 'required|numeric',
             'biaya_surat_surat' => 'required|numeric',
@@ -179,7 +191,6 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
             'luas_bangunan.required' => 'Luas Bangunan wajib diisi.',
             'luas_tanah.required' => 'Luas Tanah wajib diisi.',
             'blok.required' => 'Blok wajib diisi.',
-            'no.required' => 'No wajib diisi.',
             'harga_jual.required' => 'Harga Jual wajib diisi.',
             'asumsi_plafon_kpr.required' => 'Asumsi Plafon KPR wajib diisi.',
             'biaya_surat_surat.required' => 'Biaya Surat-surat wajib diisi.',
@@ -200,7 +211,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
             'luas_bangunan' => $request->luas_bangunan,
             'luas_tanah' => $request->luas_tanah,
             'blok' => $request->blok,
-            'no' => $request->no,
+            'no' => $request->no ?: '-',
             'harga_jual' => $request->harga_jual,
             'asumsi_plafon_kpr' => $request->asumsi_plafon_kpr,
             'biaya_surat_surat' => $request->biaya_surat_surat,
@@ -270,7 +281,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
             'luas_bangunan' => 'required|numeric',
             'luas_tanah' => 'required|numeric',
             'blok' => 'required',
-            'no' => 'required',
+            'no' => 'nullable',
             'harga_jual' => 'required|numeric',
             'asumsi_plafon_kpr' => 'required|numeric',
             'biaya_surat_surat' => 'required|numeric',
@@ -315,7 +326,7 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
             'luas_bangunan' => $request->luas_bangunan,
             'luas_tanah' => $request->luas_tanah,
             'blok' => $request->blok,
-            'no' => $request->no,
+            'no' => $request->no ?: '-',
             'harga_jual' => $request->harga_jual,
             'asumsi_plafon_kpr' => $request->asumsi_plafon_kpr,
             'biaya_surat_surat' => $request->biaya_surat_surat,

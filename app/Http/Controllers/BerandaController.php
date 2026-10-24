@@ -214,10 +214,7 @@ class BerandaController extends Controller
             ->map(function (MarketingOffline $marketing) use ($startBulanIni, $endBulanIni) {
                 $count = Customer::where('id_marketing', $marketing->id)
                     ->where('stt_arsip', 0)
-                    ->where(function ($q) use ($startBulanIni, $endBulanIni) {
-                        $q->whereBetween('tanggal_verif', [$startBulanIni, $endBulanIni])
-                          ->orWhere(fn($sq) => $sq->whereNull('tanggal_verif')->whereBetween('created_at', [$startBulanIni, $endBulanIni]));
-                    })
+                    ->whereBetween('tanggal_verif', [$startBulanIni, $endBulanIni])
                     ->count();
 
                 return [

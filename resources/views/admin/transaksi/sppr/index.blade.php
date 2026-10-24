@@ -154,11 +154,11 @@
                             <div class="form-group row">
                                 <label for="blok" class="col-sm-3 col-form-label">Blok</label>
                                 <div class="col-sm-2">
-                                    <input type="text" name="blok" id="blok" class="form-control" readonly>
+                                    <input type="text" name="blok" id="blok" class="form-control">
                                 </div>
                                 <label for="no" class="col-sm-2 col-form-label">No</label>
                                 <div class="col-sm-2">
-                                    <input type="text" name="no" id="no" class="form-control" readonly>
+                                    <input type="text" name="no" id="no" class="form-control" placeholder="-">
                                 </div>
                             </div>
 
@@ -516,7 +516,7 @@
                     $('#luas_bangunan').val(d.luas_bangunan || 0);
                     $('#luas_tanah').val(d.luas_tanah || 0);
                     $('#blok').val(d.blok || '');
-                    $('#no').val(d.no || '');
+                    $('#no').val(d.no || '-');
                     $('#harga_jual').val(formatNumber(d.harga_jual) || '');
                     $('#biaya_surat_surat').val(formatNumber(d.biaya_surat_surat) || '');
                     $('#peningkatan_mutu').val(formatNumber(d.peningkatan_mutu) || '');
