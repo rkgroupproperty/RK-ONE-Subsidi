@@ -1537,13 +1537,13 @@
             <article class="pipeline-node p-bank">
               <h3>Proses Bank</h3>
               <div class="count-display">{{ $pipelineCounts['wawancara'] ?? 0 }}</div>
-              <a class="pipeline-action-btn" href="{{ route('wawancara.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-action-btn" href="{{ route('proses-bank.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-sp3k">
               <h3>SP3K Terbit</h3>
               <div class="count-display">{{ $pipelineCounts['acc_bank'] ?? 0 }}</div>
-              <a class="pipeline-action-btn" href="{{ route('acc-bank.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-action-btn" href="{{ route('sp3k.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-ppjb">
