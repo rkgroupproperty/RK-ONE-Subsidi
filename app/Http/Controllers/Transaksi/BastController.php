@@ -109,6 +109,8 @@ class BastController extends Controller
                 'no_bast'      => $noBast,
             ]);
 
+            $customer->update(['id_status_progres' => 5]);
+
             $this->logCreate('BAST', $bast->id);
 
             DB::commit();
@@ -173,9 +175,24 @@ class BastController extends Controller
     public function destroy($id)
     {
         $data = BAST::findOrFail($id);
+        $customerId = $data->id_customer;
 
         $this->logDelete('BAST', $data->id);
         $data->delete();
+
+        if ($customerId) {
+            $prev = 3;
+            if (!\App\Models\AkadDetail::where('id_customer', $customerId)->where('status', 2)->exists()) {
+                if (\App\Models\PPJB::where('id_customer', $customerId)->exists()) {
+                    $prev = 6;
+                } elseif (\App\Models\WawancaraSp3k::whereHas('wawancara', fn($q) => $q->where('id_customer', $customerId))->where('status', 1)->exists()) {
+                    $prev = 4;
+                } else {
+                    $prev = 10;
+                }
+            }
+            Customer::where('id', $customerId)->update(['id_status_progres' => $prev]);
+        }
 
         return response()->json(['status' => 'success']);
     }

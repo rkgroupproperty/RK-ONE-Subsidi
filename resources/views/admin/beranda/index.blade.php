@@ -450,8 +450,8 @@
   /* Pipeline Penjualan - Connected Futuristic Stepper */
   .pipeline-track {
     display: grid;
-    grid-template-columns: repeat(7, minmax(135px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(8, minmax(120px, 1fr));
+    gap: 12px;
     overflow-x: auto;
     padding: 4px 4px 12px;
   }
@@ -1531,23 +1531,23 @@
             <article class="pipeline-node p-admin">
               <h3>Proses Admin</h3>
               <div class="count-display">{{ $pipelineCounts['sppr'] ?? 0 }}</div>
-              <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 10]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-action-btn" href="{{ route('proses-admin.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-bank">
               <h3>Proses Bank</h3>
               <div class="count-display">{{ $pipelineCounts['wawancara'] ?? 0 }}</div>
-              <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 7]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-action-btn" href="{{ route('wawancara.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-sp3k">
               <h3>SP3K Terbit</h3>
               <div class="count-display">{{ $pipelineCounts['acc_bank'] ?? 0 }}</div>
-              <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 4]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-action-btn" href="{{ route('acc-bank.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-ppjb">
-              <h3>PPJB</h3>
+              <h3>PPJB <small style="font-size: 10px; font-weight: normal; opacity: 0.8; display: block;">(Opsional)</small></h3>
               <div class="count-display">{{ $pipelineCounts['ppjb'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('ppjb.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
@@ -1555,7 +1555,13 @@
             <article class="pipeline-node p-akad">
               <h3>Akad Kredit</h3>
               <div class="count-display">{{ $pipelineCounts['akad'] ?? 0 }}</div>
-              <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 3]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              <a class="pipeline-action-btn" href="{{ route('akad.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+            </article>
+
+            <article class="pipeline-node p-bast">
+              <h3>BAST</h3>
+              <div class="count-display">{{ $pipelineCounts['bast'] ?? 0 }}</div>
+              <a class="pipeline-action-btn" href="{{ route('bast.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
           </div>
         </div>

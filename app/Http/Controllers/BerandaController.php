@@ -90,22 +90,80 @@ class BerandaController extends Controller
         $bookingFeePeriode = (int) $bookingFeeQuery->sum('booking_fee') + (int) $pemasukanBfQuery->sum('nominal');
         $customerPeriode = $customerPeriodeQuery->count();
 
+        // Auto-reconciliation: Pastikan alur status progres konsumen selalu ngeflow sinkron dengan transaksi riil
+        try {
+            $bastCustIds = BAST::pluck('id_customer')->filter()->toArray();
+            if (!empty($bastCustIds)) {
+                Customer::whereIn('id', $bastCustIds)->where('id_status_progres', '!=', 5)->update(['id_status_progres' => 5]);
+            }
+
+            $akadCustIds = AkadDetail::where('status', 2)->pluck('id_customer')->filter()->toArray();
+            if (!empty($akadCustIds)) {
+                Customer::whereIn('id', $akadCustIds)
+                    ->whereNotIn('id', $bastCustIds)
+                    ->where('id_status_progres', '!=', 3)
+                    ->update(['id_status_progres' => 3]);
+            }
+
+            $ppjbCustIds = PPJB::pluck('id_customer')->filter()->toArray();
+            if (!empty($ppjbCustIds)) {
+                Customer::whereIn('id', $ppjbCustIds)
+                    ->whereNotIn('id', $bastCustIds)
+                    ->whereNotIn('id', $akadCustIds)
+                    ->where('id_status_progres', '!=', 6)
+                    ->update(['id_status_progres' => 6]);
+            }
+
+            $sp3kCustIds = WawancaraSp3k::where('status', 1)
+                ->join('wawancara', 'wawancara_sp3k.id_wawancara', '=', 'wawancara.id')
+                ->pluck('wawancara.id_customer')
+                ->filter()
+                ->toArray();
+            if (!empty($sp3kCustIds)) {
+                Customer::whereIn('id', $sp3kCustIds)
+                    ->whereNotIn('id', $bastCustIds)
+                    ->whereNotIn('id', $akadCustIds)
+                    ->whereNotIn('id', $ppjbCustIds)
+                    ->where('id_status_progres', '!=', 4)
+                    ->update(['id_status_progres' => 4]);
+            }
+
+            $wawancaraCustIds = Wawancara::where('status', 1)->pluck('id_customer')->filter()->toArray();
+            if (!empty($wawancaraCustIds)) {
+                Customer::whereIn('id', $wawancaraCustIds)
+                    ->whereNotIn('id', $bastCustIds)
+                    ->whereNotIn('id', $akadCustIds)
+                    ->whereNotIn('id', $ppjbCustIds)
+                    ->whereNotIn('id', $sp3kCustIds)
+                    ->where('id_status_progres', '!=', 7)
+                    ->update(['id_status_progres' => 7]);
+            }
+
+            $spprCustIds = SPPR::pluck('id_customer')->filter()->toArray();
+            if (!empty($spprCustIds)) {
+                Customer::whereIn('id', $spprCustIds)
+                    ->whereNotIn('id', $bastCustIds)
+                    ->whereNotIn('id', $akadCustIds)
+                    ->whereNotIn('id', $ppjbCustIds)
+                    ->whereNotIn('id', $sp3kCustIds)
+                    ->whereNotIn('id', $wawancaraCustIds)
+                    ->where('id_status_progres', '!=', 10)
+                    ->update(['id_status_progres' => 10]);
+            }
+        } catch (\Throwable $e) {
+            // Fallback aman
+        }
+
         $pipelineCounts = [
             'booking' => PengajuanHold::where('stt_reg', '!=', 2)->count()
                 + Customer::where('id_status_progres', 2)->where('stt_arsip', 0)->count(),
             'marketing' => Customer::where('id_status_progres', 11)->where('stt_arsip', 0)->count(),
-            'sppr' => Customer::where('id_status_progres', 10)->where('stt_arsip', 0)->count()
-                + SPPR::whereDoesntHave('customer')->count(),
-            'wawancara' => Customer::where('id_status_progres', 7)->where('stt_arsip', 0)->count()
-                + Wawancara::where('status', 1)->whereDoesntHave('customer')->count(),
-            'acc_bank' => Customer::where('id_status_progres', 4)->where('stt_arsip', 0)->count()
-                + WawancaraSp3k::where('status', 1)->whereDoesntHave('wawancara.customer')->count(),
-            'ppjb' => PPJB::whereHas('customer', fn ($query) => $query->where('stt_arsip', 0))->count()
-                + Customer::where('id_status_progres', 6)->where('stt_arsip', 0)->count(),
-            'akad' => Customer::where('id_status_progres', 3)->where('stt_arsip', 0)->count()
-                + AkadDetail::whereDoesntHave('customer')->count(),
-            'bast' => Customer::where('id_status_progres', 5)->where('stt_arsip', 0)->count()
-                + BAST::whereHas('customer', fn ($query) => $query->where('stt_arsip', 0))->count(),
+            'sppr' => Customer::where('id_status_progres', 10)->where('stt_arsip', 0)->count(),
+            'wawancara' => Customer::where('id_status_progres', 7)->where('stt_arsip', 0)->count(),
+            'acc_bank' => Customer::where('id_status_progres', 4)->where('stt_arsip', 0)->count(),
+            'ppjb' => Customer::where('id_status_progres', 6)->where('stt_arsip', 0)->count(),
+            'akad' => Customer::where('id_status_progres', 3)->where('stt_arsip', 0)->count(),
+            'bast' => Customer::where('id_status_progres', 5)->where('stt_arsip', 0)->count(),
         ];
 
         if (session('app_type') === 'komersil') {
@@ -159,18 +217,12 @@ class BerandaController extends Controller
                 $booking = PengajuanHold::where('id_lokasi', $lokasiId)->where('stt_reg', '!=', 2)->count()
                     + Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 2)->where('stt_arsip', 0)->count();
                 $marketing = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 11)->where('stt_arsip', 0)->count();
-                $sppr = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 10)->where('stt_arsip', 0)->count()
-                    + SPPR::whereHas('customer', fn ($query) => $query->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('customer', fn ($q) => $q->where('id_status_progres', 10))->count();
-                $wawancara = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 7)->where('stt_arsip', 0)->count()
-                    + Wawancara::where('status', 1)->whereHas('customer', fn ($query) => $query->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('customer', fn ($q) => $q->where('id_status_progres', 7))->count();
-                $accBank = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 4)->where('stt_arsip', 0)->count()
-                    + WawancaraSp3k::where('status', 1)->whereHas('wawancara.customer', fn ($query) => $query->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('wawancara.customer', fn ($q) => $q->where('id_status_progres', 4))->count();
-                $ppjb = PPJB::whereHas('customer', fn ($query) => $query->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->count()
-                    + Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 6)->where('stt_arsip', 0)->count();
-                $akad = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 3)->where('stt_arsip', 0)->count()
-                    + AkadDetail::whereHas('customer', fn ($query) => $query->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('customer', fn ($q) => $q->where('id_status_progres', 3))->count();
-                $bast = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 5)->where('stt_arsip', 0)->count()
-                    + BAST::whereHas('customer', fn ($query) => $query->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('customer', fn ($q) => $q->where('id_status_progres', 5))->count();
+                $sppr = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 10)->where('stt_arsip', 0)->count();
+                $wawancara = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 7)->where('stt_arsip', 0)->count();
+                $accBank = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 4)->where('stt_arsip', 0)->count();
+                $ppjb = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 6)->where('stt_arsip', 0)->count();
+                $akad = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 3)->where('stt_arsip', 0)->count();
+                $bast = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 5)->where('stt_arsip', 0)->count();
                 $terjual = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->count();
 
                 return [

@@ -247,11 +247,13 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
 
         $this->logCreate('Proses Admin', $sppr->id);
 
+        $customerUpdate = [
+            'id_status_progres' => 10,
+        ];
         if ($request->filled('id_admin_pemberkasan')) {
-            Customer::where('id', $request->id_customer)->update([
-                'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
-            ]);
+            $customerUpdate['id_admin_pemberkasan'] = $request->id_admin_pemberkasan;
         }
+        Customer::where('id', $request->id_customer)->update($customerUpdate);
 
         return response()->json(['status' => 'success']);
     }
@@ -377,9 +379,14 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
     public function destroy($id)
     {
         $sppr = SPPR::findOrFail($id);
+        $customerId = $sppr->id_customer;
 
         $this->logDelete('Proses Admin', $sppr->id);
         $sppr->delete();
+
+        if ($customerId) {
+            Customer::where('id', $customerId)->update(['id_status_progres' => 11]);
+        }
 
         return response()->json(['status' => 'success']);
     }

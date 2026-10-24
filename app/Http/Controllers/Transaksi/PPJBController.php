@@ -120,6 +120,8 @@ class PPJBController extends Controller
                 'no_ppjb'         => $noPPJB,
             ]);
 
+            $customer->update(['id_status_progres' => 6]);
+
             $this->logCreate('PPJB', $ppjb->id);
 
             DB::commit();
@@ -209,9 +211,22 @@ class PPJBController extends Controller
     public function destroy($id)
     {
         $data = PPJB::findOrFail($id);
+        $customerId = $data->id_customer;
 
         $this->logDelete('PPJB', $data->id);
         $data->delete();
+
+        if ($customerId) {
+            $prev = 11;
+            if (\App\Models\WawancaraSp3k::whereHas('wawancara', fn($q) => $q->where('id_customer', $customerId))->where('status', 1)->exists()) {
+                $prev = 4;
+            } elseif (\App\Models\Wawancara::where('id_customer', $customerId)->where('status', 1)->exists()) {
+                $prev = 7;
+            } elseif (\App\Models\SPPR::where('id_customer', $customerId)->exists()) {
+                $prev = 10;
+            }
+            Customer::where('id', $customerId)->update(['id_status_progres' => $prev]);
+        }
 
         return response()->json(['status' => 'success']);
     }
