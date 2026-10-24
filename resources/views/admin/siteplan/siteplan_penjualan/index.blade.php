@@ -63,16 +63,16 @@
             position: relative;
         }
 
-        /* Styling interaktif kavling - Transparan & Multiply agar nama blok & nomor unit di denah tetap terlihat jelas */
+        /* Styling interaktif kavling - Opacity tebal & Multiply agar warna asli blok jelas namun nama blok & nomor unit di denah tetap terbaca tajam */
         polygon.kavling-poly,
         path.kavling-poly,
         .svg-container svg polygon,
         .svg-container svg path {
             transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease, fill-opacity 0.2s ease;
             vector-effect: non-scaling-stroke;
-            fill-opacity: 0.52 !important;
+            fill-opacity: 0.78 !important;
             mix-blend-mode: multiply !important;
-            stroke: rgba(0, 0, 0, 0.45) !important;
+            stroke: rgba(0, 0, 0, 0.55) !important;
             stroke-width: 1px !important;
             cursor: pointer !important;
         }
