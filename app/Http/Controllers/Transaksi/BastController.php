@@ -7,6 +7,8 @@ use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\BAST;
 use App\Models\Customer;
 use App\Models\ListrikAir;
+use App\Models\LokasiKavling;
+use App\Models\MarketingOffline;
 use App\Services\DocumentGenerator;
 use App\Traits\LogAktivitasTrait;
 use Carbon\Carbon;
@@ -26,24 +28,50 @@ class BastController extends Controller
 
         if ($request->ajax()) {
             $data = BAST::with(
-                'customer',
                 'customer.lokasi',
-                'customer.kavling'
+                'customer.kavling',
+                'customer.marketing',
+                'customer.progres'
             )
-                ->whereHas('customer', function ($q) {
-                    $q->where('stt_arsip', 0);
+                ->whereHas('customer', function ($q) use ($request) {
+                    $q->where('stt_arsip', 0)->where('id_status_progres', 5);
+                    if ($request->filled('id_lokasi')) {
+                        $q->where('id_lokasi', $request->id_lokasi);
+                    }
+                    if ($request->filled('id_marketing')) {
+                        $q->where('id_marketing', $request->id_marketing);
+                    }
                 })
                 ->orderByDesc('id');
 
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->editColumn('tanggal_bast', function ($row) {
-                    return Carbon::parse($row->tanggal_bast)->translatedFormat('d F Y');
+                    return $row->tanggal_bast ? Carbon::parse($row->tanggal_bast)->translatedFormat('d F Y') : '-';
+                })
+                ->addColumn('nama_nasabah', function ($row) {
+                    $nama = '<strong>' . e($row->customer->nama_lengkap ?? '-') . '</strong>';
+                    $telp = ($row->customer && $row->customer->no_telp)
+                        ? '<br><small class="text-muted"><i class="fas fa-phone-alt mr-1"></i>' . e($row->customer->no_telp) . '</small>'
+                        : '';
+                    return $nama . $telp;
+                })
+                ->addColumn('marketing', function ($row) {
+                    $mkt = $row->customer->marketing->nama_marketing ?? 'Non Marketing';
+                    return '<span class="badge bg-secondary">' . e($mkt) . '</span>';
                 })
                 ->addColumn('lokasi_rumah', function ($row) {
-                    $lokasi  = $row->customer->lokasi->nama_kavling ?? '-';
-                    $kavling = $row->customer->kavling->kode_kavling ?? '-';
-                    return '<strong>' . $lokasi . '</strong><br>' . $kavling;
+                    $lokasi  = '<strong>' . e($row->customer->lokasi->nama_kavling ?? '-') . '</strong>';
+                    $kavling = ($row->customer->kavling && $row->customer->kavling->kode_kavling)
+                        ? '<br><span class="badge bg-primary text-white">' . e($row->customer->kavling->kode_kavling) . '</span>'
+                        : '';
+                    return $lokasi . $kavling;
+                })
+                ->editColumn('no_bast', function ($row) {
+                    return '<span class="badge badge-info">' . e($row->no_bast ?? '-') . '</span>';
+                })
+                ->addColumn('status_progres', function ($row) {
+                    return '<span class="badge" style="background-color: #10b981; color: #ffffff;">BAST Selesai</span>';
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
                     $deleteUrl = route('bast.destroy', $row->id);
@@ -57,25 +85,31 @@ class BastController extends Controller
                         $btn .= '<button class="btn btn-dark btn-sm btn-cetak-item mr-2"
                                         data-id="' . $row->id . '"
                                         data-nama="' . e($row->customer->nama_lengkap ?? '') . '"
-                                        data-documents=\'' . $documents . '\'>Cetak</button>';
+                                        data-documents=\'' . $documents . '\'><i class="fas fa-print mr-1"></i> Cetak</button>';
                     }
 
                     if ($permissions['hapus']) {
                         $btn .= '<form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">'
                         . csrf_field()
                         . method_field('DELETE')
-                            . '<button type="submit" class="delete-button btn btn-danger btn-sm">Hapus</button></form>';
+                            . '<button type="submit" class="delete-button btn btn-danger btn-sm"><i class="fas fa-trash-alt mr-1"></i> Hapus</button></form>';
                     }
 
                     return $btn . '</div>';
                 })
-                ->rawColumns(['lokasi_rumah', 'action'])
+                ->rawColumns(['lokasi_rumah', 'nama_nasabah', 'marketing', 'no_bast', 'status_progres', 'action'])
                 ->make(true);
         }
 
-        $customerList = Customer::all();
+        $customerList = Customer::with(['lokasi', 'kavling'])
+            ->where('stt_arsip', 0)
+            ->where('id_status_progres', 3)
+            ->orderBy('nama_lengkap')
+            ->get();
+        $lokasiList = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('nama_kavling')->get();
+        $marketingList = MarketingOffline::orderBy('nama_marketing')->get();
 
-        return view('admin.transaksi.bast.index', compact('permissions', 'customerList'));
+        return view('admin.transaksi.bast.index', compact('permissions', 'customerList', 'lokasiList', 'marketingList'));
     }
 
     public function store(Request $request)

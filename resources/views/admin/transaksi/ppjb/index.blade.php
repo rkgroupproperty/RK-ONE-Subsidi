@@ -17,24 +17,56 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Perjanjian Pengikatan Jual Beli (PPJB)</h3>
                                     <div class="d-flex align-items-center">
+                                        <a href="{{ route('export.transaksi.ppjb') }}" target="_blank" id="btn-export-excel" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
                                         @if ($permissions['tambah'])
                                             <button class="btn btn-primary btn-sm" data-toggle="modal"
-                                                data-target="#modalForm"><i class="fas fa-plus"></i>
+                                                data-target="#modalForm"><i class="fas fa-plus mr-1"></i>
                                                 Tambah PPJB</button>
                                         @endif
                                     </div>
                                 </div>
                             </div>
                             <div class="card-body">
-                                <table class="table table-bordered w-100 table-striped data-table">
+                                <!-- Filter Bar -->
+                                <div class="row mb-3 bg-light p-2 rounded mx-0 border align-items-center">
+                                    <div class="col-md-4 mb-2 mb-md-0">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-building mr-1 text-primary"></i> Filter Proyek / Perumahan:</label>
+                                        <select id="filter_lokasi" class="form-control form-control-sm select2">
+                                            <option value="">-- Semua Proyek --</option>
+                                            @foreach ($lokasiList as $lok)
+                                                <option value="{{ $lok->id }}">{{ $lok->nama_kavling }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-2 mb-md-0">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-user-tie mr-1 text-info"></i> Filter Marketing:</label>
+                                        <select id="filter_marketing" class="form-control form-control-sm select2">
+                                            <option value="">-- Semua Marketing --</option>
+                                            @foreach ($marketingList as $mkt)
+                                                <option value="{{ $mkt->id }}">{{ $mkt->nama_marketing }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mt-md-4">
+                                        <button type="button" id="btn-reset-filter" class="btn btn-sm btn-secondary btn-block">
+                                            <i class="fas fa-redo mr-1"></i> Reset Filter
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table class="table table-bordered w-100 small table-striped data-table">
                                     <thead>
                                         <tr>
-                                            <th width="5%">No</th>
+                                            <th width="3%">No</th>
                                             <th>Tanggal PPJB</th>
+                                            <th>Nama Nasabah</th>
+                                            <th>Marketing</th>
+                                            <th>Lokasi & Kavling</th>
                                             <th>No. PPJB</th>
-                                            <th>Customer</th>
-                                            <th>Lokasi Rumah</th>
-                                            <th class="text-center" width="15%">Action</th>
+                                            <th>Termin</th>
+                                            <th>Bayar / Bulan</th>
+                                            <th>Status</th>
+                                            <th class="text-center" width="13%">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -204,12 +236,40 @@
         $(function() {
             var permissions = @json($permissions);
             var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
+
+            function updateExportUrl() {
+                var baseUrl = "{{ route('export.transaksi.ppjb') }}";
+                var params = $.param({
+                    id_lokasi: $('#filter_lokasi').val(),
+                    id_marketing: $('#filter_marketing').val()
+                });
+                $('#btn-export-excel').attr('href', baseUrl + (params ? '?' + params : ''));
+            }
+
+            $('#filter_lokasi, #filter_marketing').on('change', function() {
+                updateExportUrl();
+                table.ajax.reload();
+            });
+
+            $('#btn-reset-filter').on('click', function() {
+                $('#filter_lokasi').val('').trigger('change');
+                $('#filter_marketing').val('').trigger('change');
+                updateExportUrl();
+                table.ajax.reload();
+            });
+
             var table = $('.data-table').DataTable({
-                processing: false,
-                serverSide: false,
+                processing: true,
+                serverSide: true,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('ppjb.index') }}",
+                ajax: {
+                    url: "{{ route('ppjb.index') }}",
+                    data: function(d) {
+                        d.id_lokasi = $('#filter_lokasi').val();
+                        d.id_marketing = $('#filter_marketing').val();
+                    }
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
@@ -224,16 +284,16 @@
                         searchable: false
                     },
                     {
-                        data: 'no_ppjb',
-                        name: 'no_ppjb',
+                        data: 'nama_nasabah',
+                        name: 'customer.nama_lengkap',
                         orderable: false,
                         searchable: true
                     },
                     {
-                        data: 'customer.nama_lengkap',
-                        name: 'customer.nama_lengkap',
+                        data: 'marketing',
+                        name: 'marketing',
                         orderable: false,
-                        searchable: true
+                        searchable: false
                     },
                     {
                         data: 'lokasi_rumah',
@@ -241,7 +301,30 @@
                         orderable: false,
                         searchable: false
                     },
-
+                    {
+                        data: 'no_ppjb',
+                        name: 'no_ppjb',
+                        orderable: false,
+                        searchable: true
+                    },
+                    {
+                        data: 'termin_info',
+                        name: 'termin_info',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'bayar_per_bulan_fmt',
+                        name: 'bayar_per_bulan_fmt',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'status_progres',
+                        name: 'status_progres',
+                        orderable: false,
+                        searchable: false
+                    },
                     {
                         data: 'action',
                         name: 'action',

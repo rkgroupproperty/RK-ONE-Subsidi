@@ -15,6 +15,7 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Proses Admin</h3>
                                     <div class="d-flex align-items-center">
+                                        <a href="{{ route('export.transaksi.sppr') }}" target="_blank" id="btn-export-excel" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
                                         @if ($permissions['tambah'])
                                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                                 data-target="#modalForm">
@@ -25,15 +26,43 @@
                                 </div>
                             </div>
                             <div class="card-body">
+                                <div class="row mb-3 p-2 rounded" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.06);">
+                                    <div class="col-md-4 mb-2">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-city mr-1"></i> Filter Proyek / Perumahan:</label>
+                                        <select id="filter_lokasi" class="form-control form-control-sm select2-filter">
+                                            <option value="">-- Semua Proyek --</option>
+                                            @foreach ($lokasiList as $lok)
+                                                <option value="{{ $lok->id }}">{{ $lok->nama_kavling }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-user-tie mr-1"></i> Filter Marketing:</label>
+                                        <select id="filter_marketing" class="form-control form-control-sm select2-filter">
+                                            <option value="">-- Semua Marketing --</option>
+                                            @foreach ($marketingList as $mkt)
+                                                <option value="{{ $mkt->id }}">{{ $mkt->nama_marketing }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-2 d-flex align-items-end">
+                                        <button type="button" id="btn-reset-filter" class="btn btn-sm btn-secondary btn-block">
+                                            <i class="fas fa-undo mr-1"></i> Reset Filter
+                                        </button>
+                                    </div>
+                                </div>
                                 <table class="table table-bordered table-striped data-table">
                                     <thead>
                                         <tr>
-                                            <th width="50px">No</th>
-                                            <th>Nama</th>
-                                            <th>Blok / No</th>
-                                            <th>Total</th>
+                                            <th width="50px" class="text-center">No</th>
+                                            <th>Tanggal</th>
+                                            <th>Nama Nasabah</th>
+                                            <th>Marketing</th>
+                                            <th>Perumahan</th>
+                                            <th>Total Biaya</th>
                                             <th>Cicilan/bln</th>
-                                            <th width="150px">Action</th>
+                                            <th class="text-center">Status</th>
+                                            <th width="140px" class="text-center">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -441,37 +470,58 @@
                 // dropdownParent: $('#modalForm'),
             });
 
+            $('.select2-filter').select2({
+                theme: "bootstrap4",
+                width: '100%',
+            });
+
             var table = $('.data-table').DataTable({
-                processing: false,
-                serverSide: false,
+                processing: true,
+                serverSide: true,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('proses-admin.index') }}",
+                ajax: {
+                    url: "{{ route('proses-admin.index') }}",
+                    data: function(d) {
+                        d.id_lokasi = $('#filter_lokasi').val();
+                        d.id_marketing = $('#filter_marketing').val();
+                    }
+                },
                 columns: [{
                     data: 'DT_RowIndex',
                     name: 'DT_RowIndex',
                     orderable: false,
-                    searchable: false
+                    searchable: false,
+                    className: 'text-center'
+                }, {
+                    data: 'tanggal',
+                    name: 'created_at',
+                    searchable: true
                 }, {
                     data: 'customer_nama',
-                    name: 'customer_nama',
-                    orderable: false,
+                    name: 'nama',
+                    searchable: true
+                }, {
+                    data: 'marketing',
+                    name: 'customer.marketing.nama_marketing',
                     searchable: true
                 }, {
                     data: 'customer_lokasi',
-                    name: 'customer_lokasi',
-                    orderable: false,
+                    name: 'customer.lokasi.nama_kavling',
                     searchable: true
                 }, {
                     data: 'total_format',
-                    name: 'total_format',
-                    orderable: false,
+                    name: 'total_yang_harus_dibayar',
                     searchable: false
                 }, {
                     data: 'cicilan_format',
-                    name: 'cicilan_format',
-                    orderable: false,
+                    name: 'cicilan_per_bulan',
                     searchable: false
+                }, {
+                    data: 'status_progres',
+                    name: 'status_progres',
+                    searchable: false,
+                    className: 'text-center'
                 }, {
                     data: 'action',
                     name: 'action',
@@ -486,6 +536,29 @@
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 }]
+            });
+
+            function updateExportLink() {
+                var url = "{{ route('export.transaksi.sppr') }}";
+                var params = [];
+                var lok = $('#filter_lokasi').val();
+                var mkt = $('#filter_marketing').val();
+                if (lok) params.push('id_lokasi=' + encodeURIComponent(lok));
+                if (mkt) params.push('id_marketing=' + encodeURIComponent(mkt));
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+                $('#btn-export-excel').attr('href', url);
+            }
+
+            $('#filter_lokasi, #filter_marketing').on('change', function() {
+                table.ajax.reload();
+                updateExportLink();
+            });
+
+            $('#btn-reset-filter').on('click', function() {
+                $('#filter_lokasi').val('').trigger('change');
+                $('#filter_marketing').val('').trigger('change');
             });
         });
 

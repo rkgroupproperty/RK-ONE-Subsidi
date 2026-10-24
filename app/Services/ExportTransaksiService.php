@@ -174,23 +174,41 @@ class ExportTransaksiService
 
     public function exportSPPR()
     {
-        $data = SPPR::with(['customer', 'customer.lokasi', 'customer.kavling'])
-            ->orderByDesc('id')
-            ->get();
+        $query = SPPR::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'marketing'])
+            ->whereHas('customer', function ($q) {
+                $q->where('stt_arsip', 0)->where('id_status_progres', 10);
+                if (request()->filled('id_lokasi')) {
+                    $q->where('id_lokasi', request('id_lokasi'));
+                }
+                if (request()->filled('id_marketing')) {
+                    $q->where('id_marketing', request('id_marketing'));
+                }
+            })
+            ->orderByDesc('id');
 
-        $headers = ['No', 'Nama', 'Blok', 'No', 'Total', 'Cicilan/bln'];
+        $data = $query->get();
+
+        $headers = ['No', 'Tanggal', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Total Biaya', 'Cicilan / Bulan', 'Status Progres'];
         $this->sheet->fromArray($headers, null, 'A1');
 
         $row = 2;
         $no = 1;
         foreach ($data as $item) {
+            $customer = $item->customer;
+            $marketing = $customer->marketing->nama_marketing ?? $item->marketing->nama_marketing ?? '-';
+            $tgl = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') : '-';
+
             $this->sheet->fromArray([
                 $no++,
-                $item->nama ?? $item->customer->nama_lengkap ?? '-',
-                $item->blok ?? ($item->customer->kavling->kode_kavling ?? '-'),
-                $item->no ?? '-',
+                $tgl,
+                $item->nama ?? $customer->nama_lengkap ?? '-',
+                $item->no_telp ?? $customer->no_telp ?? '-',
+                $marketing,
+                $customer->lokasi->nama_kavling ?? '-',
+                ($item->blok ? $item->blok . ' ' . $item->no : ($customer->kavling->kode_kavling ?? '-')),
                 $item->total_yang_harus_dibayar ?? 0,
                 $item->cicilan_per_bulan ?? 0,
+                'Proses Admin',
             ], null, "A{$row}");
             $row++;
         }
@@ -207,24 +225,37 @@ class ExportTransaksiService
 
     public function exportProsesMarketing()
     {
-        $data = Customer::with(['lokasi', 'kavling', 'progres'])
+        $query = Customer::with(['lokasi', 'kavling', 'marketing', 'progres'])
             ->where('stt_arsip', 0)
-            ->orderByDesc('id')
-            ->get();
+            ->where('id_status_progres', 11);
 
-        $headers = ['No', 'Nama', 'Telp', 'Blok / Unit', 'Lokasi', 'Status'];
+        if (request()->filled('id_lokasi')) {
+            $query->where('id_lokasi', request('id_lokasi'));
+        }
+        if (request()->filled('id_marketing')) {
+            $query->where('id_marketing', request('id_marketing'));
+        }
+
+        $data = $query->orderByDesc('id')->get();
+
+        $headers = ['No', 'Tanggal Verif', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Status Progres'];
         $this->sheet->fromArray($headers, null, 'A1');
 
         $row = 2;
         $no = 1;
         foreach ($data as $item) {
+            $marketing = $item->marketing->nama_marketing ?? 'Non Marketing';
+            $tgl = $item->tanggal_verif ? \Carbon\Carbon::parse($item->tanggal_verif)->format('d/m/Y') : '-';
+
             $this->sheet->fromArray([
                 $no++,
+                $tgl,
                 $item->nama_lengkap ?? '-',
                 $item->no_telp ?? '-',
-                $item->kavling->kode_kavling ?? '-',
+                $marketing,
                 $item->lokasi->nama_kavling ?? '-',
-                $item->progres->status_progres ?? '-',
+                $item->kavling->kode_kavling ?? '-',
+                $item->progres->status_progres ?? 'Pemberkasan Marketing',
             ], null, "A{$row}");
             $row++;
         }
@@ -236,32 +267,49 @@ class ExportTransaksiService
         }
         $this->autoWidth($colCount);
 
-        return $this->output('data_proses_marketing.xlsx');
+        return $this->output('data_pemberkasan_marketing.xlsx');
     }
 
     public function exportWawancara()
     {
-        $data = Wawancara::with(['customer', 'customer.lokasi', 'customer.kavling', 'bankKPR'])
+        $query = Wawancara::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'bankKPR'])
             ->where('status', 1)
-            ->whereHas('customer', fn ($q) => $q->where('stt_arsip', 0))
-            ->orderByDesc('id')
-            ->get();
+            ->whereHas('customer', function ($q) {
+                $q->where('stt_arsip', 0)->where('id_status_progres', 7);
+                if (request()->filled('id_lokasi')) {
+                    $q->where('id_lokasi', request('id_lokasi'));
+                }
+                if (request()->filled('id_marketing')) {
+                    $q->where('id_marketing', request('id_marketing'));
+                }
+            });
 
-        $headers = ['No', 'Customer', 'Lokasi Rumah', 'Tgl Wawancara', 'Bank KPR', 'Catatan'];
+        if (request()->filled('id_bank_kpr')) {
+            $query->where('id_bank_kpr', request('id_bank_kpr'));
+        }
+
+        $data = $query->orderByDesc('id')->get();
+
+        $headers = ['No', 'Tanggal Wawancara', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Bank KPR', 'Status Progres', 'Catatan'];
         $this->sheet->fromArray($headers, null, 'A1');
 
         $row = 2;
         $no = 1;
         foreach ($data as $item) {
-            $lokasi = ($item->customer->kavling->kode_kavling ?? '-') . ' - ' . ($item->customer->lokasi->nama_kavling ?? '-');
+            $customer = $item->customer;
+            $marketing = $customer->marketing->nama_marketing ?? 'Non Marketing';
             $catatan = strip_tags($item->catatan_wawancara ?? '-');
 
             $this->sheet->fromArray([
                 $no++,
-                $item->customer->nama_lengkap ?? '-',
-                $lokasi,
                 $item->tgl_wawancara ? \Carbon\Carbon::parse($item->tgl_wawancara)->format('d/m/Y') : '-',
+                $customer->nama_lengkap ?? '-',
+                $customer->no_telp ?? '-',
+                $marketing,
+                $customer->lokasi->nama_kavling ?? '-',
+                $customer->kavling->kode_kavling ?? '-',
                 $item->bankKPR->nama ?? '-',
+                'Proses Bank',
                 $catatan,
             ], null, "A{$row}");
             $row++;
@@ -279,22 +327,32 @@ class ExportTransaksiService
 
     public function exportAccBank()
     {
-        $data = WawancaraSp3k::with(['wawancara.customer', 'wawancara.customer.lokasi', 'wawancara.customer.kavling', 'bankKPR'])
+        $query = WawancaraSp3k::with(['wawancara.customer.lokasi', 'wawancara.customer.kavling', 'wawancara.customer.marketing', 'wawancara.customer.progres', 'bankKPR'])
             ->where('status', 1)
-            ->whereHas('wawancara.customer', fn ($q) => $q->where('stt_arsip', 0))
-            ->orderByDesc('id')
-            ->get();
+            ->whereHas('wawancara.customer', function ($q) {
+                $q->where('stt_arsip', 0)->where('id_status_progres', 4);
+                if (request()->filled('id_lokasi')) {
+                    $q->where('id_lokasi', request('id_lokasi'));
+                }
+                if (request()->filled('id_marketing')) {
+                    $q->where('id_marketing', request('id_marketing'));
+                }
+            });
 
-        $headers = ['No', 'Customer', 'Lokasi Rumah', 'Bank KPR', 'Harga Jual', 'ACC Plafon', 'Tgl SP3K', 'Tgl Expired', 'Sisa Hari'];
+        if (request()->filled('id_bank_kpr')) {
+            $query->where('id_bank_kpr', request('id_bank_kpr'));
+        }
+
+        $data = $query->orderByDesc('id')->get();
+
+        $headers = ['No', 'Tgl Terbit SP3K', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Bank KPR', 'ACC Plafon', 'Tgl Expired', 'Sisa Hari', 'Status Progres'];
         $this->sheet->fromArray($headers, null, 'A1');
 
         $row = 2;
         $no = 1;
         foreach ($data as $item) {
             $customer = $item->wawancara->customer ?? null;
-            $lokasi = ($customer->kavling->kode_kavling ?? '-') . ' - ' . ($customer->lokasi->nama_kavling ?? '-');
-            $hargaJual = $customer->kavling->rincianBiaya->firstWhere('nama', 'Harga Rumah')->nilai ?? $customer->total_harga ?? 0;
-
+            $marketing = $customer->marketing->nama_marketing ?? 'Non Marketing';
             $tglExpired = $item->tgl_expired ? \Carbon\Carbon::parse($item->tgl_expired) : null;
             $sisaHari = '-';
             if ($tglExpired) {
@@ -304,14 +362,17 @@ class ExportTransaksiService
 
             $this->sheet->fromArray([
                 $no++,
-                $customer->nama_lengkap ?? '-',
-                $lokasi,
-                $item->bankKPR->nama ?? '-',
-                $hargaJual,
-                $item->acc_plafon ?? 0,
                 $item->tgl_terbit_sp3k ? \Carbon\Carbon::parse($item->tgl_terbit_sp3k)->format('d/m/Y') : '-',
+                $customer->nama_lengkap ?? '-',
+                $customer->no_telp ?? '-',
+                $marketing,
+                $customer->lokasi->nama_kavling ?? '-',
+                $customer->kavling->kode_kavling ?? '-',
+                $item->bankKPR->nama ?? '-',
+                $item->acc_plafon ?? 0,
                 $item->tgl_expired ? $tglExpired->format('d/m/Y') : '-',
                 $sisaHari,
+                'SP3K Terbit',
             ], null, "A{$row}");
             $row++;
         }
@@ -323,30 +384,45 @@ class ExportTransaksiService
         }
         $this->autoWidth($colCount);
 
-        return $this->output('data_acc_bank.xlsx');
+        return $this->output('data_sp3k.xlsx');
     }
 
     public function exportPPJB()
     {
-        $data = PPJB::with(['customer', 'customer.lokasi', 'customer.kavling'])
-            ->whereHas('customer', fn ($q) => $q->where('stt_arsip', 0))
-            ->orderByDesc('id')
-            ->get();
+        $query = PPJB::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres'])
+            ->whereHas('customer', function ($q) {
+                $q->where('stt_arsip', 0)->where('id_status_progres', 6);
+                if (request()->filled('id_lokasi')) {
+                    $q->where('id_lokasi', request('id_lokasi'));
+                }
+                if (request()->filled('id_marketing')) {
+                    $q->where('id_marketing', request('id_marketing'));
+                }
+            })
+            ->orderByDesc('id');
 
-        $headers = ['No', 'Tanggal PPJB', 'No. PPJB', 'Customer', 'Lokasi Rumah'];
+        $data = $query->get();
+
+        $headers = ['No', 'Tanggal PPJB', 'No. PPJB', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Termin', 'Status Progres'];
         $this->sheet->fromArray($headers, null, 'A1');
 
         $row = 2;
         $no = 1;
         foreach ($data as $item) {
-            $lokasi = ($item->customer->kavling->kode_kavling ?? '-') . ' - ' . ($item->customer->lokasi->nama_kavling ?? '-');
+            $customer = $item->customer;
+            $marketing = $customer->marketing->nama_marketing ?? 'Non Marketing';
 
             $this->sheet->fromArray([
                 $no++,
-                $item->tgl_ppjb ? \Carbon\Carbon::parse($item->tgl_ppjb)->format('d/m/Y') : '-',
+                $item->tanggal_ppjb ? \Carbon\Carbon::parse($item->tanggal_ppjb)->format('d/m/Y') : '-',
                 $item->no_ppjb ?? '-',
-                $item->customer->nama_lengkap ?? '-',
-                $lokasi,
+                $customer->nama_lengkap ?? '-',
+                $customer->no_telp ?? '-',
+                $marketing,
+                $customer->lokasi->nama_kavling ?? '-',
+                $customer->kavling->kode_kavling ?? '-',
+                $item->termin ?? 0,
+                'PPJB',
             ], null, "A{$row}");
             $row++;
         }
@@ -363,25 +439,61 @@ class ExportTransaksiService
 
     public function exportAkad()
     {
-        $data = Akad::with([])
-            ->orderByDesc('id')
-            ->get();
+        $query = AkadDetail::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'akad'])
+            ->whereHas('customer', function ($q) {
+                $q->where('stt_arsip', 0);
+                if (request()->filled('id_lokasi')) {
+                    $q->where('id_lokasi', request('id_lokasi'));
+                }
+                if (request()->filled('id_marketing')) {
+                    $q->where('id_marketing', request('id_marketing'));
+                }
+            })
+            ->orderByDesc('id');
 
-        $headers = ['No', 'Jadwal Akad', 'Total Akad', 'Keterangan'];
-        $this->sheet->fromArray($headers, null, 'A1');
+        $data = $query->get();
 
-        $row = 2;
-        $no = 1;
-        foreach ($data as $item) {
-            $totalAkad = AkadDetail::where('id_akad', $item->id)->count();
+        if ($data->isEmpty()) {
+            $dataAkad = Akad::orderByDesc('id')->get();
+            $headers = ['No', 'Jadwal Akad', 'Total Akad', 'Keterangan'];
+            $this->sheet->fromArray($headers, null, 'A1');
+            $row = 2;
+            $no = 1;
+            foreach ($dataAkad as $item) {
+                $totalAkad = AkadDetail::where('id_akad', $item->id)->count();
+                $this->sheet->fromArray([
+                    $no++,
+                    $item->tgl_akad ? \Carbon\Carbon::parse($item->tgl_akad)->format('d/m/Y') : '-',
+                    $totalAkad,
+                    $item->keterangan ?? '-',
+                ], null, "A{$row}");
+                $row++;
+            }
+        } else {
+            $headers = ['No', 'Tanggal Akad', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Status Kehadiran', 'Keterangan'];
+            $this->sheet->fromArray($headers, null, 'A1');
 
-            $this->sheet->fromArray([
-                $no++,
-                $item->tgl_akad ? \Carbon\Carbon::parse($item->tgl_akad)->format('d/m/Y') : '-',
-                $totalAkad,
-                $item->keterangan ?? '-',
-            ], null, "A{$row}");
-            $row++;
+            $row = 2;
+            $no = 1;
+            foreach ($data as $item) {
+                $customer = $item->customer;
+                $marketing = $customer->marketing->nama_marketing ?? 'Non Marketing';
+                $tglAkad = ($item->akad && $item->akad->tgl_akad) ? \Carbon\Carbon::parse($item->akad->tgl_akad)->format('d/m/Y') : '-';
+                $statusHadir = ($item->status == 2) ? 'Hadir' : (($item->status == 1) ? 'Belum Hadir' : '-');
+
+                $this->sheet->fromArray([
+                    $no++,
+                    $tglAkad,
+                    $customer->nama_lengkap ?? '-',
+                    $customer->no_telp ?? '-',
+                    $marketing,
+                    $customer->lokasi->nama_kavling ?? '-',
+                    $customer->kavling->kode_kavling ?? '-',
+                    $statusHadir,
+                    $item->keterangan ?? '-',
+                ], null, "A{$row}");
+                $row++;
+            }
         }
 
         $colCount = count($headers);
@@ -396,25 +508,39 @@ class ExportTransaksiService
 
     public function exportBAST()
     {
-        $data = BAST::with(['customer', 'customer.lokasi', 'customer.kavling'])
-            ->whereHas('customer', fn ($q) => $q->where('stt_arsip', 0))
-            ->orderByDesc('id')
-            ->get();
+        $query = BAST::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres'])
+            ->whereHas('customer', function ($q) {
+                $q->where('stt_arsip', 0)->where('id_status_progres', 5);
+                if (request()->filled('id_lokasi')) {
+                    $q->where('id_lokasi', request('id_lokasi'));
+                }
+                if (request()->filled('id_marketing')) {
+                    $q->where('id_marketing', request('id_marketing'));
+                }
+            })
+            ->orderByDesc('id');
 
-        $headers = ['No', 'Tanggal BAST', 'No. BAST', 'Customer', 'Lokasi Rumah'];
+        $data = $query->get();
+
+        $headers = ['No', 'Tanggal BAST', 'No. BAST', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Status Progres'];
         $this->sheet->fromArray($headers, null, 'A1');
 
         $row = 2;
         $no = 1;
         foreach ($data as $item) {
-            $lokasi = ($item->customer->kavling->kode_kavling ?? '-') . ' - ' . ($item->customer->lokasi->nama_kavling ?? '-');
+            $customer = $item->customer;
+            $marketing = $customer->marketing->nama_marketing ?? 'Non Marketing';
 
             $this->sheet->fromArray([
                 $no++,
-                $item->tgl_bast ? \Carbon\Carbon::parse($item->tgl_bast)->format('d/m/Y') : '-',
+                $item->tanggal_bast ? \Carbon\Carbon::parse($item->tanggal_bast)->format('d/m/Y') : '-',
                 $item->no_bast ?? '-',
-                $item->customer->nama_lengkap ?? '-',
-                $lokasi,
+                $customer->nama_lengkap ?? '-',
+                $customer->no_telp ?? '-',
+                $marketing,
+                $customer->lokasi->nama_kavling ?? '-',
+                $customer->kavling->kode_kavling ?? '-',
+                'BAST',
             ], null, "A{$row}");
             $row++;
         }

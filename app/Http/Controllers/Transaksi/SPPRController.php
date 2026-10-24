@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Transaksi;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\Customer;
+use App\Models\LokasiKavling;
 use App\Models\MarketingOffline;
 use App\Models\AdminPemberkasan;
 use App\Models\SPPR;
@@ -25,15 +26,41 @@ class SPPRController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = SPPR::with('customer')->orderBy('id', 'desc');
+            $data = SPPR::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'marketing'])
+                ->whereHas('customer', function ($q) use ($request) {
+                    $q->where('stt_arsip', 0)->where('id_status_progres', 10);
+                    if ($request->filled('id_lokasi')) {
+                        $q->where('id_lokasi', $request->id_lokasi);
+                    }
+                    if ($request->filled('id_marketing')) {
+                        $q->where('id_marketing', $request->id_marketing);
+                    }
+                })
+                ->orderBy('id', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->addColumn('tanggal', function ($row) {
+                    return $row->created_at ? Carbon::parse($row->created_at)->translatedFormat('d F Y') : '-';
+                })
                 ->addColumn('customer_nama', function ($row) {
-                    return $row->nama;
+                    $nama = '<strong>' . e($row->nama) . '</strong>';
+                    $telp = ($row->no_telp || ($row->customer && $row->customer->no_telp))
+                        ? '<br><small class="text-muted"><i class="fas fa-phone-alt mr-1"></i>' . e($row->no_telp ?: $row->customer->no_telp) . '</small>'
+                        : '';
+                    return $nama . $telp;
+                })
+                ->addColumn('marketing', function ($row) {
+                    $mkt = $row->customer->marketing->nama_marketing ?? $row->marketing->nama_marketing ?? 'Non Marketing';
+                    return '<span class="badge bg-secondary">' . e($mkt) . '</span>';
                 })
                 ->addColumn('customer_lokasi', function ($row) {
-                    return $row->blok . ' - ' . $row->no;
+                    $lokasi = '<strong>' . e($row->customer->lokasi->nama_kavling ?? '-') . '</strong>';
+                    $unit = '<br><span class="badge bg-primary text-white">' . e($row->blok . ' ' . $row->no) . '</span>';
+                    return $lokasi . $unit;
+                })
+                ->addColumn('status_progres', function ($row) {
+                    return '<span class="badge" style="background-color: #0891b2; color: #ffffff;">Proses Admin</span>';
                 })
                 ->addColumn('total_format', function ($row) {
                     return 'Rp ' . number_format($row->total_yang_harus_dibayar, 0, ',', '.');
@@ -42,9 +69,9 @@ class SPPRController extends Controller
                     return 'Rp ' . number_format($row->cicilan_per_bulan, 0, ',', '.');
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
-$cetakUrl = route('proses-admin.cetak', $row->id);
-                $editUrl = route('proses-admin.edit', $row->id);
-                $deleteUrl = route('proses-admin.destroy', $row->id);
+                    $cetakUrl = route('proses-admin.cetak', $row->id);
+                    $editUrl = route('proses-admin.edit', $row->id);
+                    $deleteUrl = route('proses-admin.destroy', $row->id);
 
                     $btn = '<div class="d-flex justify-content-center">';
                     if ($permissions['edit']) {
@@ -62,18 +89,19 @@ $cetakUrl = route('proses-admin.cetak', $row->id);
                     $btn .= '</div>';
                     return $btn;
                 })
-                ->rawColumns(['action'])
+                ->rawColumns(['action', 'customer_nama', 'marketing', 'customer_lokasi', 'status_progres'])
                 ->make(true);
         }
 
-        $customerList = Customer::orderBy('nama_lengkap')->get();
+        $customerList = Customer::where('stt_arsip', 0)->where('id_status_progres', 11)->orderBy('nama_lengkap')->get();
         $marketingList = MarketingOffline::orderBy('nama_marketing')->get();
         $adminPemberkasanList = AdminPemberkasan::orderBy('nama_lengkap')->get();
+        $lokasiList = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('nama_kavling')->get();
 
         $lastId = SPPR::max('id') ?? 0;
         $nextNoSppr = str_pad($lastId + 1, 3, '0', STR_PAD_LEFT);
 
-        return view('admin.transaksi.sppr.index', compact('permissions', 'customerList', 'marketingList', 'adminPemberkasanList', 'nextNoSppr'));
+        return view('admin.transaksi.sppr.index', compact('permissions', 'customerList', 'marketingList', 'adminPemberkasanList', 'lokasiList', 'nextNoSppr'));
     }
 
     public function getCustomerDetail($id)

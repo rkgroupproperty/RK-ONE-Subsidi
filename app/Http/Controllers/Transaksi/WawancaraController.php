@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\BankKPR;
 use App\Models\Customer;
+use App\Models\LokasiKavling;
+use App\Models\MarketingOffline;
 use App\Models\Notaris;
 use App\Models\Wawancara;
 use App\Models\WawancaraSp3k;
@@ -27,32 +29,58 @@ class WawancaraController extends Controller
         app(AkadController::class)->refreshDeadlineAkad();
 
         if ($request->ajax()) {
-            $data = Wawancara::with(['customer', 'customer.lokasi', 'customer.kavling', 'bankKPR'])
+            $data = Wawancara::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'bankKPR'])
                 ->where('status', 1)
-                ->whereHas('customer', function ($q) {
-                    $q->where('stt_arsip', 0);
-                })
-                ->orderByDesc('id');
+                ->whereHas('customer', function ($q) use ($request) {
+                    $q->where('stt_arsip', 0)->where('id_status_progres', 7);
+                    if ($request->filled('id_lokasi')) {
+                        $q->where('id_lokasi', $request->id_lokasi);
+                    }
+                    if ($request->filled('id_marketing')) {
+                        $q->where('id_marketing', $request->id_marketing);
+                    }
+                });
+
+            if ($request->filled('id_bank_kpr')) {
+                $data->where('id_bank_kpr', $request->id_bank_kpr);
+            }
+
+            $data->orderByDesc('id');
 
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('id_customer', fn($row) => $row->customer->nama_lengkap ?? '-')
-                ->addColumn('lokasi_rumah', function ($row) {
-                    $kode = $row->customer->kavling->kode_kavling ?? '-';
-                    $nama = $row->customer->lokasi->nama_kavling ?? '-';
-                    return "$kode - $nama";
-                })
                 ->addColumn('tgl_wawancara', function ($row) {
                     return $row->tgl_wawancara
                         ? Carbon::parse($row->tgl_wawancara)->locale('id')->translatedFormat('d F Y')
                         : '-';
+                })
+                ->addColumn('id_customer', function ($row) {
+                    $nama = '<strong>' . e($row->customer->nama_lengkap ?? '-') . '</strong>';
+                    $telp = ($row->customer && $row->customer->no_telp)
+                        ? '<br><small class="text-muted"><i class="fas fa-phone-alt mr-1"></i>' . e($row->customer->no_telp) . '</small>'
+                        : '';
+                    return $nama . $telp;
+                })
+                ->addColumn('marketing', function ($row) {
+                    $mkt = $row->customer->marketing->nama_marketing ?? 'Non Marketing';
+                    return '<span class="badge bg-secondary">' . e($mkt) . '</span>';
+                })
+                ->addColumn('lokasi_rumah', function ($row) {
+                    $nama = '<strong>' . e($row->customer->lokasi->nama_kavling ?? '-') . '</strong>';
+                    $kode = ($row->customer->kavling && $row->customer->kavling->kode_kavling)
+                        ? '<br><span class="badge bg-primary text-white">' . e($row->customer->kavling->kode_kavling) . '</span>'
+                        : '';
+                    return $nama . $kode;
+                })
+                ->addColumn('id_bank_kpr', fn($row) => '<span class="badge badge-success">' . e($row->bankKPR?->nama ?? '-') . '</span>')
+                ->addColumn('status_progres', function ($row) {
+                    return '<span class="badge" style="background-color: #10b981; color: #ffffff;">Proses Bank</span>';
                 })
                 ->addColumn('catatan_wawancara', function ($row) {
                     return $row->catatan_wawancara
                         ? strip_tags($row->catatan_wawancara)
                         : '-';
                 })
-                ->addColumn('id_bank_kpr', fn($row) => $row->bankKPR?->nama ?? '-')
                 ->addColumn('action', function ($row) use ($permissions) {
                     $editUrl   = route('proses-bank.edit', $row->id);
                     $deleteUrl = route('proses-bank.destroy', $row->id);
@@ -73,21 +101,25 @@ class WawancaraController extends Controller
 
                     return $btn . '</div>';
                 })
-                ->rawColumns(['action'])
+                ->rawColumns(['action', 'id_customer', 'marketing', 'lokasi_rumah', 'id_bank_kpr', 'status_progres'])
                 ->make(true);
         }
 
-        $customerList = Customer::where('stt_arsip', 0)->get();
-        $bankKPRList  = BankKPR::all();
+        $customerList = Customer::where('stt_arsip', 0)->where('id_status_progres', 10)->orderBy('nama_lengkap')->get();
+        $bankKPRList  = BankKPR::orderBy('nama')->get();
         $hari         = Carbon::now('Asia/Jakarta')->locale('id')->translatedFormat('l');
         $notarisList  = Notaris::all();
+        $lokasiList   = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('nama_kavling')->get();
+        $marketingList= MarketingOffline::orderBy('nama_marketing')->get();
 
         return view('admin.transaksi.wawancara.index', compact(
             'permissions',
             'customerList',
             'bankKPRList',
             'hari',
-            'notarisList'
+            'notarisList',
+            'lokasiList',
+            'marketingList'
         ));
     }
 

@@ -17,7 +17,7 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data SP3K</h3>
                                     <div class="d-flex align-items-center">
-                                        <a href="{{ route('export.transaksi.acc-bank') }}" target="_blank" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
+                                        <a href="{{ route('export.transaksi.acc-bank') }}" target="_blank" id="btn-export-excel" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
                                         @if ($permissions['tambah'])
                                             <button type="button" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modalTambahSp3k">
                                                 <i class="fas fa-plus mr-1"></i> Tambah SP3K
@@ -27,19 +27,56 @@
                                 </div>
                             </div>
                             <div class="card-body">
+                                <!-- Filter Bar -->
+                                <div class="row mb-3 bg-light p-2 rounded mx-0 border align-items-center">
+                                    <div class="col-md-3 mb-2 mb-md-0">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-building mr-1 text-primary"></i> Filter Proyek / Perumahan:</label>
+                                        <select id="filter_lokasi" class="form-control form-control-sm select2">
+                                            <option value="">-- Semua Proyek --</option>
+                                            @foreach ($lokasiList as $lok)
+                                                <option value="{{ $lok->id }}">{{ $lok->nama_kavling }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-2 mb-md-0">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-user-tie mr-1 text-info"></i> Filter Marketing:</label>
+                                        <select id="filter_marketing" class="form-control form-control-sm select2">
+                                            <option value="">-- Semua Marketing --</option>
+                                            @foreach ($marketingList as $mkt)
+                                                <option value="{{ $mkt->id }}">{{ $mkt->nama_marketing }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-2 mb-md-0">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-university mr-1 text-success"></i> Filter Bank:</label>
+                                        <select id="filter_bank" class="form-control form-control-sm select2">
+                                            <option value="">-- Semua Bank --</option>
+                                            @foreach ($bankKPRList as $bank)
+                                                <option value="{{ $bank->id }}">{{ $bank->nama }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mt-md-4">
+                                        <button type="button" id="btn-reset-filter" class="btn btn-sm btn-secondary btn-block">
+                                            <i class="fas fa-redo mr-1"></i> Reset Filter
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <table class="table table-bordered w-100 small table-striped data-table">
                                     <thead>
                                         <tr>
                                             <th width="3%">No</th>
-                                            <th>Nama Customer</th>
-                                            <th>Lokasi Rumah</th>
-                                            <th>Bank KPR</th>
-                                            <th>Harga Jual</th>
-                                            <th>ACC Plafon</th>
                                             <th>Tgl SP3K</th>
+                                            <th>Nama Customer</th>
+                                            <th>Marketing</th>
+                                            <th>Lokasi & Kavling</th>
+                                            <th>Bank KPR</th>
+                                            <th>ACC Plafon</th>
                                             <th>Tgl Expired</th>
                                             <th>Sisa Hari</th>
-                                            <th class="text-center" width="13%">Action</th>
+                                            <th>Status</th>
+                                            <th class="text-center" width="10%">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -178,12 +215,42 @@
         var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
 
         $(function() {
+            function updateExportUrl() {
+                var baseUrl = "{{ route('export.transaksi.acc-bank') }}";
+                var params = $.param({
+                    id_lokasi: $('#filter_lokasi').val(),
+                    id_marketing: $('#filter_marketing').val(),
+                    id_bank_kpr: $('#filter_bank').val()
+                });
+                $('#btn-export-excel').attr('href', baseUrl + (params ? '?' + params : ''));
+            }
+
+            $('#filter_lokasi, #filter_marketing, #filter_bank').on('change', function() {
+                updateExportUrl();
+                table.ajax.reload();
+            });
+
+            $('#btn-reset-filter').on('click', function() {
+                $('#filter_lokasi').val('').trigger('change');
+                $('#filter_marketing').val('').trigger('change');
+                $('#filter_bank').val('').trigger('change');
+                updateExportUrl();
+                table.ajax.reload();
+            });
+
             var table = $('.data-table').DataTable({
-                processing: false,
-                serverSide: false,
+                processing: true,
+                serverSide: true,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('sp3k.index') }}",
+                ajax: {
+                    url: "{{ route('sp3k.index') }}",
+                    data: function(d) {
+                        d.id_lokasi = $('#filter_lokasi').val();
+                        d.id_marketing = $('#filter_marketing').val();
+                        d.id_bank_kpr = $('#filter_bank').val();
+                    }
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
@@ -192,10 +259,22 @@
                         className: 'text-center'
                     },
                     {
-                        data: 'wawancara.customer.nama_lengkap',
+                        data: 'tgl_terbit_sp3k',
+                        name: 'tgl_terbit_sp3k',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'nama_nasabah',
                         name: 'wawancara.customer.nama_lengkap',
                         orderable: false,
                         searchable: true
+                    },
+                    {
+                        data: 'marketing',
+                        name: 'marketing',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'lokasi_rumah',
@@ -210,20 +289,8 @@
                         searchable: false
                     },
                     {
-                        data: 'harga_jual',
-                        name: 'harga_jual',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
                         data: 'acc_plafon',
                         name: 'acc_plafon',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'tgl_terbit_sp3k',
-                        name: 'tgl_terbit_sp3k',
                         orderable: false,
                         searchable: false
                     },
@@ -237,7 +304,13 @@
                         data: 'sisa_hari',
                         name: 'sisa_hari',
                         orderable: false,
-                        searchable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'status_progres',
+                        name: 'status_progres',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'action',

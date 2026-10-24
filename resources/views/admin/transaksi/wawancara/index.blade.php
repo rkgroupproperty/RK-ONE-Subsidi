@@ -17,6 +17,7 @@
                                 <div class="d-flex align-content-center justify-content-between">
                                     <h3 class="font-weight-bold text-lg">Data Proses Bank</h3>
                                     <div class="d-flex align-items-center" style="gap: 3px">
+                                        <a href="{{ route('export.transaksi.wawancara') }}" target="_blank" id="btn-export-excel" class="btn btn-sm btn-success mr-2"><i class="fas fa-file-excel mr-1"></i> Excel</a>
                                         <button class="btn btn-primary btn-sm" data-toggle="modal"
                                             data-target="#modalForm"><i class="fas fa-plus" id="btnTambah"></i>
                                             Tambah Data Proses Bank</button>
@@ -24,16 +25,52 @@
                                 </div>
                             </div>
                             <div class="card-body">
+                                <div class="row mb-3 p-2 rounded" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.06);">
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-city mr-1"></i> Filter Proyek:</label>
+                                        <select id="filter_lokasi" class="form-control form-control-sm select2-filter">
+                                            <option value="">-- Semua Proyek --</option>
+                                            @foreach ($lokasiList as $lok)
+                                                <option value="{{ $lok->id }}">{{ $lok->nama_kavling }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-user-tie mr-1"></i> Filter Marketing:</label>
+                                        <select id="filter_marketing" class="form-control form-control-sm select2-filter">
+                                            <option value="">-- Semua Marketing --</option>
+                                            @foreach ($marketingList as $mkt)
+                                                <option value="{{ $mkt->id }}">{{ $mkt->nama_marketing }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-university mr-1"></i> Filter Bank:</label>
+                                        <select id="filter_bank" class="form-control form-control-sm select2-filter">
+                                            <option value="">-- Semua Bank --</option>
+                                            @foreach ($bankKPRList as $bank)
+                                                <option value="{{ $bank->id }}">{{ $bank->nama }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-2 d-flex align-items-end">
+                                        <button type="button" id="btn-reset-filter" class="btn btn-sm btn-secondary btn-block">
+                                            <i class="fas fa-undo mr-1"></i> Reset Filter
+                                        </button>
+                                    </div>
+                                </div>
                                 <table class="table table-bordered small w-100 table-striped data-table">
                                     <thead>
                                         <tr>
-                                            <th width="5%">No</th>
-                                            <th>Customer</th>
-                                            <th>Lokasi Rumah</th>
-                                            <th>Tgl Wawancara</th>
+                                            <th width="5%" class="text-center">No</th>
+                                            <th>Tanggal</th>
+                                            <th>Nama Nasabah</th>
+                                            <th>Marketing</th>
+                                            <th>Perumahan</th>
                                             <th>Bank KPR</th>
+                                            <th class="text-center">Status</th>
                                             <th>Catatan</th>
-                                            <th class="text-center" width="15%">Action</th>
+                                            <th class="text-center" width="12%">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -398,46 +435,65 @@
 
 
         $(function() {
+            $('.select2-filter').select2({
+                theme: "bootstrap4",
+                width: '100%',
+            });
+
             var table = $('.data-table').DataTable({
-                processing: false,
-                serverSide: false,
+                processing: true,
+                serverSide: true,
                 ordering: false,
                 responsive: true,
-                ajax: "{{ route('proses-bank.index') }}",
+                ajax: {
+                    url: "{{ route('proses-bank.index') }}",
+                    data: function(d) {
+                        d.id_lokasi = $('#filter_lokasi').val();
+                        d.id_marketing = $('#filter_marketing').val();
+                        d.id_bank_kpr = $('#filter_bank').val();
+                    }
+                },
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'id_customer',
-                        name: 'id_customer',
-                        orderable: false,
-                        searchable: true
-                    },
-                    {
-                        data: 'lokasi_rumah',
-                        name: 'lokasi_rumah',
-                        orderable: false,
-                        searchable: false
+                        searchable: false,
+                        className: 'text-center'
                     },
                     {
                         data: 'tgl_wawancara',
                         name: 'tgl_wawancara',
-                        orderable: false,
-                        searchable: false
+                        searchable: true
+                    },
+                    {
+                        data: 'id_customer',
+                        name: 'customer.nama_lengkap',
+                        searchable: true
+                    },
+                    {
+                        data: 'marketing',
+                        name: 'customer.marketing.nama_marketing',
+                        searchable: true
+                    },
+                    {
+                        data: 'lokasi_rumah',
+                        name: 'customer.lokasi.nama_kavling',
+                        searchable: true
                     },
                     {
                         data: 'id_bank_kpr',
-                        name: 'id_bank_kpr',
-                        orderable: false,
-                        searchable: false
+                        name: 'bankKPR.nama',
+                        searchable: true
+                    },
+                    {
+                        data: 'status_progres',
+                        name: 'status_progres',
+                        searchable: false,
+                        className: 'text-center'
                     },
                     {
                         data: 'catatan_wawancara',
                         name: 'catatan_wawancara',
-                        orderable: false,
                         searchable: false
                     },
                     {
@@ -445,6 +501,7 @@
                         name: 'action',
                         orderable: false,
                         searchable: false,
+                        className: 'text-center'
                     }
                 ],
                 columnDefs: [{
@@ -452,7 +509,33 @@
                     render: function(data, type, row, meta) {
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
-                }, ]
+                }]
+            });
+
+            function updateExportLink() {
+                var url = "{{ route('export.transaksi.wawancara') }}";
+                var params = [];
+                var lok = $('#filter_lokasi').val();
+                var mkt = $('#filter_marketing').val();
+                var bnk = $('#filter_bank').val();
+                if (lok) params.push('id_lokasi=' + encodeURIComponent(lok));
+                if (mkt) params.push('id_marketing=' + encodeURIComponent(mkt));
+                if (bnk) params.push('id_bank_kpr=' + encodeURIComponent(bnk));
+                if (params.length > 0) {
+                    url += '?' + params.join('&');
+                }
+                $('#btn-export-excel').attr('href', url);
+            }
+
+            $('#filter_lokasi, #filter_marketing, #filter_bank').on('change', function() {
+                table.ajax.reload();
+                updateExportLink();
+            });
+
+            $('#btn-reset-filter').on('click', function() {
+                $('#filter_lokasi').val('').trigger('change');
+                $('#filter_marketing').val('').trigger('change');
+                $('#filter_bank').val('').trigger('change');
             });
         });
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Transaksi;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Pengaturan\HakAksesController;
 use App\Models\Customer;
+use App\Models\LokasiKavling;
 use App\Models\MarketingOffline;
 use App\Models\ProgresListPenjualan;
 use App\Models\UploudFile;
@@ -36,22 +37,41 @@ class ProsesMarketingController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = Customer::with(['lokasi', 'kavling', 'progres'])
+            $data = Customer::with(['lokasi', 'kavling', 'marketing', 'progres'])
                 ->where('stt_arsip', 0)
-                ->orderBy('id', 'desc');
+                ->where('id_status_progres', 11);
+
+            if ($request->filled('id_lokasi')) {
+                $data->where('id_lokasi', $request->id_lokasi);
+            }
+            if ($request->filled('id_marketing')) {
+                $data->where('id_marketing', $request->id_marketing);
+            }
+
+            $data->orderBy('id', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('blok_unit', function ($row) {
-                    return $row->kavling->kode_kavling ?? '-';
+                ->addColumn('tgl_terima', function ($row) {
+                    return $row->tanggal_verif ? Carbon::parse($row->tanggal_verif)->translatedFormat('d F Y') : '-';
                 })
-                ->addColumn('lokasi_nama', function ($row) {
-                    return $row->lokasi->nama_kavling ?? '-';
+                ->addColumn('nama_nasabah', function ($row) {
+                    $nama = '<strong>' . e($row->nama_lengkap) . '</strong>';
+                    $telp = $row->no_telp ? '<br><small class="text-muted"><i class="fas fa-phone-alt mr-1"></i>' . e($row->no_telp) . '</small>' : '';
+                    return $nama . $telp;
+                })
+                ->addColumn('marketing', function ($row) {
+                    return $row->marketing->nama_marketing ?? '<span class="badge bg-secondary">None</span>';
+                })
+                ->addColumn('perumahan', function ($row) {
+                    $lokasi = '<strong>' . e($row->lokasi->nama_kavling ?? '-') . '</strong>';
+                    $kav = ($row->kavling && $row->kavling->kode_kavling) ? '<br><span class="badge bg-primary text-white">' . e($row->kavling->kode_kavling) . '</span>' : '';
+                    return $lokasi . $kav;
                 })
                 ->addColumn('status_progres', function ($row) {
-                    $status = $row->progres->status_progres ?? '-';
-                    $warna  = $row->progres->warna ?? '#6c757d';
-                    $rgb    = sscanf($warna, '#%02x%02x%02x') ?: [108, 117, 125];
+                    $status = $row->progres->status_progres ?? 'Pemberkasan Marketing';
+                    $warna  = $row->progres->warna ?? '#0284c7';
+                    $rgb    = sscanf($warna, '#%02x%02x%02x') ?: [2, 132, 199];
                     $terang = ($rgb[0] * 0.299 + $rgb[1] * 0.587 + $rgb[2] * 0.114) > 150;
 
                     return '<span class="badge" style="background-color:' . e($warna) . ';color:' . ($terang ? '#1f2937' : '#ffffff') . '">' . e($status) . '</span>';
@@ -69,14 +89,15 @@ class ProsesMarketingController extends Controller
 
                     return $btn;
                 })
-                ->rawColumns(['action', 'status_progres'])
+                ->rawColumns(['action', 'status_progres', 'nama_nasabah', 'marketing', 'perumahan'])
                 ->make(true);
         }
 
-        $customerList = Customer::where('stt_arsip', 0)->orderBy('nama_lengkap')->get();
+        $customerList = Customer::where('stt_arsip', 0)->where('id_status_progres', 11)->orderBy('nama_lengkap')->get();
         $marketingList = MarketingOffline::orderBy('nama_marketing')->get();
+        $lokasiList = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('nama_kavling')->get();
 
-        return view('admin.transaksi.proses_marketing.index', compact('permissions', 'customerList', 'marketingList'));
+        return view('admin.transaksi.proses_marketing.index', compact('permissions', 'customerList', 'marketingList', 'lokasiList'));
     }
 
     public function getCustomerDetail($id)
