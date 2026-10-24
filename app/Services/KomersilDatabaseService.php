@@ -2132,6 +2132,7 @@ class KomersilDatabaseService
                     $persyaratanId = $persyaratan ? $persyaratan->id : null;
 
                     // Update wawancara
+                    $bankIdForWawancara = $bankId ?: 1;
                     $wawancara = $conn->table('wawancara')->where('id_customer', $custId)->first();
                     if (!$wawancara) {
                         $wawancaraId = $conn->table('wawancara')->insertGetId([
@@ -2139,13 +2140,13 @@ class KomersilDatabaseService
                             'id_customer' => $custId,
                             'catatan_wawancara' => 'Wawancara Selesai',
                             'status' => 1,
-                            'id_bank_kpr' => $bankId,
+                            'id_bank_kpr' => $bankIdForWawancara,
                         ]);
                     } else {
                         $wawancaraId = $wawancara->id;
                         $conn->table('wawancara')->where('id', $wawancaraId)->update([
                             'status' => 1,
-                            'id_bank_kpr' => $bankId,
+                            'id_bank_kpr' => $bankIdForWawancara,
                         ]);
                     }
 
@@ -2154,7 +2155,7 @@ class KomersilDatabaseService
                     if (!$sp3k) {
                         $conn->table('wawancara_sp3k')->insert([
                             'id_wawancara' => $wawancaraId,
-                            'id_bank_kpr' => $bankId,
+                            'id_bank_kpr' => $bankIdForWawancara,
                             'acc_plafon' => $hargaJual,
                             'tenor' => 15,
                             'id_notaris' => $notarisId,
