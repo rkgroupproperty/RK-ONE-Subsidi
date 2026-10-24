@@ -2017,6 +2017,20 @@ class KomersilDatabaseService
                 }
                 $logs[] = "Data Bank KPR dipetakan: " . json_encode($bankMap);
 
+                // 2b. Notaris
+                $notaris = $conn->table('notaris')->first();
+                if (!$notaris) {
+                    $notarisId = $conn->table('notaris')->insertGetId([
+                        'nama_notaris' => 'Notaris RK Group',
+                        'alamat_notaris' => '-',
+                        'telp_notaris' => '-',
+                        'keterangan_notaris' => 'Notaris Utama',
+                    ]);
+                } else {
+                    $notarisId = $notaris->id;
+                }
+                $logs[] = "Data Notaris dipetakan (ID: {$notarisId})";
+
                 // 3. Progres List Penjualan - Pastikan Akad (ID 3) ada
                 $progresAkad = $conn->table('progres_list_penjualan')->where('id', 3)->first();
                 if (!$progresAkad) {
@@ -2143,11 +2157,13 @@ class KomersilDatabaseService
                             'id_bank_kpr' => $bankId,
                             'acc_plafon' => $hargaJual,
                             'tenor' => 15,
+                            'id_notaris' => $notarisId,
                             'tgl_terbit_sp3k' => $k['tgl_booking'],
                             'no_sp3k' => 'SP3K/AVH/' . $k['blok'],
                             'tgl_expired' => Carbon::parse($k['tgl_booking'])->addMonths(6)->toDateString(),
                             'catatan_acc' => 'SP3K Disetujui',
                             'status' => 1,
+                            'lampiran' => '',
                         ]);
                     }
 
