@@ -2002,8 +2002,6 @@ class KomersilDatabaseService
                             'kode_marketing' => 'MKT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $mName), 0, 6)),
                             'nama_marketing' => $mName,
                             'status' => 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
                         ]);
                     } else {
                         $mktId = $mkt->id;
@@ -2035,8 +2033,6 @@ class KomersilDatabaseService
                         'warna' => '#ffff00',
                         'urutan' => 3,
                         'stt_tampil' => 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
                 } else {
                     $conn->table('progres_list_penjualan')->where('id', 3)->update([
@@ -2094,14 +2090,12 @@ class KomersilDatabaseService
                         'total_harga' => $hargaJual,
                         'hrg_jual' => $hargaJual,
                         'stt_arsip' => 0,
-                        'updated_at' => now(),
                     ];
 
                     if ($existingCust) {
                         $conn->table('customer')->where('id', $existingCust->id)->update($custPayload);
                         $custId = $existingCust->id;
                     } else {
-                        $custPayload['created_at'] = now();
                         $custId = $conn->table('customer')->insertGetId($custPayload);
                     }
 
@@ -2162,8 +2156,6 @@ class KomersilDatabaseService
                             'tgl_expired' => Carbon::parse($k['tgl_booking'])->addMonths(6)->toDateString(),
                             'catatan_acc' => 'SP3K Disetujui',
                             'status' => 1,
-                            'created_at' => now(),
-                            'updated_at' => now(),
                         ]);
                     }
 
