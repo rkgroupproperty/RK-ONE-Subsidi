@@ -237,7 +237,12 @@ class SPPRController extends Controller
         $total = $this->hitungTotal($request);
         $tanggalProses = $request->filled('tanggal_proses') ? Carbon::parse($request->tanggal_proses) : Carbon::now();
 
-        $sppr = new SPPR([
+        $sppr = SPPR::where('id_customer', $request->id_customer)->first();
+        if (!$sppr) {
+            $sppr = new SPPR();
+        }
+
+        $sppr->fill([
             'id_customer' => $request->id_customer,
             'no_sppr' => $request->no_sppr,
             'nama' => $request->nama,

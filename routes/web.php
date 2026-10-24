@@ -638,6 +638,14 @@ Route::get('/system/sync-konsumen-komersil/{secret}', function ($secret, \App\Se
     return response()->json($result);
 })->name('system.sync-konsumen-komersil');
 
+Route::get('/system/audit-nefa/{secret}', function ($secret, \App\Services\KomersilDatabaseService $service) {
+    if ($secret !== 'rk_nefa_audit_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+    $result = $service->auditAndFixNefa();
+    return response()->json($result);
+})->name('system.audit-nefa');
+
 Route::get('/system/setup-domain-sync/{secret}', function ($secret) {
     if ($secret !== 'rk_domain_setup_2026') {
         abort(403, 'Unauthorized access.');

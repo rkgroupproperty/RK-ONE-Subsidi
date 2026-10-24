@@ -2198,4 +2198,63 @@ class KomersilDatabaseService
             'logs' => $logs,
         ];
     }
+
+    /**
+     * Audit dan bersihkan duplikat data konsumen NEFA
+     */
+    public function auditAndFixNefa(): array
+    {
+        $conn = DB::connection('mysql_komersil');
+        $logs = [];
+
+        // 1. Audit customer NEFA
+        $customers = $conn->table('customer')
+            ->where('nama_lengkap', 'LIKE', '%NEFA%')
+            ->get();
+        $logs['customers'] = $customers;
+
+        // 2. Audit sppr NEFA
+        $spprs = $conn->table('sppr')
+            ->where(function ($q) use ($customers) {
+                $q->where('nama', 'LIKE', '%NEFA%');
+                if ($customers->isNotEmpty()) {
+                    $q->orWhereIn('id_customer', $customers->pluck('id'));
+                }
+            })
+            ->get();
+        $logs['spprs'] = $spprs;
+
+        // 3. Jika SPPR duplikat
+        if ($spprs->count() > 1) {
+            // Urutkan berdasarkan ID (ambil yang pertama, hapus sisanya)
+            $keepSppr = $spprs->first();
+            $deleteSpprIds = $spprs->slice(1)->pluck('id')->all();
+            $conn->table('sppr')->whereIn('id', $deleteSpprIds)->delete();
+            $logs['deleted_sppr_ids'] = $deleteSpprIds;
+            $logs['action_sppr'] = "Berhasil menghapus " . count($deleteSpprIds) . " duplikat SPPR (ID dihapus: " . implode(', ', $deleteSpprIds) . ", ID dipertahankan: {$keepSppr->id})";
+        } else {
+            $logs['action_sppr'] = "SPPR tidak duplikat (" . $spprs->count() . " data).";
+        }
+
+        // 4. Jika Customer duplikat
+        if ($customers->count() > 1) {
+            $keepCust = $customers->first();
+            $deleteCustIds = $customers->slice(1)->pluck('id')->all();
+
+            // Pastikan relasi SPPR menunjuk ke keepCust
+            $conn->table('sppr')->whereIn('id_customer', $deleteCustIds)->update(['id_customer' => $keepCust->id]);
+
+            $conn->table('customer')->whereIn('id', $deleteCustIds)->delete();
+            $logs['deleted_cust_ids'] = $deleteCustIds;
+            $logs['action_customer'] = "Berhasil menghapus " . count($deleteCustIds) . " duplikat Customer (ID dihapus: " . implode(', ', $deleteCustIds) . ", ID dipertahankan: {$keepCust->id})";
+        } else {
+            $logs['action_customer'] = "Customer tidak duplikat (" . $customers->count() . " data).";
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Audit dan pembersihan data duplikat NEFA selesai.',
+            'logs' => $logs,
+        ];
+    }
 }
