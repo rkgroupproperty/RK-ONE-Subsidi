@@ -27,7 +27,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="row mb-3 p-2 rounded" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.06);">
-                                    <div class="col-md-4 mb-2">
+                                    <div class="col-md-3 mb-2">
                                         <label class="small font-weight-bold mb-1"><i class="fas fa-city mr-1"></i> Filter Proyek / Perumahan:</label>
                                         <select id="filter_lokasi" class="form-control form-control-sm select2-filter">
                                             <option value="">-- Semua Proyek --</option>
@@ -36,7 +36,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4 mb-2">
+                                    <div class="col-md-3 mb-2">
                                         <label class="small font-weight-bold mb-1"><i class="fas fa-user-tie mr-1"></i> Filter Marketing:</label>
                                         <select id="filter_marketing" class="form-control form-control-sm select2-filter">
                                             <option value="">-- Semua Marketing --</option>
@@ -45,7 +45,16 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4 mb-2 d-flex align-items-end">
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-user-shield mr-1 text-primary"></i> Filter Admin:</label>
+                                        <select id="filter_admin" class="form-control form-control-sm select2-filter">
+                                            <option value="">-- Semua Admin --</option>
+                                            @foreach ($adminPemberkasanList as $ap)
+                                                <option value="{{ $ap->id }}">{{ $ap->nama_lengkap }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-2 d-flex align-items-end">
                                         <button type="button" id="btn-reset-filter" class="btn btn-sm btn-secondary btn-block">
                                             <i class="fas fa-undo mr-1"></i> Reset Filter
                                         </button>
@@ -58,9 +67,8 @@
                                             <th>Tanggal</th>
                                             <th>Nama Nasabah</th>
                                             <th>Marketing</th>
+                                            <th>Admin</th>
                                             <th>Perumahan</th>
-                                            <th>Total Biaya</th>
-                                            <th>Cicilan/bln</th>
                                             <th class="text-center">Status</th>
                                             <th width="140px" class="text-center">Action</th>
                                         </tr>
@@ -110,6 +118,14 @@
                                             <option value="{{ $c->id }}">{{ $c->nama_lengkap }} ({{ $c->nik }})</option>
                                         @endforeach
                                     </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <label for="tanggal_proses" class="col-sm-3 col-form-label">Tanggal Proses Admin <span class="text-danger">*</span></label>
+                                <div class="col-sm-4">
+                                    <input type="date" name="tanggal_proses" id="tanggal_proses" class="form-control" value="{{ date('Y-m-d') }}" required>
+                                    <small class="text-muted">Tanggal berkas diserahkan ke admin / diproses admin.</small>
                                 </div>
                             </div>
 
@@ -485,6 +501,7 @@
                     data: function(d) {
                         d.id_lokasi = $('#filter_lokasi').val();
                         d.id_marketing = $('#filter_marketing').val();
+                        d.id_admin_pemberkasan = $('#filter_admin').val();
                     }
                 },
                 columns: [{
@@ -495,7 +512,7 @@
                     className: 'text-center'
                 }, {
                     data: 'tanggal',
-                    name: 'created_at',
+                    name: 'tanggal',
                     searchable: true
                 }, {
                     data: 'customer_nama',
@@ -506,17 +523,13 @@
                     name: 'customer.marketing.nama_marketing',
                     searchable: true
                 }, {
+                    data: 'admin_pemberkasan',
+                    name: 'customer.adminPemberkasan.nama_lengkap',
+                    searchable: true
+                }, {
                     data: 'customer_lokasi',
                     name: 'customer.lokasi.nama_kavling',
                     searchable: true
-                }, {
-                    data: 'total_format',
-                    name: 'total_yang_harus_dibayar',
-                    searchable: false
-                }, {
-                    data: 'cicilan_format',
-                    name: 'cicilan_per_bulan',
-                    searchable: false
                 }, {
                     data: 'status_progres',
                     name: 'status_progres',
@@ -543,15 +556,17 @@
                 var params = [];
                 var lok = $('#filter_lokasi').val();
                 var mkt = $('#filter_marketing').val();
+                var adm = $('#filter_admin').val();
                 if (lok) params.push('id_lokasi=' + encodeURIComponent(lok));
                 if (mkt) params.push('id_marketing=' + encodeURIComponent(mkt));
+                if (adm) params.push('id_admin_pemberkasan=' + encodeURIComponent(adm));
                 if (params.length > 0) {
                     url += '?' + params.join('&');
                 }
                 $('#btn-export-excel').attr('href', url);
             }
 
-            $('#filter_lokasi, #filter_marketing').on('change', function() {
+            $('#filter_lokasi, #filter_marketing, #filter_admin').on('change', function() {
                 table.ajax.reload();
                 updateExportLink();
             });
@@ -559,6 +574,7 @@
             $('#btn-reset-filter').on('click', function() {
                 $('#filter_lokasi').val('').trigger('change');
                 $('#filter_marketing').val('').trigger('change');
+                $('#filter_admin').val('').trigger('change');
             });
         });
 
@@ -596,6 +612,9 @@
                     $('#jumlah_booking_fee').val(formatNumber(d.jumlah_booking_fee) || '');
                     $('#pekerjaan').val(d.pekerjaan || '');
                     $('#agama').val(d.agama || '');
+                    if (d.tanggal_proses) {
+                        $('#tanggal_proses').val(d.tanggal_proses);
+                    }
                     if (!$('#primary_id').val()) {
                         if (d.id_marketing) {
                             $('#id_marketing').val(d.id_marketing).trigger('change');
@@ -654,6 +673,9 @@
                     let d = response.data;
                     $('#primary_id').val(d.id);
                     $('#id_customer').val(d.id_customer).prop('disabled', true);
+                    if (d.tanggal_proses) {
+                        $('#tanggal_proses').val(d.tanggal_proses);
+                    }
                     if (d.customer && d.customer.id_admin_pemberkasan) {
                         $('#id_admin_pemberkasan').val(d.customer.id_admin_pemberkasan).trigger('change');
                     } else {
@@ -713,6 +735,7 @@
             $('.is-invalid').removeClass('is-invalid');
             $('.invalid-feedback').remove();
             $('#primary_id').val('');
+            $('#tanggal_proses').val('{{ date('Y-m-d') }}');
             $('#id_customer').val('').trigger('change').prop('disabled', false);
             $('#no_sppr').val('');
             $('#id_marketing').val('').trigger('change');

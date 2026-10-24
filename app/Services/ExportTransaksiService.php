@@ -174,7 +174,7 @@ class ExportTransaksiService
 
     public function exportSPPR()
     {
-        $query = SPPR::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'marketing'])
+        $query = SPPR::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'customer.adminPemberkasan', 'marketing'])
             ->whereHas('customer', function ($q) {
                 $q->where('stt_arsip', 0)->where('id_status_progres', 10);
                 if (request()->filled('id_lokasi')) {
@@ -183,20 +183,25 @@ class ExportTransaksiService
                 if (request()->filled('id_marketing')) {
                     $q->where('id_marketing', request('id_marketing'));
                 }
+                if (request()->filled('id_admin_pemberkasan')) {
+                    $q->where('id_admin_pemberkasan', request('id_admin_pemberkasan'));
+                }
             })
             ->orderByDesc('id');
 
         $data = $query->get();
 
-        $headers = ['No', 'Tanggal', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Total Biaya', 'Cicilan / Bulan', 'Status Progres'];
+        $headers = ['No', 'Tanggal Proses', 'Nama Nasabah', 'No Telp', 'Marketing', 'Admin Pemberkasan', 'Lokasi / Perumahan', 'Blok / Unit', 'Status Progres'];
         $this->sheet->fromArray($headers, null, 'A1');
 
         $row = 2;
         $no = 1;
         foreach ($data as $item) {
             $customer = $item->customer;
-            $marketing = $customer->marketing->nama_marketing ?? $item->marketing->nama_marketing ?? '-';
-            $tgl = $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') : '-';
+            $marketing = $customer->marketing->nama_marketing ?? $item->marketing->nama_marketing ?? 'Non Marketing';
+            $admin = $customer->adminPemberkasan->nama_lengkap ?? '-';
+            $tglRaw = ($customer && $customer->tanggal_verif) ? $customer->tanggal_verif : $item->created_at;
+            $tgl = $tglRaw ? \Carbon\Carbon::parse($tglRaw)->format('d/m/Y') : '-';
 
             $this->sheet->fromArray([
                 $no++,
@@ -204,10 +209,9 @@ class ExportTransaksiService
                 $item->nama ?? $customer->nama_lengkap ?? '-',
                 $item->no_telp ?? $customer->no_telp ?? '-',
                 $marketing,
+                $admin,
                 $customer->lokasi->nama_kavling ?? '-',
                 ($item->blok ? $item->blok . ' ' . $item->no : ($customer->kavling->kode_kavling ?? '-')),
-                $item->total_yang_harus_dibayar ?? 0,
-                $item->cicilan_per_bulan ?? 0,
                 'Proses Admin',
             ], null, "A{$row}");
             $row++;

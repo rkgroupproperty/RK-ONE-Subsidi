@@ -286,10 +286,10 @@
     gap: 6px;
   }
 
-  /* 5 KPI Metric Cards - Futuristic Cards */
+  /* 4 KPI Metric Cards (Tagihan Jatuh Tempo di-hide) */
   .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
     margin-bottom: 22px;
   }
@@ -1496,7 +1496,8 @@
           </div>
         </article>
 
-        <article class="kpi-card kpi-red">
+        {{-- Card Tagihan Jatuh Tempo di-hide sesuai request user --}}
+        <article class="kpi-card kpi-red" style="display: none !important;">
           <div class="kpi-icon-box red"><i class="fa-solid fa-business-time"></i></div>
           <div class="kpi-info">
             <div class="kpi-title">Tagihan Jatuh Tempo</div>

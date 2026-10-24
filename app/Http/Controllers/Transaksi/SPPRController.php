@@ -26,7 +26,7 @@ class SPPRController extends Controller
         $permissions = HakAksesController::getUserPermissions();
 
         if ($request->ajax()) {
-            $data = SPPR::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'marketing'])
+            $data = SPPR::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'customer.adminPemberkasan', 'marketing'])
                 ->whereHas('customer', function ($q) use ($request) {
                     $q->where('stt_arsip', 0)->where('id_status_progres', 10);
                     if ($request->filled('id_lokasi')) {
@@ -35,13 +35,17 @@ class SPPRController extends Controller
                     if ($request->filled('id_marketing')) {
                         $q->where('id_marketing', $request->id_marketing);
                     }
+                    if ($request->filled('id_admin_pemberkasan')) {
+                        $q->where('id_admin_pemberkasan', $request->id_admin_pemberkasan);
+                    }
                 })
                 ->orderBy('id', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('tanggal', function ($row) {
-                    return $row->created_at ? Carbon::parse($row->created_at)->translatedFormat('d F Y') : '-';
+                    $tgl = ($row->customer && $row->customer->tanggal_verif) ? $row->customer->tanggal_verif : $row->created_at;
+                    return $tgl ? Carbon::parse($tgl)->translatedFormat('d F Y') : '-';
                 })
                 ->addColumn('customer_nama', function ($row) {
                     $nama = '<strong>' . e($row->nama) . '</strong>';
@@ -54,6 +58,13 @@ class SPPRController extends Controller
                     $mkt = $row->customer->marketing->nama_marketing ?? $row->marketing->nama_marketing ?? 'Non Marketing';
                     return '<span class="badge bg-secondary">' . e($mkt) . '</span>';
                 })
+                ->addColumn('admin_pemberkasan', function ($row) {
+                    $admin = $row->customer->adminPemberkasan->nama_lengkap ?? null;
+                    if ($admin) {
+                        return '<span class="badge" style="background-color: #6366f1; color: #ffffff;"><i class="fas fa-user-shield mr-1"></i>' . e($admin) . '</span>';
+                    }
+                    return '<span class="badge bg-light text-muted border">-</span>';
+                })
                 ->addColumn('customer_lokasi', function ($row) {
                     $lokasi = '<strong>' . e($row->customer->lokasi->nama_kavling ?? '-') . '</strong>';
                     $unit = '<br><span class="badge bg-primary text-white">' . e($row->blok . ' ' . $row->no) . '</span>';
@@ -61,12 +72,6 @@ class SPPRController extends Controller
                 })
                 ->addColumn('status_progres', function ($row) {
                     return '<span class="badge" style="background-color: #0891b2; color: #ffffff;">Proses Admin</span>';
-                })
-                ->addColumn('total_format', function ($row) {
-                    return 'Rp ' . number_format($row->total_yang_harus_dibayar, 0, ',', '.');
-                })
-                ->addColumn('cicilan_format', function ($row) {
-                    return 'Rp ' . number_format($row->cicilan_per_bulan, 0, ',', '.');
                 })
                 ->addColumn('action', function ($row) use ($permissions) {
                     $cetakUrl = route('proses-admin.cetak', $row->id);
@@ -89,7 +94,7 @@ class SPPRController extends Controller
                     $btn .= '</div>';
                     return $btn;
                 })
-                ->rawColumns(['action', 'customer_nama', 'marketing', 'customer_lokasi', 'status_progres'])
+                ->rawColumns(['action', 'customer_nama', 'marketing', 'admin_pemberkasan', 'customer_lokasi', 'status_progres'])
                 ->make(true);
         }
 
@@ -144,6 +149,7 @@ class SPPRController extends Controller
                 'data' => [
                     'nama_lengkap' => $customer->nama_lengkap,
                     'id_admin_pemberkasan' => $customer->id_admin_pemberkasan,
+                    'tanggal_proses' => $customer->tanggal_verif ? Carbon::parse($customer->tanggal_verif)->format('Y-m-d') : date('Y-m-d'),
                     'alamat' => $customer->alamat_ktp ?? $customer->alamat_domisili ?? '',
                     'nik' => $customer->nik,
                     'no_telp' => $customer->no_telp,
@@ -171,6 +177,7 @@ class SPPRController extends Controller
         $request->validate([
             'id_customer' => 'required|integer|exists:customer,id',
             'id_admin_pemberkasan' => 'nullable|integer|exists:admin_pemberkasan,id',
+            'tanggal_proses' => 'nullable|date',
             'no_sppr' => 'nullable',
             'nama' => 'required',
             'alamat' => 'required',
@@ -228,8 +235,9 @@ class SPPRController extends Controller
         ]);
 
         $total = $this->hitungTotal($request);
+        $tanggalProses = $request->filled('tanggal_proses') ? Carbon::parse($request->tanggal_proses) : Carbon::now();
 
-        $sppr = SPPR::create([
+        $sppr = new SPPR([
             'id_customer' => $request->id_customer,
             'no_sppr' => $request->no_sppr,
             'nama' => $request->nama,
@@ -272,11 +280,14 @@ class SPPRController extends Controller
             'keterangan_tabungan' => $request->keterangan_tabungan,
             'keterangan_shm' => $request->keterangan_shm,
         ]);
+        $sppr->created_at = $tanggalProses;
+        $sppr->save();
 
         $this->logCreate('Proses Admin', $sppr->id);
 
         $customerUpdate = [
             'id_status_progres' => 10,
+            'tanggal_verif' => $tanggalProses->format('Y-m-d'),
         ];
         if ($request->filled('id_admin_pemberkasan')) {
             $customerUpdate['id_admin_pemberkasan'] = $request->id_admin_pemberkasan;
@@ -289,10 +300,15 @@ class SPPRController extends Controller
     public function edit($id)
     {
         $sppr = SPPR::with('customer')->findOrFail($id);
+        $data = $sppr->toArray();
+        $data['tanggal_proses'] = ($sppr->customer && $sppr->customer->tanggal_verif)
+            ? Carbon::parse($sppr->customer->tanggal_verif)->format('Y-m-d')
+            : ($sppr->created_at ? Carbon::parse($sppr->created_at)->format('Y-m-d') : date('Y-m-d'));
+        $data['id_admin_pemberkasan'] = $sppr->customer->id_admin_pemberkasan ?? null;
 
         return response()->json([
             'status' => 'success',
-            'data' => $sppr,
+            'data' => $data,
         ]);
     }
 
@@ -303,6 +319,7 @@ class SPPRController extends Controller
         $request->validate([
             'id_customer' => 'required|integer|exists:customer,id',
             'id_admin_pemberkasan' => 'nullable|integer|exists:admin_pemberkasan,id',
+            'tanggal_proses' => 'nullable|date',
             'no_sppr' => 'nullable',
             'nama' => 'required',
             'alamat' => 'required',
@@ -390,14 +407,24 @@ class SPPRController extends Controller
             'keterangan_shm' => $request->keterangan_shm,
         ]);
 
+        if ($request->filled('tanggal_proses')) {
+            $sppr->created_at = Carbon::parse($request->tanggal_proses);
+            $sppr->save();
+        }
+
         $this->logEdit('Proses Admin', $sppr->id);
 
-        if ($request->filled('id_admin_pemberkasan')) {
-            $custId = $sppr->id_customer ?? $request->id_customer;
-            if ($custId) {
-                Customer::where('id', $custId)->update([
-                    'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
-                ]);
+        $custId = $sppr->id_customer ?? $request->id_customer;
+        if ($custId) {
+            $custUpd = [];
+            if ($request->filled('id_admin_pemberkasan')) {
+                $custUpd['id_admin_pemberkasan'] = $request->id_admin_pemberkasan;
+            }
+            if ($request->filled('tanggal_proses')) {
+                $custUpd['tanggal_verif'] = Carbon::parse($request->tanggal_proses)->format('Y-m-d');
+            }
+            if (!empty($custUpd)) {
+                Customer::where('id', $custId)->update($custUpd);
             }
         }
 
