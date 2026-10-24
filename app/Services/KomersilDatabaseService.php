@@ -1904,13 +1904,6 @@ class KomersilDatabaseService
     {
         $logs = [];
         $targetConnections = ['mysql_komersil'];
-        
-        // Cek juga jika mysql_subsidi memiliki lokasi komersil
-        try {
-            if (DB::connection('mysql_subsidi')->table('lokasi_kavling')->where('id', 2)->exists()) {
-                $targetConnections[] = 'mysql_subsidi';
-            }
-        } catch (\Throwable $e) {}
 
         $konsumens = [
             [
@@ -2103,7 +2096,6 @@ class KomersilDatabaseService
                     if ($kavlingId) {
                         $conn->table('kavling_peta')->where('id', $kavlingId)->update([
                             'id_customer' => $custId,
-                            'id_status_progres' => 3, // Akad
                             'status' => 2, // Terjual / Akad
                         ]);
                     }
