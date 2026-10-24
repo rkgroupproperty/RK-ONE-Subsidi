@@ -122,8 +122,16 @@ class BerandaController extends Controller
         $tagihanTempoCust = \App\Models\CustomerTempo::count();
         $tagihanTempoTotal = (int) \App\Models\CustomerTempo::sum('total_harga');
 
+        $isKomersil = session('app_type') === 'komersil';
+        $lokasiQuery = LokasiKavling::whereIn('stt_tampil', [1, 3]);
+        if ($isKomersil) {
+            $lokasiQuery->whereIn('id', [1, 2]);
+        } else {
+            $lokasiQuery->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills']);
+        }
+
         $summaryMetrics = [
-            'jumlah_project' => LokasiKavling::whereIn('stt_tampil', [1, 3])->count(),
+            'jumlah_project' => (clone $lokasiQuery)->count(),
             'total_unit' => $totalUnit,
             'unit_terjual' => $unitTerjual,
             'unit_ready' => $unitReady,
@@ -141,7 +149,7 @@ class BerandaController extends Controller
             'tagihan_tempo_total' => $tagihanTempoTotal,
         ];
 
-        $projectStats = LokasiKavling::whereIn('stt_tampil', [1, 3])
+        $projectStats = (clone $lokasiQuery)
             ->orderBy('urutan')
             ->orderBy('id')
             ->get()
@@ -194,9 +202,36 @@ class BerandaController extends Controller
             'terjual' => $projectStats->sum('terjual'),
         ];
 
-        $marketingStats = MarketingOffline::where('status', 1)
+        // Marketing Stats: aktif saja, hitung perbulan (default) dan semua waktu
+        $startBulanIni = $now->copy()->startOfMonth();
+        $endBulanIni = $now->copy()->endOfMonth();
+
+        $activeMarketings = MarketingOffline::where('status', 1)
             ->orderBy('nama_marketing')
-            ->get()
+            ->get();
+
+        $marketingStatsBulan = $activeMarketings
+            ->map(function (MarketingOffline $marketing) use ($startBulanIni, $endBulanIni) {
+                $count = Customer::where('id_marketing', $marketing->id)
+                    ->where('stt_arsip', 0)
+                    ->where(function ($q) use ($startBulanIni, $endBulanIni) {
+                        $q->whereBetween('tanggal_verif', [$startBulanIni, $endBulanIni])
+                          ->orWhere(fn($sq) => $sq->whereNull('tanggal_verif')->whereBetween('created_at', [$startBulanIni, $endBulanIni]));
+                    })
+                    ->count();
+
+                return [
+                    'id' => $marketing->id,
+                    'nama' => $marketing->nama_marketing,
+                    'kode' => $marketing->kode_marketing,
+                    'inisial' => mb_substr($marketing->nama_marketing, 0, 1),
+                    'jumlah' => $count,
+                ];
+            })
+            ->sortByDesc('jumlah')
+            ->values();
+
+        $marketingStatsAll = $activeMarketings
             ->map(function (MarketingOffline $marketing) {
                 return [
                     'id' => $marketing->id,
@@ -210,6 +245,8 @@ class BerandaController extends Controller
             })
             ->sortByDesc('jumlah')
             ->values();
+
+        $marketingStats = $marketingStatsBulan; // Default perbulan
 
         $bankStats = BankKPR::orderBy('nama')
             ->get()
@@ -317,6 +354,8 @@ class BerandaController extends Controller
             'projectStats',
             'projectTotals',
             'marketingStats',
+            'marketingStatsBulan',
+            'marketingStatsAll',
             'bankStats',
             'availableYears',
             'availableMonths',
@@ -625,7 +664,14 @@ class BerandaController extends Controller
 
     private function getProjectResumes()
     {
-        $lokasis = LokasiKavling::where('stt_tampil', 1)->orderBy('urutan', 'asc')->get();
+        $isKomersil = session('app_type') === 'komersil';
+        $query = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('urutan', 'asc')->orderBy('id', 'asc');
+        if ($isKomersil) {
+            $query->whereIn('id', [1, 2]);
+        } else {
+            $query->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills']);
+        }
+        $lokasis = $query->get();
 
         $resumes = [];
         $totalAllUnits = 0;
@@ -878,6 +924,64 @@ class BerandaController extends Controller
         $data = Customer::with(['marketing', 'lokasi', 'kavling', 'progres'])
             ->where('stt_arsip', 0)
             ->where('id_admin_pemberkasan', $id);
+
+        return DataTables::of($data)
+            ->addIndexColumn()
+            ->editColumn('tgl_terima', function ($row) {
+                $tgl = $row->tanggal_verif ? Carbon::parse($row->tanggal_verif)->translatedFormat('d F Y') : '-';
+                $kode = $row->kode_customer ? '<strong>' . $row->kode_customer . '</strong>' : '';
+                $jenisPembelian = $row->jenis_pembelian
+                    ? '<div><small><strong>' . strtoupper($row->jenis_pembelian) . '</strong></small></div>'
+                    : '';
+                return "$tgl<br>$kode<br>$jenisPembelian";
+            })
+            ->editColumn('id_marketing', function ($row) {
+                return $row->marketing->nama_marketing ?? '-';
+            })
+            ->editColumn('id_lokasi', function ($row) {
+                $namaLokasi = $row->lokasi->nama_kavling ?? '-';
+                $kodeKavling = $row->kavling->kode_kavling ?? '-';
+                return '<strong>' . $namaLokasi . '</strong><br> ' . $kodeKavling;
+            })
+            ->editColumn('id_status_progres', function ($row) {
+                $status = $row->progres->status_progres ?? '-';
+                $badgeColors = [
+                    'BOOKING FEE' => 'warning',
+                    'PROSES BANK' => 'secondary',
+                    'SP3K' => 'success',
+                    'AKAD' => 'info',
+                    'SERAH TERIMA' => 'dark',
+                ];
+                if (array_key_exists($status, $badgeColors)) {
+                    return '<span class="badge bg-' . $badgeColors[$status] . '">' . $status . '</span>';
+                }
+                return $status;
+            })
+            ->editColumn('nama_lengkap', function ($row) {
+                $nama = '<strong>' . $row->nama_lengkap . '</strong>';
+                $wa = $row->no_telp ?? '-';
+                $ktp = $row->nik ? '<span class="badge bg-info">NIK: ' . $row->nik . '</span>' : '';
+                return "$nama<br>$wa<br>$ktp";
+            })
+            ->rawColumns(['tgl_terima', 'id_marketing', 'id_lokasi', 'id_status_progres', 'nama_lengkap'])
+            ->make(true);
+    }
+
+    public function detailCustomerBank($id)
+    {
+        $bank = BankKPR::findOrFail($id);
+        return view('admin.beranda.detail_customer_bank', compact('bank'));
+    }
+
+    public function detailCustomerBankData(Request $request, $id)
+    {
+        $data = Customer::with(['marketing', 'lokasi', 'kavling', 'progres', 'bank'])
+            ->where('stt_arsip', 0)
+            ->where(function ($q) use ($id) {
+                $q->where('id_bank_kpr', $id)
+                  ->orWhereHas('wawancara', fn ($wq) => $wq->where('id_bank_kpr', $id))
+                  ->orWhereHas('wawancara.wawancaraSp3k', fn ($sq) => $sq->where('id_bank_kpr', $id));
+            });
 
         return DataTables::of($data)
             ->addIndexColumn()

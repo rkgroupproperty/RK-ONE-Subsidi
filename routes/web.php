@@ -174,6 +174,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('admin/detail-grafik-penjualan-bulanan/data', [BerandaController::class, 'detailGrafikData'])->name('beranda.detail-grafik.data');
     Route::get('admin/detail-customer-marketing/{id}', [BerandaController::class, 'detailCustomerMarketing'])->name('beranda.detail-customer-marketing');
     Route::get('admin/detail-customer-marketing/{id}/data', [BerandaController::class, 'detailCustomerMarketingData'])->name('beranda.detail-customer-marketing.data');
+    Route::get('admin/detail-customer-bank/{id}', [BerandaController::class, 'detailCustomerBank'])->name('beranda.detail-customer-bank');
+    Route::get('admin/detail-customer-bank/{id}/data', [BerandaController::class, 'detailCustomerBankData'])->name('beranda.detail-customer-bank.data');
     Route::get('admin/detail-customer-admin-pemberkasan/{id}', [BerandaController::class, 'detailCustomerAdminPemberkasan'])->name('beranda.detail-customer-admin-pemberkasan');
     Route::get('admin/detail-customer-admin-pemberkasan/{id}/data', [BerandaController::class, 'detailCustomerAdminPemberkasanData'])->name('beranda.detail-customer-admin-pemberkasan.data');
     Route::get('admin/sync-excel-data', [SyncExcelController::class, 'index'])->name('admin.sync-excel');

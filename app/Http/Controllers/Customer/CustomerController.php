@@ -53,6 +53,14 @@ class CustomerController extends Controller
             if ($request->filled('id_marketing')) {
                 $data->where('id_marketing', $request->id_marketing);
             }
+            if ($request->filled('id_bank_kpr')) {
+                $data->where('id_bank_kpr', $request->id_bank_kpr);
+            } elseif ($request->filled('id_bank')) {
+                $data->where(function($q) use ($request) {
+                    $q->where('id_bank_kpr', $request->id_bank)
+                      ->orWhere('id_bank', $request->id_bank);
+                });
+            }
 
             return DataTables::of($data)
                 ->addIndexColumn()

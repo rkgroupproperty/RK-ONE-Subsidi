@@ -844,6 +844,8 @@
   .bank-item-row:hover {
     background: #ffffff;
     border-color: #cbd5e1;
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   }
 
   /* Table Sumber Matrix (YoY 2026 vs 2025) */
@@ -1515,49 +1517,42 @@
 
           <div class="pipeline-track">
             <article class="pipeline-node p-booking">
-              <span class="pipeline-step-badge">Tahap 01</span>
               <h3>Booking</h3>
               <div class="count-display">{{ $pipelineCounts['booking'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('pengajuan-hold.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-marketing">
-              <span class="pipeline-step-badge">Tahap 02</span>
               <h3>Pemberkasan Marketing</h3>
               <div class="count-display">{{ $pipelineCounts['marketing'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 11]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-admin">
-              <span class="pipeline-step-badge">Tahap 03</span>
               <h3>Proses Admin</h3>
               <div class="count-display">{{ $pipelineCounts['sppr'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 10]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-bank">
-              <span class="pipeline-step-badge">Tahap 04</span>
               <h3>Proses Bank</h3>
               <div class="count-display">{{ $pipelineCounts['wawancara'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 7]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-sp3k">
-              <span class="pipeline-step-badge">Tahap 05</span>
               <h3>SP3K Terbit</h3>
               <div class="count-display">{{ $pipelineCounts['acc_bank'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 4]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-ppjb">
-              <span class="pipeline-step-badge">Tahap 06</span>
               <h3>PPJB</h3>
               <div class="count-display">{{ $pipelineCounts['ppjb'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('ppjb.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-akad">
-              <span class="pipeline-step-badge">Tahap 07</span>
               <h3>Akad Kredit</h3>
               <div class="count-display">{{ $pipelineCounts['akad'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('customer.index', ['id_status_progres' => 3]) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
@@ -1792,20 +1787,48 @@
         <!-- Leaderboard Marketing -->
         <article class="panel" style="margin-bottom:0">
           <div class="panel-body">
-            <div class="section-head">
+            <div class="section-head" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
               <h2><i class="fa-solid fa-trophy text-warning"></i> Penjualan Marketing</h2>
+              <div class="btn-group btn-group-sm" role="group" style="background:#f1f5f9;padding:2px;border-radius:8px">
+                <button type="button" class="btn btn-sm font-weight-bold btn-primary" id="btnMktBulan" onclick="switchMarketingFilter('bulan')" style="border-radius:6px;font-size:11px;padding:4px 10px">
+                  Bulan Ini
+                </button>
+                <button type="button" class="btn btn-sm font-weight-bold btn-light" id="btnMktSemua" onclick="switchMarketingFilter('semua')" style="border-radius:6px;font-size:11px;padding:4px 10px;color:#64748b">
+                  Semua
+                </button>
+              </div>
             </div>
 
-            <div class="marketing-list">
-              @forelse ($marketingStats as $index => $marketing)
+            <!-- List Bulan Ini (Default) -->
+            <div class="marketing-list" id="mktListBulan">
+              @forelse ($marketingStatsBulan ?? $marketingStats as $index => $marketing)
                 <a href="{{ route('beranda.detail-customer-marketing', $marketing['id']) }}" class="marketing-item">
                   <span class="rank-badge {{ $index == 0 ? 'top-1' : ($index == 1 ? 'top-2' : ($index == 2 ? 'top-3' : '')) }}">{{ $index + 1 }}</span>
                   <span class="user-avatar-initials">{{ $marketing['inisial'] }}</span>
                   <div style="flex:1;min-width:0">
                     <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:2px">{{ $marketing['nama'] }}</div>
-                    <div style="color:#64748b;font-size:11px">{{ $marketing['kode'] }} · Marketing</div>
+                    <div style="color:#64748b;font-size:11px">{{ $marketing['kode'] }} · Marketing Aktif</div>
                   </div>
                   <div style="color:#2563eb;font-weight:900;font-size:13px;background:rgba(37,99,235,0.08);padding:4px 10px;border-radius:8px">
+                    {{ $marketing['jumlah'] }} Unit
+                  </div>
+                </a>
+              @empty
+                <div class="text-muted text-center py-4">Belum ada penjualan marketing bulan ini.</div>
+              @endforelse
+            </div>
+
+            <!-- List Semua Waktu -->
+            <div class="marketing-list" id="mktListSemua" style="display:none;">
+              @forelse ($marketingStatsAll ?? $marketingStats as $index => $marketing)
+                <a href="{{ route('beranda.detail-customer-marketing', $marketing['id']) }}" class="marketing-item">
+                  <span class="rank-badge {{ $index == 0 ? 'top-1' : ($index == 1 ? 'top-2' : ($index == 2 ? 'top-3' : '')) }}">{{ $index + 1 }}</span>
+                  <span class="user-avatar-initials">{{ $marketing['inisial'] }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:2px">{{ $marketing['nama'] }}</div>
+                    <div style="color:#64748b;font-size:11px">{{ $marketing['kode'] }} · Marketing Aktif</div>
+                  </div>
+                  <div style="color:#10b981;font-weight:900;font-size:13px;background:rgba(16,185,129,0.08);padding:4px 10px;border-radius:8px">
                     {{ $marketing['jumlah'] }} Unit
                   </div>
                 </a>
@@ -1820,23 +1843,27 @@
       <!-- STATISTIK PENGGUNAAN BANK -->
       <section class="panel">
         <div class="panel-body">
-          <div class="section-head">
+          <div class="section-head" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
             <h2><i class="fa-solid fa-building-columns text-primary"></i> Statistik Penggunaan Bank</h2>
+            <span style="font-size:11.5px;color:#64748b"><i class="fa-solid fa-mouse-pointer mr-1 text-primary"></i> Klik nama bank untuk melihat data konsumen</span>
           </div>
 
-          <div class="bank-list" style="max-height:260px">
+          <div class="bank-list" style="max-height:280px">
             @forelse ($bankStats as $index => $bank)
-              <div class="bank-item-row">
+              <a href="{{ route('beranda.detail-customer-bank', $bank['id']) }}" class="bank-item-row" style="text-decoration:none !important;color:inherit;cursor:pointer;">
                 <span class="rank-badge">{{ $index + 1 }}</span>
                 <div style="min-width:0">
-                  <div style="font-size:13px;font-weight:800;color:#0f172a">{{ $bank['nama'] }}</div>
-                  <div style="color:#64748b;font-size:11px">Bank Penyalur KPR</div>
+                  <div style="font-size:13.5px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:6px">
+                    <span>{{ $bank['nama'] }}</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-primary" style="font-size:11px;opacity:0.7"></i>
+                  </div>
+                  <div style="color:#64748b;font-size:11px">Bank Penyalur KPR &middot; <span class="text-primary font-weight-bold">Buka Daftar Konsumen &rarr;</span></div>
                 </div>
                 <div style="color:#0f172a;font-weight:800;font-size:13px;text-align:right">{{ $bank['jumlah'] }} Nasabah</div>
                 <div style="text-align:right">
                   <span class="badge badge-light px-2 py-1 font-weight-bold" style="font-size:11px;border:1px solid #cbd5e1;border-radius:6px">{{ $bank['persentase'] }}%</span>
                 </div>
-              </div>
+              </a>
             @empty
               <div class="text-muted text-center py-4">Belum ada penggunaan bank.</div>
             @endforelse
@@ -2339,6 +2366,19 @@
                 }
             }
         });
+    }
+    function switchMarketingFilter(mode) {
+        if (mode === 'bulan') {
+            $('#mktListBulan').fadeIn(150);
+            $('#mktListSemua').hide();
+            $('#btnMktBulan').removeClass('btn-light').addClass('btn-primary active').css('color', '#fff');
+            $('#btnMktSemua').removeClass('btn-primary active').addClass('btn-light').css('color', '#64748b');
+        } else {
+            $('#mktListBulan').hide();
+            $('#mktListSemua').fadeIn(150);
+            $('#btnMktSemua').removeClass('btn-light').addClass('btn-primary active').css('color', '#fff');
+            $('#btnMktBulan').removeClass('btn-primary active').addClass('btn-light').css('color', '#64748b');
+        }
     }
 </script>
 @endpush
