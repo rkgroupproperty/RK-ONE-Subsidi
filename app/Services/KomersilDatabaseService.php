@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 use Exception;
 
 class KomersilDatabaseService
@@ -1894,5 +1895,306 @@ class KomersilDatabaseService
         }
 
         return $results;
+    }
+
+    /**
+     * Sinkronisasi data konsumen komersil Avana Hills yang sudah Akad Kredit
+     */
+    public function syncKonsumenAkadKomersil(): array
+    {
+        $logs = [];
+        $targetConnections = ['mysql_komersil'];
+        
+        // Cek juga jika mysql_subsidi memiliki lokasi komersil
+        try {
+            if (DB::connection('mysql_subsidi')->table('lokasi_kavling')->where('id', 2)->exists()) {
+                $targetConnections[] = 'mysql_subsidi';
+            }
+        } catch (\Throwable $e) {}
+
+        $konsumens = [
+            [
+                'nama' => 'Primanda',
+                'blok' => 'B5',
+                'tipe' => '97/96',
+                'tgl_booking' => '2025-08-25',
+                'marketing' => 'Kantor',
+                'cara_bayar' => 'KPR',
+                'bank' => 'BRI',
+            ],
+            [
+                'nama' => 'Veni Apri',
+                'blok' => 'A1',
+                'tipe' => '125/128',
+                'tgl_booking' => '2025-09-30',
+                'marketing' => 'Adit',
+                'cara_bayar' => 'KPR',
+                'bank' => 'BRI',
+            ],
+            [
+                'nama' => 'Heni Hafiza',
+                'blok' => 'B18',
+                'tipe' => '76/96',
+                'tgl_booking' => '2025-12-27',
+                'marketing' => 'Jody',
+                'cara_bayar' => 'KPR',
+                'bank' => 'BNI',
+            ],
+            [
+                'nama' => 'Rian Mitra',
+                'blok' => 'B4',
+                'tipe' => '125',
+                'tgl_booking' => '2026-01-20',
+                'marketing' => 'Ilham',
+                'cara_bayar' => 'KPR',
+                'bank' => 'BRI',
+            ],
+            [
+                'nama' => 'Esi esanti',
+                'blok' => 'A2',
+                'tipe' => '125',
+                'tgl_booking' => '2026-02-07',
+                'marketing' => 'Jody',
+                'cara_bayar' => 'Cash Bertahap',
+                'bank' => null,
+            ],
+            [
+                'nama' => 'Linggar',
+                'blok' => 'B2',
+                'tipe' => '125',
+                'tgl_booking' => '2026-03-29',
+                'marketing' => 'Nico',
+                'cara_bayar' => 'KPR',
+                'bank' => 'BRI',
+            ],
+            [
+                'nama' => 'Athika',
+                'blok' => 'B3',
+                'tipe' => '125',
+                'tgl_booking' => '2026-09-11',
+                'marketing' => 'Ilham',
+                'cara_bayar' => 'Cash Bertahap',
+                'bank' => null,
+            ],
+            [
+                'nama' => 'Faisal Irawan',
+                'blok' => 'A3',
+                'tipe' => '125',
+                'tgl_booking' => '2026-06-28',
+                'marketing' => 'Adit',
+                'cara_bayar' => 'KPR',
+                'bank' => 'BRI',
+            ],
+        ];
+
+        foreach ($targetConnections as $connName) {
+            try {
+                $conn = DB::connection($connName);
+                $logs[] = "Menghubungkan ke database [{$connName}]...";
+
+                // 1. Marketing
+                $marketingNames = ['Kantor', 'Adit', 'Jody', 'Ilham', 'Nico'];
+                $marketingMap = [];
+                foreach ($marketingNames as $mName) {
+                    $mkt = $conn->table('marketing_offline')->where('nama_marketing', $mName)->first();
+                    if (!$mkt) {
+                        $mktId = $conn->table('marketing_offline')->insertGetId([
+                            'kode_marketing' => 'MKT-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $mName), 0, 6)),
+                            'nama_marketing' => $mName,
+                            'status' => 1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    } else {
+                        $mktId = $mkt->id;
+                    }
+                    $marketingMap[$mName] = $mktId;
+                }
+                $logs[] = "Data Marketing dipetakan: " . json_encode($marketingMap);
+
+                // 2. Bank
+                $bankNames = ['BRI', 'BNI'];
+                $bankMap = [];
+                foreach ($bankNames as $bName) {
+                    $b = $conn->table('bank_kpr')->where('nama', $bName)->first();
+                    if (!$b) {
+                        $bId = $conn->table('bank_kpr')->insertGetId(['nama' => $bName]);
+                    } else {
+                        $bId = $b->id;
+                    }
+                    $bankMap[$bName] = $bId;
+                }
+                $logs[] = "Data Bank KPR dipetakan: " . json_encode($bankMap);
+
+                // 3. Progres List Penjualan - Pastikan Akad (ID 3) ada
+                $progresAkad = $conn->table('progres_list_penjualan')->where('id', 3)->first();
+                if (!$progresAkad) {
+                    $conn->table('progres_list_penjualan')->insert([
+                        'id' => 3,
+                        'status_progres' => 'Akad',
+                        'warna' => '#ffff00',
+                        'urutan' => 3,
+                        'stt_tampil' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $conn->table('progres_list_penjualan')->where('id', 3)->update([
+                        'status_progres' => 'Akad',
+                        'warna' => '#ffff00',
+                        'stt_tampil' => 1,
+                    ]);
+                }
+
+                // 4. Jadwal Akad di tabel akad
+                $akad = $conn->table('akad')->where('keterangan', 'LIKE', '%Avana Hills%')->first();
+                if (!$akad) {
+                    $akadId = $conn->table('akad')->insertGetId([
+                        'tgl_akad' => '2026-10-24',
+                        'keterangan' => 'Akad Kredit Avana Hills',
+                    ]);
+                } else {
+                    $akadId = $akad->id;
+                }
+
+                // 5. Masukkan / Update masing-masing konsumen
+                $syncedCount = 0;
+                foreach ($konsumens as $k) {
+                    $kavling = $conn->table('kavling_peta')
+                        ->where('id_lokasi', 2)
+                        ->where('kode_kavling', $k['blok'])
+                        ->first();
+
+                    $mktId = $marketingMap[$k['marketing']] ?? null;
+                    $bankId = $k['bank'] ? ($bankMap[$k['bank']] ?? null) : null;
+                    $kavlingId = $kavling ? $kavling->id : null;
+                    $hargaJual = $kavling ? ($kavling->hrg_jual ?: 1250000000) : 1250000000;
+
+                    $existingCust = $conn->table('customer')
+                        ->where('id_lokasi', 2)
+                        ->where(function ($q) use ($k, $kavlingId) {
+                            $q->where('nama_lengkap', $k['nama']);
+                            if ($kavlingId) {
+                                $q->orWhere('id_kavling', $kavlingId);
+                            }
+                        })
+                        ->first();
+
+                    $custPayload = [
+                        'kode_customer' => 'CUST-AVH-' . $k['blok'],
+                        'nama_lengkap' => $k['nama'],
+                        'id_lokasi' => 2,
+                        'id_kavling' => $kavlingId,
+                        'id_marketing' => $mktId,
+                        'id_bank_kpr' => $bankId,
+                        'jenis_pembelian' => $k['cara_bayar'],
+                        'sumber_prospek' => 'Marketing ' . $k['marketing'],
+                        'id_status_progres' => 3, // Akad
+                        'tanggal_verif' => $k['tgl_booking'],
+                        'total_harga' => $hargaJual,
+                        'hrg_jual' => $hargaJual,
+                        'stt_arsip' => 0,
+                        'updated_at' => now(),
+                    ];
+
+                    if ($existingCust) {
+                        $conn->table('customer')->where('id', $existingCust->id)->update($custPayload);
+                        $custId = $existingCust->id;
+                    } else {
+                        $custPayload['created_at'] = now();
+                        $custId = $conn->table('customer')->insertGetId($custPayload);
+                    }
+
+                    // Update kavling_peta
+                    if ($kavlingId) {
+                        $conn->table('kavling_peta')->where('id', $kavlingId)->update([
+                            'id_customer' => $custId,
+                            'id_status_progres' => 3, // Akad
+                            'status' => 2, // Terjual / Akad
+                        ]);
+                    }
+
+                    // Update persyaratan_legal
+                    $conn->table('persyaratan_legal')->updateOrInsert(
+                        ['id_customer' => $custId],
+                        [
+                            'IPH' => 1,
+                            'SHGB' => 1,
+                            'SSP' => 1,
+                            'BPHTB' => 1,
+                            'SIKUMBANG' => 1,
+                            'DAFTAR_SIKASEP' => 1,
+                            'FOTO_SIKASEP' => 1,
+                            'TRILOGI' => 1,
+                        ]
+                    );
+                    $persyaratan = $conn->table('persyaratan_legal')->where('id_customer', $custId)->first();
+                    $persyaratanId = $persyaratan ? $persyaratan->id : null;
+
+                    // Update wawancara
+                    $wawancara = $conn->table('wawancara')->where('id_customer', $custId)->first();
+                    if (!$wawancara) {
+                        $wawancaraId = $conn->table('wawancara')->insertGetId([
+                            'tgl_wawancara' => $k['tgl_booking'],
+                            'id_customer' => $custId,
+                            'catatan_wawancara' => 'Wawancara Selesai',
+                            'status' => 1,
+                            'id_bank_kpr' => $bankId,
+                        ]);
+                    } else {
+                        $wawancaraId = $wawancara->id;
+                        $conn->table('wawancara')->where('id', $wawancaraId)->update([
+                            'status' => 1,
+                            'id_bank_kpr' => $bankId,
+                        ]);
+                    }
+
+                    // Update wawancara_sp3k
+                    $sp3k = $conn->table('wawancara_sp3k')->where('id_wawancara', $wawancaraId)->first();
+                    if (!$sp3k) {
+                        $conn->table('wawancara_sp3k')->insert([
+                            'id_wawancara' => $wawancaraId,
+                            'id_bank_kpr' => $bankId,
+                            'acc_plafon' => $hargaJual,
+                            'tenor' => 15,
+                            'tgl_terbit_sp3k' => $k['tgl_booking'],
+                            'no_sp3k' => 'SP3K/AVH/' . $k['blok'],
+                            'tgl_expired' => Carbon::parse($k['tgl_booking'])->addMonths(6)->toDateString(),
+                            'catatan_acc' => 'SP3K Disetujui',
+                            'status' => 1,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    // Update detail_akad
+                    $conn->table('detail_akad')->updateOrInsert(
+                        [
+                            'id_akad' => $akadId,
+                            'id_customer' => $custId,
+                        ],
+                        [
+                            'id_persyaratan' => $persyaratanId,
+                            'status' => 2, // Hadir (Selesai Akad)
+                            'jenis_akad' => 'Akad Kredit',
+                            'keterangan' => 'Akad Kredit Selesai',
+                        ]
+                    );
+
+                    $syncedCount++;
+                    $logs[] = "Konsumen [{$k['nama']}] (Blok {$k['blok']}) berhasil diset Akad Kredit (ID Customer: {$custId}).";
+                }
+
+                $logs[] = "Database [{$connName}]: Berhasil mensinkronkan {$syncedCount} konsumen Akad Kredit.";
+            } catch (\Exception $e) {
+                $logs[] = "Error pada [{$connName}]: " . $e->getMessage();
+            }
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Berhasil memproses 8 data konsumen Avana Hills menjadi status Akad Kredit!',
+            'logs' => $logs,
+        ];
     }
 }
