@@ -78,6 +78,37 @@
             cursor: grab;
             transition: transform 0.1s ease-out;
         }
+
+        polygon.kavling-poly, path.kavling-poly, .svg-container svg polygon, .svg-container svg path {
+            transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease, fill-opacity 0.2s ease;
+            vector-effect: non-scaling-stroke;
+            fill-opacity: 0.52 !important;
+            mix-blend-mode: multiply !important;
+            stroke: rgba(0, 0, 0, 0.45) !important;
+            stroke-width: 1px !important;
+            cursor: pointer !important;
+        }
+        .svg-container svg polygon[style*="#ffffff"],
+        .svg-container svg polygon[style*="#FFFFFF"],
+        .svg-container svg polygon[style*="fill:#ffffff"],
+        .svg-container svg polygon[style*="fill: #ffffff"],
+        .svg-container svg path[style*="#ffffff"],
+        .svg-container svg path[style*="#FFFFFF"],
+        .svg-container svg path[style*="fill:#ffffff"],
+        .svg-container svg path[style*="fill: #ffffff"] {
+            fill: transparent !important;
+            fill-opacity: 0 !important;
+            stroke: rgba(37, 99, 235, 0.35) !important;
+            stroke-width: 1px !important;
+            mix-blend-mode: normal !important;
+        }
+        polygon.kavling-poly:hover, path.kavling-poly:hover, .svg-container svg polygon:hover, .svg-container svg path:hover {
+            fill-opacity: 0.25 !important;
+            stroke: #1d4ed8 !important;
+            stroke-width: 2.5px !important;
+            filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.7));
+            cursor: pointer !important;
+        }
     </style>
 
     <div class="content-wrapper">

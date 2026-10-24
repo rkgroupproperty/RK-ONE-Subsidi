@@ -983,282 +983,186 @@
   }
 
   /* ========================================================
-     LUXURY COMMERCIAL DASHBOARD THEME (PORTAL KOMERSIL)
+     PREMIUM SOFT-BRIGHT THEME (PORTAL KOMERSIL)
+     Cerah, Soft, Bersih, dan Sangat Jelas
      ======================================================== */
   .portal-komersil-luxury {
-    background: radial-gradient(circle at 10% 8%, rgba(212, 175, 55, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 90% 92%, rgba(2, 132, 199, 0.10) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.6) 0%, transparent 75%),
-                #090d16 !important;
-    color: #f1f5f9 !important;
+    background: radial-gradient(circle at 10% 8%, rgba(2, 132, 199, 0.05) 0%, transparent 45%),
+                radial-gradient(circle at 90% 92%, rgba(217, 119, 6, 0.04) 0%, transparent 45%),
+                linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    color: #1e293b !important;
   }
 
   .portal-komersil-luxury .topbar .greeting-badge {
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.18), rgba(245, 158, 11, 0.28)) !important;
-    border: 1px solid rgba(245, 158, 11, 0.45) !important;
-    color: #fbbf24 !important;
+    background: linear-gradient(135deg, #fef3c7, #fef9c3) !important;
+    border: 1px solid #fde68a !important;
+    color: #b45309 !important;
     font-weight: 800 !important;
     letter-spacing: 0.08em !important;
-    box-shadow: 0 0 15px rgba(245, 158, 11, 0.2) !important;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.12) !important;
   }
 
   .portal-komersil-luxury .topbar h1 {
-    color: #ffffff !important;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    color: #0f172a !important;
+    text-shadow: none !important;
   }
 
   .portal-komersil-luxury .topbar p {
-    color: #94a3b8 !important;
+    color: #64748b !important;
   }
 
-  /* Luxury Commercial Featured Projects Hero Grid */
-  .komersil-hero-showcase {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    margin-bottom: 24px;
-  }
-
-  .komersil-project-card {
-    background: linear-gradient(145deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.98));
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    border-radius: 20px;
-    padding: 24px 26px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.65), 0 0 25px rgba(212, 175, 55, 0.08);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .komersil-project-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #d97706, #fbbf24, #0284c7);
-  }
-
-  .komersil-project-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(245, 158, 11, 0.65);
-    box-shadow: 0 18px 40px -5px rgba(0, 0, 0, 0.75), 0 0 30px rgba(245, 158, 11, 0.22);
-  }
-
-  .komersil-project-card .project-header-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-  }
-
-  .komersil-project-card .project-brand-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    background: rgba(245, 158, 11, 0.15);
-    color: #fbbf24;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-  }
-
-  .komersil-project-card h3 {
-    font-size: 21px;
-    font-weight: 800;
-    color: #ffffff;
-    margin: 0 0 6px;
-    letter-spacing: -0.02em;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .komersil-project-card .project-subtitle {
-    font-size: 13px;
-    color: #94a3b8;
-    margin-bottom: 18px;
-  }
-
-  .komersil-project-card .project-quick-stats {
-    display: flex;
-    gap: 16px;
-    background: rgba(15, 23, 42, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
-    padding: 14px 18px;
-    margin-bottom: 18px;
-  }
-
-  .komersil-project-card .stat-mini-box {
-    flex: 1;
-  }
-
-  .komersil-project-card .stat-mini-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: #64748b;
-    margin-bottom: 3px;
-  }
-
-  .komersil-project-card .stat-mini-value {
-    font-size: 17px;
-    font-weight: 800;
-    color: #f8fafc;
-  }
-
-  .komersil-project-card .project-cta-actions {
-    display: flex;
-    gap: 12px;
-  }
-
-  .btn-luxury-siteplan {
-    flex: 1;
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-    color: #ffffff !important;
-    border: 1px solid rgba(255,255,255,0.25);
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-size: 12.5px;
-    font-weight: 700;
-    text-align: center;
-    text-decoration: none !important;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-  }
-
-  .btn-luxury-siteplan:hover {
-    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-    box-shadow: 0 4px 18px rgba(2, 132, 199, 0.45);
-    transform: translateY(-1px);
-  }
-
-  .btn-luxury-units {
-    flex: 1;
-    background: rgba(245, 158, 11, 0.12);
-    color: #fbbf24 !important;
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-size: 12.5px;
-    font-weight: 700;
-    text-align: center;
-    text-decoration: none !important;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-  }
-
-  .btn-luxury-units:hover {
-    background: rgba(245, 158, 11, 0.22);
-    box-shadow: 0 4px 18px rgba(245, 158, 11, 0.3);
-    transform: translateY(-1px);
-  }
-
-  /* Luxury Stat KPI Cards */
+  /* Soft-Bright Stat KPI Cards */
   .portal-komersil-luxury .kpi-card {
-    background: linear-gradient(145deg, rgba(17, 24, 39, 0.9), rgba(15, 23, 42, 0.96)) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-top: 2px solid rgba(212, 175, 55, 0.5) !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.55), 0 0 15px rgba(212, 175, 55, 0.05) !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-top: 3px solid #0284c7 !important;
+    box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05) !important;
   }
+
+  .portal-komersil-luxury .kpi-card.kpi-blue { border-top-color: #2563eb !important; }
+  .portal-komersil-luxury .kpi-card.kpi-green { border-top-color: #10b981 !important; }
+  .portal-komersil-luxury .kpi-card.kpi-orange { border-top-color: #f59e0b !important; }
+  .portal-komersil-luxury .kpi-card.kpi-purple { border-top-color: #7c3aed !important; }
 
   .portal-komersil-luxury .kpi-title {
-    color: #94a3b8 !important;
+    color: #64748b !important;
     font-size: 12px !important;
     letter-spacing: 0.04em !important;
   }
 
   .portal-komersil-luxury .kpi-desc {
-    color: #64748b !important;
+    color: #475569 !important;
   }
 
-  /* Luxury Panels (Pipeline & Tables) */
+  /* Soft-Bright Panels (Pipeline & Tables) */
   .portal-komersil-luxury .panel {
-    background: linear-gradient(145deg, rgba(17, 24, 39, 0.88), rgba(15, 23, 42, 0.96)) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.6) !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06) !important;
+    border-radius: 16px !important;
   }
 
   .portal-komersil-luxury .panel h2 {
-    color: #ffffff !important;
+    color: #0f172a !important;
   }
 
   .portal-komersil-luxury .panel h2 span {
-    color: #94a3b8 !important;
+    color: #64748b !important;
   }
 
   .portal-komersil-luxury .pipeline-node {
-    background: rgba(15, 23, 42, 0.85) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  .portal-komersil-luxury .pipeline-node:hover {
+    background: #ffffff !important;
+    border-color: #0284c7 !important;
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.12) !important;
   }
 
   .portal-komersil-luxury .pipeline-node h3 {
-    color: #e2e8f0 !important;
+    color: #334155 !important;
   }
 
   .portal-komersil-luxury .pipeline-node .count-display {
-    color: #ffffff !important;
+    color: #0f172a !important;
   }
 
   .portal-komersil-luxury .projects-table th {
-    background: #0b1120 !important;
-    color: #94a3b8 !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border-color: #e2e8f0 !important;
+    font-weight: 700 !important;
   }
 
   .portal-komersil-luxury .projects-table td {
-    background: rgba(15, 23, 42, 0.4) !important;
-    color: #e2e8f0 !important;
-    border-color: rgba(255, 255, 255, 0.06) !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-color: #f1f5f9 !important;
+  }
+
+  .portal-komersil-luxury .projects-table tr.table-total td {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
   }
 
   .portal-komersil-luxury .project-name-text {
-    color: #ffffff !important;
+    color: #0f172a !important;
   }
 
   .portal-komersil-luxury .periode-filter-container {
-    background: rgba(17, 24, 39, 0.88) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    backdrop-filter: blur(12px) !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05) !important;
   }
 
   .portal-komersil-luxury .filter-pill-nav {
-    background: rgba(15, 23, 42, 0.9) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
   }
 
   .portal-komersil-luxury .filter-pill-nav .pill-btn {
-    color: #94a3b8 !important;
+    color: #64748b !important;
   }
 
   .portal-komersil-luxury .filter-pill-nav .pill-btn:hover {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.05) !important;
+    color: #0f172a !important;
+    background: rgba(0, 0, 0, 0.04) !important;
   }
 
   .portal-komersil-luxury .filter-pill-nav .pill-btn.active {
-    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    background: #0284c7 !important;
     color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3) !important;
   }
 
   .portal-komersil-luxury .icon-pill-btn,
   .portal-komersil-luxury .date-pill-btn {
-    background: rgba(17, 24, 39, 0.9) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    color: #e2e8f0 !important;
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+  }
+
+  .portal-komersil-luxury .icon-pill-btn:hover,
+  .portal-komersil-luxury .date-pill-btn:hover {
+    background: #f8fafc !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+  }
+
+  .portal-komersil-luxury .marketing-item,
+  .portal-komersil-luxury .bank-item-row,
+  .portal-komersil-luxury .resume-kpi-box {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+  }
+
+  .portal-komersil-luxury .table-sumber-matrix th {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  .portal-komersil-luxury .table-sumber-matrix td {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border-color: #f1f5f9 !important;
+  }
+
+  .portal-komersil-luxury .table-sumber-matrix .total-row td {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    font-weight: 800 !important;
+  }
+
+  .portal-komersil-luxury .resume-proc-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
   }
 </style>
 
@@ -1384,81 +1288,7 @@
         </div>
       </div>
 
-      @if(($current_app_type ?? session('app_type', 'subsidi')) === 'komersil')
-      @php
-          $projectList = collect($projectStats ?? []);
-          $tah = $projectList->firstWhere('kode', 'TAH') ?? $projectList->firstWhere('id', 1) ?? ($projectStats[0] ?? []);
-          $avh = $projectList->firstWhere('kode', 'AVH') ?? $projectList->firstWhere('id', 2) ?? ($projectStats[1] ?? []);
-      @endphp
-      <!-- LUXURY DUAL-PROJECT PORTFOLIO SHOWCASE (THE AMMAIA HILLS & AVANA HILLS) -->
-      <section class="komersil-hero-showcase">
-        <!-- Project 1: The Ammaia Hills -->
-        <article class="komersil-project-card">
-          <div class="project-header-top">
-            <span class="project-brand-badge"><i class="fa-solid fa-crown text-warning"></i> PROYEK KOMERSIL 01</span>
-            <span class="badge badge-warning text-dark font-weight-bold px-2 py-1" style="font-size: 10px; border-radius: 6px;">KODE: TAH</span>
-          </div>
-          <h3><i class="fa-solid fa-mountain-city text-warning"></i> The Ammaia Hills</h3>
-          <p class="project-subtitle">Hunian Eksklusif & Villa Hillside Modern RK Group Property</p>
-          <div class="project-quick-stats">
-            <div class="stat-mini-box">
-              <div class="stat-mini-label">Total Unit</div>
-              <div class="stat-mini-value" style="color: #38bdf8;">{{ (!empty($tah['total_unit']) && $tah['total_unit'] > 0) ? $tah['total_unit'] : 59 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
-            </div>
-            <div class="stat-mini-box">
-              <div class="stat-mini-label">Booking</div>
-              <div class="stat-mini-value" style="color: #4ade80;">{{ $tah['booking'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Cust</small></div>
-            </div>
-            <div class="stat-mini-box">
-              <div class="stat-mini-label">Terjual</div>
-              <div class="stat-mini-value" style="color: #fbbf24;">{{ $tah['terjual'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
-            </div>
-          </div>
-          <div class="project-cta-actions">
-            <a href="{{ route('siteplan-penjualan.index', ['id_lokasi' => 1]) }}" class="btn-luxury-siteplan">
-              <i class="fa-solid fa-map-location-dot"></i> Siteplan Interaktif
-            </a>
-            <a href="{{ route('kavling.index', ['id_lokasi' => 1]) }}" class="btn-luxury-units">
-              <i class="fa-solid fa-layer-group"></i> Detail Kavling
-            </a>
-          </div>
-        </article>
-
-        <!-- Project 2: Avana Hills -->
-        <article class="komersil-project-card">
-          <div class="project-header-top">
-            <span class="project-brand-badge"><i class="fa-solid fa-crown text-warning"></i> PROYEK KOMERSIL 02</span>
-            <span class="badge badge-info text-white font-weight-bold px-2 py-1" style="font-size: 10px; border-radius: 6px;">KODE: AVH</span>
-          </div>
-          <h3><i class="fa-solid fa-tree-city text-info"></i> Avana Hills</h3>
-          <p class="project-subtitle">Executive Residential & Modern Estates RK Group Property</p>
-          <div class="project-quick-stats">
-            <div class="stat-mini-box">
-              <div class="stat-mini-label">Total Unit</div>
-              <div class="stat-mini-value" style="color: #38bdf8;">{{ (!empty($avh['total_unit']) && $avh['total_unit'] > 0) ? $avh['total_unit'] : 46 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
-            </div>
-            <div class="stat-mini-box">
-              <div class="stat-mini-label">Booking</div>
-              <div class="stat-mini-value" style="color: #4ade80;">{{ $avh['booking'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Cust</small></div>
-            </div>
-            <div class="stat-mini-box">
-              <div class="stat-mini-label">Terjual</div>
-              <div class="stat-mini-value" style="color: #fbbf24;">{{ $avh['terjual'] ?? 0 }} <small style="font-size:11px;color:#94a3b8">Unit</small></div>
-            </div>
-          </div>
-          <div class="project-cta-actions">
-            <a href="{{ route('siteplan-penjualan.index', ['id_lokasi' => 2]) }}" class="btn-luxury-siteplan">
-              <i class="fa-solid fa-map-location-dot"></i> Siteplan Interaktif
-            </a>
-            <a href="{{ route('kavling.index', ['id_lokasi' => 2]) }}" class="btn-luxury-units">
-              <i class="fa-solid fa-layer-group"></i> Detail Kavling
-            </a>
-          </div>
-        </article>
-      </section>
-      @endif
-
-      <!-- 5 KPI METRICS CARDS -->
+      <!-- 4 KPI METRICS CARDS -->
       <section class="kpi-grid">
         <article class="kpi-card kpi-blue">
           <div class="kpi-icon-box blue"><i class="fa-solid fa-city"></i></div>
