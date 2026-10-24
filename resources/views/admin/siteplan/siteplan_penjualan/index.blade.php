@@ -63,11 +63,14 @@
             position: relative;
         }
 
-        /* Styling interaktif kavling - Opacity tebal & Multiply agar warna asli blok jelas namun nama blok & nomor unit di denah tetap terbaca tajam */
+        @if (session('app_type', 'subsidi') === 'komersil')
+        /* Styling Komersil - Opacity & Multiply KHUSUS pada overlay kavling interaktif (a.detail-button), BUKAN denah background */
+        a.detail-button polygon,
+        a.detail-button path,
+        a.detail-button polyline,
         polygon.kavling-poly,
         path.kavling-poly,
-        .svg-container svg polygon,
-        .svg-container svg path {
+        polyline.kavling-poly {
             transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease, fill-opacity 0.2s ease;
             vector-effect: non-scaling-stroke;
             fill-opacity: 0.78 !important;
@@ -77,6 +80,18 @@
             cursor: pointer !important;
         }
         /* Unit belum terjual (putih #ffffff) dibuat transparan agar gambar denah & nomor lot terlihat jelas tanpa bertumpuk */
+        a.detail-button polygon[style*="#ffffff"],
+        a.detail-button polygon[style*="#FFFFFF"],
+        a.detail-button polygon[style*="fill:#ffffff"],
+        a.detail-button polygon[style*="fill: #ffffff"],
+        a.detail-button path[style*="#ffffff"],
+        a.detail-button path[style*="#FFFFFF"],
+        a.detail-button path[style*="fill:#ffffff"],
+        a.detail-button path[style*="fill: #ffffff"],
+        a.detail-button polyline[style*="#ffffff"],
+        a.detail-button polyline[style*="#FFFFFF"],
+        a.detail-button polyline[style*="fill:#ffffff"],
+        a.detail-button polyline[style*="fill: #ffffff"],
         polygon.kavling-poly[style*="#ffffff"],
         polygon.kavling-poly[style*="#FFFFFF"],
         polygon.kavling-poly[style*="fill:#ffffff"],
@@ -85,14 +100,10 @@
         path.kavling-poly[style*="#FFFFFF"],
         path.kavling-poly[style*="fill:#ffffff"],
         path.kavling-poly[style*="fill: #ffffff"],
-        .svg-container svg polygon[style*="#ffffff"],
-        .svg-container svg polygon[style*="#FFFFFF"],
-        .svg-container svg polygon[style*="fill:#ffffff"],
-        .svg-container svg polygon[style*="fill: #ffffff"],
-        .svg-container svg path[style*="#ffffff"],
-        .svg-container svg path[style*="#FFFFFF"],
-        .svg-container svg path[style*="fill:#ffffff"],
-        .svg-container svg path[style*="fill: #ffffff"] {
+        polyline.kavling-poly[style*="#ffffff"],
+        polyline.kavling-poly[style*="#FFFFFF"],
+        polyline.kavling-poly[style*="fill:#ffffff"],
+        polyline.kavling-poly[style*="fill: #ffffff"] {
             fill: transparent !important;
             fill-opacity: 0 !important;
             stroke: rgba(37, 99, 235, 0.35) !important;
@@ -100,16 +111,71 @@
             mix-blend-mode: normal !important;
         }
         /* Efek hover interaktif */
+        a.detail-button polygon:hover,
+        a.detail-button path:hover,
+        a.detail-button polyline:hover,
         polygon.kavling-poly:hover,
         path.kavling-poly:hover,
-        .svg-container svg polygon:hover,
-        .svg-container svg path:hover {
+        polyline.kavling-poly:hover {
             fill-opacity: 0.25 !important;
             stroke: #1d4ed8 !important;
             stroke-width: 2.5px !important;
             filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.7));
             cursor: pointer !important;
         }
+        @else
+        /* Styling Subsidi (Asli 100% Cerah & Jelas, Tanpa Efek Gelap/Multiply pada denah background) */
+        polygon.kavling-poly,
+        path.kavling-poly,
+        polyline.kavling-poly,
+        a.detail-button polygon,
+        a.detail-button path,
+        a.detail-button polyline {
+            transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
+            vector-effect: non-scaling-stroke;
+            cursor: pointer !important;
+        }
+        polygon.kavling-poly[style*="#ffffff"],
+        polygon.kavling-poly[style*="#FFFFFF"],
+        polygon.kavling-poly[style*="fill:#ffffff"],
+        polygon.kavling-poly[style*="fill: #ffffff"],
+        path.kavling-poly[style*="#ffffff"],
+        path.kavling-poly[style*="#FFFFFF"],
+        path.kavling-poly[style*="fill:#ffffff"],
+        path.kavling-poly[style*="fill: #ffffff"],
+        polyline.kavling-poly[style*="#ffffff"],
+        polyline.kavling-poly[style*="#FFFFFF"],
+        polyline.kavling-poly[style*="fill:#ffffff"],
+        polyline.kavling-poly[style*="fill: #ffffff"],
+        a.detail-button polygon[style*="#ffffff"],
+        a.detail-button polygon[style*="#FFFFFF"],
+        a.detail-button polygon[style*="fill:#ffffff"],
+        a.detail-button polygon[style*="fill: #ffffff"],
+        a.detail-button path[style*="#ffffff"],
+        a.detail-button path[style*="#FFFFFF"],
+        a.detail-button path[style*="fill:#ffffff"],
+        a.detail-button path[style*="fill: #ffffff"],
+        a.detail-button polyline[style*="#ffffff"],
+        a.detail-button polyline[style*="#FFFFFF"],
+        a.detail-button polyline[style*="fill:#ffffff"],
+        a.detail-button polyline[style*="fill: #ffffff"] {
+            fill: transparent !important;
+            stroke: rgba(37, 99, 235, 0.35) !important;
+            stroke-width: 1px !important;
+        }
+        polygon.kavling-poly:hover,
+        path.kavling-poly:hover,
+        polyline.kavling-poly:hover,
+        a.detail-button polygon:hover,
+        a.detail-button path:hover,
+        a.detail-button polyline:hover {
+            fill: rgba(59, 130, 246, 0.45) !important;
+            stroke: #1d4ed8 !important;
+            stroke-width: 2.5px !important;
+            filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.7));
+            cursor: pointer !important;
+        }
+        @endif
 
         .svg-container svg {
             width: 100%;

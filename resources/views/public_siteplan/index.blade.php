@@ -278,16 +278,13 @@
             fill: #ffffff !important;
         }
 
-        /* Styling tampilan siteplan kavling sama persis dengan Dashboard Admin Penjualan */
+        /* Styling tampilan siteplan kavling interaktif (Hanya untuk blok unit kavling a.detail-button & .kavling-poly) */
+        a.detail-button polygon,
+        a.detail-button path,
+        a.detail-button polyline,
         polygon.kavling-poly,
         path.kavling-poly,
-        polyline.kavling-poly,
-        .svg-container svg polygon,
-        .svg-container svg path,
-        .svg-container svg polyline,
-        .svg-view-container svg polygon,
-        .svg-view-container svg path,
-        .svg-view-container svg polyline {
+        polyline.kavling-poly {
             transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease, fill-opacity 0.2s ease;
             vector-effect: non-scaling-stroke;
             fill-opacity: 0.78 !important;
@@ -298,6 +295,18 @@
         }
 
         /* Unit belum terjual (putih #ffffff) dibuat transparan agar gambar denah & nomor lot terlihat jelas tanpa bertumpuk */
+        a.detail-button polygon[style*="#ffffff"],
+        a.detail-button polygon[style*="#FFFFFF"],
+        a.detail-button polygon[style*="fill:#ffffff"],
+        a.detail-button polygon[style*="fill: #ffffff"],
+        a.detail-button path[style*="#ffffff"],
+        a.detail-button path[style*="#FFFFFF"],
+        a.detail-button path[style*="fill:#ffffff"],
+        a.detail-button path[style*="fill: #ffffff"],
+        a.detail-button polyline[style*="#ffffff"],
+        a.detail-button polyline[style*="#FFFFFF"],
+        a.detail-button polyline[style*="fill:#ffffff"],
+        a.detail-button polyline[style*="fill: #ffffff"],
         polygon.kavling-poly[style*="#ffffff"],
         polygon.kavling-poly[style*="#FFFFFF"],
         polygon.kavling-poly[style*="fill:#ffffff"],
@@ -309,31 +318,7 @@
         polyline.kavling-poly[style*="#ffffff"],
         polyline.kavling-poly[style*="#FFFFFF"],
         polyline.kavling-poly[style*="fill:#ffffff"],
-        polyline.kavling-poly[style*="fill: #ffffff"],
-        .svg-container svg polygon[style*="#ffffff"],
-        .svg-container svg polygon[style*="#FFFFFF"],
-        .svg-container svg polygon[style*="fill:#ffffff"],
-        .svg-container svg polygon[style*="fill: #ffffff"],
-        .svg-container svg path[style*="#ffffff"],
-        .svg-container svg path[style*="#FFFFFF"],
-        .svg-container svg path[style*="fill:#ffffff"],
-        .svg-container svg path[style*="fill: #ffffff"],
-        .svg-container svg polyline[style*="#ffffff"],
-        .svg-container svg polyline[style*="#FFFFFF"],
-        .svg-container svg polyline[style*="fill:#ffffff"],
-        .svg-container svg polyline[style*="fill: #ffffff"],
-        .svg-view-container svg polygon[style*="#ffffff"],
-        .svg-view-container svg polygon[style*="#FFFFFF"],
-        .svg-view-container svg polygon[style*="fill:#ffffff"],
-        .svg-view-container svg polygon[style*="fill: #ffffff"],
-        .svg-view-container svg path[style*="#ffffff"],
-        .svg-view-container svg path[style*="#FFFFFF"],
-        .svg-view-container svg path[style*="fill:#ffffff"],
-        .svg-view-container svg path[style*="fill: #ffffff"],
-        .svg-view-container svg polyline[style*="#ffffff"],
-        .svg-view-container svg polyline[style*="#FFFFFF"],
-        .svg-view-container svg polyline[style*="fill:#ffffff"],
-        .svg-view-container svg polyline[style*="fill: #ffffff"] {
+        polyline.kavling-poly[style*="fill: #ffffff"] {
             fill: transparent !important;
             fill-opacity: 0 !important;
             stroke: rgba(37, 99, 235, 0.35) !important;
@@ -342,15 +327,12 @@
         }
 
         /* Efek hover interaktif */
+        a.detail-button polygon:hover,
+        a.detail-button path:hover,
+        a.detail-button polyline:hover,
         polygon.kavling-poly:hover,
         path.kavling-poly:hover,
-        polyline.kavling-poly:hover,
-        .svg-container svg polygon:hover,
-        .svg-container svg path:hover,
-        .svg-container svg polyline:hover,
-        .svg-view-container svg polygon:hover,
-        .svg-view-container svg path:hover,
-        .svg-view-container svg polyline:hover {
+        polyline.kavling-poly:hover {
             fill-opacity: 0.25 !important;
             stroke: #1d4ed8 !important;
             stroke-width: 2.5px !important;
