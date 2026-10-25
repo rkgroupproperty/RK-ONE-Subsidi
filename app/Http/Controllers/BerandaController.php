@@ -156,7 +156,23 @@ class BerandaController extends Controller
             // Fallback aman
         }
 
-        $akadCountQuery = Customer::where('id_status_progres', 3)->where('stt_arsip', 0);
+        $isKomersil = session('app_type') === 'komersil';
+        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+        $lokasiQuery = DB::connection($conn)->table('lokasi_kavling')->whereIn('stt_tampil', [1, 3]);
+        if ($isKomersil) {
+            $lokasiQuery->whereIn('id', [1, 2]);
+        } else {
+            $lokasiQuery->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills']);
+        }
+        $targetLokasiIds = (clone $lokasiQuery)->pluck('id')->toArray();
+
+        if ($isKomersil) {
+            if (KavlingPeta::whereIn('id_lokasi', [1, 2])->count() < 105 || \App\Models\MasterSVG::whereIn('id_lokasi', [1, 2])->count() < 2) {
+                app(\App\Services\KomersilDatabaseService::class)->seedAvanaHillsSiteplan();
+            }
+        }
+
+        $akadCountQuery = Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 3)->where('stt_arsip', 0);
         if ($isFilteredByDate && $startCarbon && $endCarbon) {
             $startDateStr = $startCarbon->toDateString();
             $endDateStr = $endCarbon->toDateString();
@@ -171,32 +187,16 @@ class BerandaController extends Controller
         $akadPipelineCount = $akadCountQuery->count();
 
         $pipelineCounts = [
-            'booking' => PengajuanHold::where('stt_reg', '!=', 2)->count()
-                + Customer::where('id_status_progres', 2)->where('stt_arsip', 0)->count(),
-            'marketing' => Customer::where('id_status_progres', 11)->where('stt_arsip', 0)->count(),
-            'sppr' => Customer::where('id_status_progres', 10)->where('stt_arsip', 0)->count(),
-            'wawancara' => Customer::where('id_status_progres', 7)->where('stt_arsip', 0)->count(),
-            'acc_bank' => Customer::where('id_status_progres', 4)->where('stt_arsip', 0)->count(),
-            'ppjb' => Customer::where('id_status_progres', 6)->where('stt_arsip', 0)->count(),
+            'booking' => PengajuanHold::whereIn('id_lokasi', $targetLokasiIds)->where('stt_reg', '!=', 2)->count()
+                + Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 2)->where('stt_arsip', 0)->count(),
+            'marketing' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 11)->where('stt_arsip', 0)->count(),
+            'sppr' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 10)->where('stt_arsip', 0)->count(),
+            'wawancara' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 7)->where('stt_arsip', 0)->count(),
+            'acc_bank' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 4)->where('stt_arsip', 0)->count(),
+            'ppjb' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 6)->where('stt_arsip', 0)->count(),
             'akad' => $akadPipelineCount,
-            'bast' => Customer::where('id_status_progres', 5)->where('stt_arsip', 0)->count(),
+            'bast' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 5)->where('stt_arsip', 0)->count(),
         ];
-
-        if (session('app_type') === 'komersil') {
-            if (KavlingPeta::whereIn('id_lokasi', [1, 2])->count() < 105 || \App\Models\MasterSVG::whereIn('id_lokasi', [1, 2])->count() < 2) {
-                app(\App\Services\KomersilDatabaseService::class)->seedAvanaHillsSiteplan();
-            }
-        }
-
-        $isKomersil = session('app_type') === 'komersil';
-        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
-        $lokasiQuery = DB::connection($conn)->table('lokasi_kavling')->whereIn('stt_tampil', [1, 3]);
-        if ($isKomersil) {
-            $lokasiQuery->whereIn('id', [1, 2]);
-        } else {
-            $lokasiQuery->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills']);
-        }
-        $targetLokasiIds = (clone $lokasiQuery)->pluck('id')->toArray();
 
         $totalUnit = DB::connection($conn)->table('kavling_peta')->whereIn('id_lokasi', $targetLokasiIds)->count();
         $unitAkad = DB::connection($conn)->table('customer')->whereIn('id_lokasi', $targetLokasiIds)->where('stt_arsip', 0)->where('id_status_progres', 3)->count();
@@ -258,7 +258,8 @@ class BerandaController extends Controller
                 $akad = $akadLokasiQuery->count();
 
                 $bast = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 5)->where('stt_arsip', 0)->count();
-                $terjual = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->count();
+                $cash = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->where('jenis_pembelian', 'Cash')->where('id_status_progres', '!=', 3)->count();
+                $terjual = $akad + $cash;
 
                 return [
                     'id' => $lokasiId,
