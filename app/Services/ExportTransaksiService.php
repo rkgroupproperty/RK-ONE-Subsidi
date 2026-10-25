@@ -443,6 +443,9 @@ class ExportTransaksiService
 
     public function exportAkad()
     {
+        $now = \Carbon\Carbon::now('Asia/Jakarta');
+        $filter = request()->get('filter', 'bulan_ini');
+
         $query = AkadDetail::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'akad'])
             ->whereHas('customer', function ($q) {
                 $q->where('stt_arsip', 0);
@@ -452,13 +455,56 @@ class ExportTransaksiService
                 if (request()->filled('id_marketing')) {
                     $q->where('id_marketing', request('id_marketing'));
                 }
-            })
-            ->orderByDesc('id');
+            });
 
+        if ($filter === 'semua') {
+            // all
+        } elseif ($filter === 'bulan_kemarin') {
+            $lastMonth = $now->copy()->subMonth();
+            $query->whereHas('akad', function ($q) use ($lastMonth) {
+                $q->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
+            });
+        } elseif ($filter === 'pilih_bulan' && request()->filled('bulan') && request()->filled('tahun')) {
+            $b = (int) request('bulan');
+            $t = (int) request('tahun');
+            $query->whereHas('akad', function ($q) use ($b, $t) {
+                $q->whereYear('tgl_akad', $t)->whereMonth('tgl_akad', $b);
+            });
+        } elseif ($filter === 'custom' && request()->filled('start_date') && request()->filled('end_date')) {
+            $s = \Carbon\Carbon::parse(request('start_date'))->startOfDay()->toDateString();
+            $e = \Carbon\Carbon::parse(request('end_date'))->endOfDay()->toDateString();
+            $query->whereHas('akad', function ($q) use ($s, $e) {
+                $q->whereBetween('tgl_akad', [$s, $e]);
+            });
+        } else {
+            $query->whereHas('akad', function ($q) use ($now) {
+                $q->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
+            });
+        }
+
+        $query->orderByDesc('id');
         $data = $query->get();
 
         if ($data->isEmpty()) {
-            $dataAkad = Akad::orderByDesc('id')->get();
+            $akadQuery = Akad::query();
+            if ($filter === 'semua') {
+                // all
+            } elseif ($filter === 'bulan_kemarin') {
+                $lastMonth = $now->copy()->subMonth();
+                $akadQuery->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
+            } elseif ($filter === 'pilih_bulan' && request()->filled('bulan') && request()->filled('tahun')) {
+                $b = (int) request('bulan');
+                $t = (int) request('tahun');
+                $akadQuery->whereYear('tgl_akad', $t)->whereMonth('tgl_akad', $b);
+            } elseif ($filter === 'custom' && request()->filled('start_date') && request()->filled('end_date')) {
+                $s = \Carbon\Carbon::parse(request('start_date'))->startOfDay()->toDateString();
+                $e = \Carbon\Carbon::parse(request('end_date'))->endOfDay()->toDateString();
+                $akadQuery->whereBetween('tgl_akad', [$s, $e]);
+            } else {
+                $akadQuery->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
+            }
+
+            $dataAkad = $akadQuery->orderByDesc('tgl_akad')->orderByDesc('id')->get();
             $headers = ['No', 'Jadwal Akad', 'Total Akad', 'Keterangan'];
             $this->sheet->fromArray($headers, null, 'A1');
             $row = 2;

@@ -26,6 +26,11 @@ class AkadDetail extends Model
         return $this->belongsTo(Customer::class, 'id_customer');
     }
 
+    public function akad()
+    {
+        return $this->belongsTo(Akad::class, 'id_akad');
+    }
+
     public function persyaratan()
     {
         return $this->belongsTo(PersyaratanLegal::class, 'id_persyaratan');

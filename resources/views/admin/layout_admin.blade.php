@@ -75,6 +75,64 @@
             background: rgba(255, 255, 255, 0.02) !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
             padding: 16px 14px !important;
+            transition: all 0.3s ease;
+        }
+
+        /* Styling rapi saat sidebar dalam mode Collapse (sidebar-mini) */
+        body.sidebar-collapse .modern-brand-header {
+            padding: 12px 4px !important;
+            text-align: center !important;
+        }
+
+        body.sidebar-collapse .modern-brand-header a {
+            width: 100% !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        body.sidebar-collapse .brand-company-name,
+        body.sidebar-collapse .portal-badge-pill {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        body.sidebar-collapse .brand-logo-box {
+            max-width: 40px !important;
+            max-height: 40px !important;
+            margin-bottom: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        body.sidebar-collapse .brand-img {
+            max-height: 36px !important;
+            max-width: 36px !important;
+        }
+
+        body.sidebar-collapse .user-panel-custom {
+            padding: 8px 4px !important;
+            justify-content: center !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        body.sidebar-collapse .user-avatar-custom {
+            margin-right: 0 !important;
+        }
+
+        body.sidebar-collapse .user-info-custom {
+            display: none !important;
+        }
+
+        /* Menu Panduan Aplikasi di-hidden sesuai permintaan */
+        .sidebar-fixed-bottom,
+        body.sidebar-collapse .sidebar-fixed-bottom {
+            display: none !important;
         }
 
         .brand-logo-box {
@@ -717,12 +775,13 @@
                         </form>
                     </ul>
                 </nav>
-                <div class="sidebar-fixed-bottom">
+                <!-- Fitur menu Panduan Aplikasi di-hidden sesuai permintaan -->
+                {{-- <div class="sidebar-fixed-bottom" style="display: none !important;">
                     <a href="{{ route('panduan-aplikasi.index') }}" target="_blank" class="modern-panduan-link">
                         <i class="fas fa-book-reader mr-1 text-primary"></i>
                         <span>Panduan Aplikasi</span>
                     </a>
-                </div>
+                </div> --}}
 
                 <!-- /.sidebar-menu -->
             </div>

@@ -56,7 +56,29 @@ class AkadController extends Controller
         $this->refreshDeadlineAkad();
 
         if ($request->ajax()) {
-            $data = Akad::orderBy('id', 'desc');
+            $now = Carbon::now('Asia/Jakarta');
+            $filter = $request->get('filter', 'bulan_ini');
+            $query = Akad::query();
+
+            if ($filter === 'semua') {
+                // Tampilkan semua data tanpa filter tanggal
+            } elseif ($filter === 'bulan_kemarin') {
+                $lastMonth = $now->copy()->subMonth();
+                $query->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
+            } elseif ($filter === 'pilih_bulan' && $request->filled('bulan') && $request->filled('tahun')) {
+                $bulan = (int) $request->get('bulan');
+                $tahun = (int) $request->get('tahun');
+                $query->whereYear('tgl_akad', $tahun)->whereMonth('tgl_akad', $bulan);
+            } elseif ($filter === 'custom' && $request->filled('start_date') && $request->filled('end_date')) {
+                $startDate = Carbon::parse($request->get('start_date'))->startOfDay()->toDateString();
+                $endDate = Carbon::parse($request->get('end_date'))->endOfDay()->toDateString();
+                $query->whereBetween('tgl_akad', [$startDate, $endDate]);
+            } else {
+                // Default: bulan ini
+                $query->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
+            }
+
+            $data = $query->orderBy('tgl_akad', 'desc')->orderBy('id', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -93,7 +115,24 @@ class AkadController extends Controller
                 ->make(true);
         }
 
-        return view('admin.transaksi.akad.index', compact('permissions'));
+        $now = Carbon::now('Asia/Jakarta');
+        $availableYears = Akad::selectRaw('YEAR(tgl_akad) as tahun')
+            ->whereNotNull('tgl_akad')
+            ->distinct()
+            ->orderBy('tahun', 'desc')
+            ->pluck('tahun')
+            ->toArray();
+        if (empty($availableYears)) {
+            $availableYears = [$now->year];
+        }
+
+        $availableMonths = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        return view('admin.transaksi.akad.index', compact('permissions', 'availableYears', 'availableMonths'));
     }
 
     public function show(Request $request, $id)
