@@ -440,6 +440,62 @@ class KomersilDatabaseService
             }
             $logs[] = "Berhasil memasukkan {$unitCount} unit kavling interaktif untuk Avana Hills ke kavling_peta.";
 
+            // Pastikan tabel `perusahaan` & `lokasi_kavling_perusahaan` ada di database komersil dan terisi PT Unggul Perkasa Sriwijaya
+            try {
+                $dstConn->statement("
+                    CREATE TABLE IF NOT EXISTS `perusahaan` (
+                      `id` int NOT NULL AUTO_INCREMENT,
+                      `nama_perusahaan` varchar(100) NOT NULL,
+                      `alamat_perusahaan` varchar(200) NOT NULL,
+                      `telp_perusahaan` varchar(35) NOT NULL,
+                      `bg_kwitansi` varchar(50) DEFAULT '',
+                      `kop_surat` varchar(50) DEFAULT '',
+                      `kota_penandatangan` varchar(35) DEFAULT '',
+                      `nama_penandatangan` varchar(50) DEFAULT '',
+                      `jabatan_penandatangan` varchar(50) DEFAULT '',
+                      `nama_mengetahui` varchar(50) DEFAULT '',
+                      PRIMARY KEY (`id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                $dstConn->statement("
+                    CREATE TABLE IF NOT EXISTS `lokasi_kavling_perusahaan` (
+                      `id` int NOT NULL AUTO_INCREMENT,
+                      `id_lokasi` int NOT NULL,
+                      `id_perusahaan` int NOT NULL,
+                      PRIMARY KEY (`id`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                ");
+
+                $dstConn->table('perusahaan')->updateOrInsert(
+                    ['id' => 1],
+                    [
+                        'nama_perusahaan' => 'PT UNGGUL PERKASA SRIWIJAYA',
+                        'alamat_perusahaan' => 'Jl. Sultan M. Mansyur No. 1181 Bukit Lama Palembang',
+                        'telp_perusahaan' => '0711 441139',
+                        'bg_kwitansi' => 'bg-kwitansi.png',
+                        'kop_surat' => 'kop_surat_pt_unggul.png',
+                        'kota_penandatangan' => 'Palembang',
+                        'nama_penandatangan' => 'Admin Keuangan',
+                        'jabatan_penandatangan' => 'Kasir / Keuangan',
+                        'nama_mengetahui' => 'Pimpinan'
+                    ]
+                );
+
+                $dstConn->table('lokasi_kavling_perusahaan')->updateOrInsert(
+                    ['id_lokasi' => 1, 'id_perusahaan' => 1],
+                    ['id' => 1, 'id_lokasi' => 1, 'id_perusahaan' => 1]
+                );
+
+                $dstConn->table('lokasi_kavling_perusahaan')->updateOrInsert(
+                    ['id_lokasi' => 2, 'id_perusahaan' => 1],
+                    ['id' => 2, 'id_lokasi' => 2, 'id_perusahaan' => 1]
+                );
+                $logs[] = "Tabel `perusahaan` dan `lokasi_kavling_perusahaan` berhasil diverifikasi dan dimuat untuk PT UNGGUL PERKASA SRIWIJAYA.";
+            } catch (\Exception $exPerusahaan) {
+                $logs[] = "Setup tabel perusahaan: " . $exPerusahaan->getMessage();
+            }
+
             return [
                 'success' => true,
                 'message' => 'Siteplan The Ammaia Hills (59 unit) & Avana Hills (46 unit) berhasil diaktifkan!',

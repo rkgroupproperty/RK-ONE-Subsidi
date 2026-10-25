@@ -1414,12 +1414,21 @@ class PengajuanHoldController extends Controller
         $pdf->SetAlpha(1);
 
         // 2. Header / Kop Kwitansi
+        $kopPath = public_path('assets/img/kop_surat_pt_unggul.png');
+        if (!file_exists($kopPath)) {
+            $kopPath = base_path('public/assets/img/kop_surat_pt_unggul.png');
+        }
+
         $logoPath = null;
         if ($media && $media->nama_file && file_exists(public_path('config_media/' . $media->nama_file))) {
             $logoPath = public_path('config_media/' . $media->nama_file);
         }
 
-        if ($logoPath) {
+        if (file_exists($kopPath)) {
+            // Kop Surat Resmi PT UNGGUL PERKASA SRIWIJAYA (Rasio 1024 x 342)
+            $pdf->Image($kopPath, 15, 8, 180, 0, 'PNG');
+            $pdf->SetY(71);
+        } elseif ($logoPath) {
             $pdf->Image($logoPath, 15, 12, 20);
             $pdf->SetXY(38, 12);
             $pdf->SetFont('helvetica', 'B', 14);
@@ -1431,6 +1440,16 @@ class PengajuanHoldController extends Controller
             $pdf->Cell(155, 4.5, $alamatPerusahaan . ' | Telp: ' . $telpPerusahaan, 0, 1, 'L');
             $pdf->SetX(38);
             $pdf->Cell(155, 4.5, 'Sistem Penjualan Perumahan Dealaska - RK GROUP Property', 0, 1, 'L');
+
+            // Garis Kop
+            $pdf->SetY(31);
+            $pdf->SetDrawColor(30, 95, 168);
+            $pdf->SetLineWidth(0.8);
+            $pdf->Line(15, 31, 195, 31);
+            $pdf->SetDrawColor(180, 200, 230);
+            $pdf->SetLineWidth(0.3);
+            $pdf->Line(15, 32, 195, 32);
+            $pdf->SetY(36);
         } else {
             $pdf->SetFont('helvetica', 'B', 15);
             $pdf->SetTextColor(15, 23, 42);
@@ -1438,18 +1457,19 @@ class PengajuanHoldController extends Controller
             $pdf->SetFont('helvetica', '', 9);
             $pdf->SetTextColor(71, 85, 105);
             $pdf->Cell(0, 4.5, $alamatPerusahaan . ' | Telp: ' . $telpPerusahaan, 0, 1, 'C');
+
+            // Garis Kop
+            $pdf->SetY(31);
+            $pdf->SetDrawColor(30, 95, 168);
+            $pdf->SetLineWidth(0.8);
+            $pdf->Line(15, 31, 195, 31);
+            $pdf->SetDrawColor(180, 200, 230);
+            $pdf->SetLineWidth(0.3);
+            $pdf->Line(15, 32, 195, 32);
+            $pdf->SetY(36);
         }
 
-        // Garis Kop
-        $pdf->SetY(31);
-        $pdf->SetDrawColor(30, 95, 168);
-        $pdf->SetLineWidth(0.8);
-        $pdf->Line(15, 31, 195, 31);
-        $pdf->SetDrawColor(180, 200, 230);
-        $pdf->SetLineWidth(0.3);
-        $pdf->Line(15, 32, 195, 32);
-
-        $pdf->Ln(4);
+        $pdf->Ln(2);
 
         // 3. Judul Dokumen & Badge Draf
         $pdf->SetFont('helvetica', 'B', 13);

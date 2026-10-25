@@ -151,17 +151,37 @@ class PembayaranController extends Controller
             }
         ])->findOrFail($id);
 
-        $lokasi          = LokasiKavling::with('perusahaan')->find($customer->id_lokasi);
-        $kavling         = KavlingPeta::with('perusahaan')->find($customer->id_kavling);
-        $perusahaan      = $kavling->perusahaan;
-        if (! $perusahaan && $lokasi) {
-            $perusahaanId = $lokasi->perusahaan->first()->id_perusahaan ?? null;
-            $perusahaan   = $perusahaanId ? Perusahaan::find($perusahaanId) : null;
+        $lokasi          = null;
+        $kavling         = null;
+        $perusahaan      = null;
+        try {
+            $lokasi          = LokasiKavling::find($customer->id_lokasi);
+            $kavling         = KavlingPeta::find($customer->id_kavling);
+            if ($kavling && $kavling->id_perusahaan) {
+                $perusahaan = Perusahaan::find($kavling->id_perusahaan);
+            }
+            if (! $perusahaan && $lokasi) {
+                $perusahaan = $lokasi->perusahaan ? $lokasi->perusahaan->first() : null;
+            }
+            if (! $perusahaan) {
+                $perusahaan = Perusahaan::first();
+            }
+        } catch (\Throwable $e) {}
+
+        if (! $perusahaan) {
+            $perusahaan = (object) [
+                'nama_perusahaan' => 'PT UNGGUL PERKASA SRIWIJAYA',
+                'alamat_perusahaan' => 'Jl. Sultan M. Mansyur No. 1181 Bukit Lama Palembang',
+                'telp_perusahaan' => '0711 441139',
+                'kota_penandatangan' => 'Palembang',
+                'nama_penandatangan' => 'Admin Keuangan',
+                'nama_mengetahui' => 'Pimpinan',
+            ];
         }
 
         $namaPerusahaan   = $lokasi->nama_kavling ?? 'Nama Perusahaan Belum diisi';
-        $alamatPerusahaan = $perusahaan->alamat_perusahaan ?? 'Alamat Belum diisi';
-        $telpPerusahaan   = $perusahaan->telp_perusahaan ?? '-';
+        $alamatPerusahaan = $perusahaan->alamat_perusahaan ?? 'Jl. Sultan M. Mansyur No. 1181 Bukit Lama Palembang';
+        $telpPerusahaan   = $perusahaan->telp_perusahaan ?? '0711 441139';
         $profilPerusahaan = PengaturanProfil::first();
         $namaProfil       = $profilPerusahaan->nama_perusahaan ?? 'PT. ALAM INDAH SELALU';
         $telpProfil       = $profilPerusahaan->telp ?? '0778-4173387';
@@ -400,18 +420,36 @@ class PembayaranController extends Controller
             ->firstOrFail();
 
         $nasabah    = $pembayaran->customer;
-        $lokasi     = $nasabah->lokasi ?? LokasiKavling::find($nasabah->id_lokasi);
-        $kavling    = $nasabah->kavling ?? KavlingPeta::find($nasabah->id_kavling);
+        $lokasi     = null;
+        $kavling    = null;
+        try {
+            $lokasi     = $nasabah->lokasi ?? LokasiKavling::find($nasabah->id_lokasi);
+            $kavling    = $nasabah->kavling ?? KavlingPeta::find($nasabah->id_kavling);
+        } catch (\Throwable $e) {}
 
         $perusahaan = null;
-        if ($kavling && $kavling->id_perusahaan) {
-            $perusahaan = Perusahaan::find($kavling->id_perusahaan);
-        }
-        if (!$perusahaan && $lokasi) {
-            $perusahaan = $lokasi->perusahaan->first() ?? null;
-        }
+        try {
+            if ($kavling && $kavling->id_perusahaan) {
+                $perusahaan = Perusahaan::find($kavling->id_perusahaan);
+            }
+            if (!$perusahaan && $lokasi) {
+                $perusahaan = $lokasi->perusahaan ? $lokasi->perusahaan->first() : null;
+            }
+            if (!$perusahaan) {
+                $perusahaan = Perusahaan::first();
+            }
+        } catch (\Throwable $e) {}
+
         if (!$perusahaan) {
-            $perusahaan = Perusahaan::first();
+            $perusahaan = (object) [
+                'nama_perusahaan' => 'PT UNGGUL PERKASA SRIWIJAYA',
+                'alamat_perusahaan' => 'Jl. Sultan M. Mansyur No. 1181 Bukit Lama Palembang',
+                'telp_perusahaan' => '0711 441139',
+                'kota_penandatangan' => 'Palembang',
+                'nama_penandatangan' => 'Admin Keuangan',
+                'jabatan_penandatangan' => 'Kasir / Keuangan',
+                'nama_mengetahui' => 'Pimpinan',
+            ];
         }
 
         $blokNomor = '-';
