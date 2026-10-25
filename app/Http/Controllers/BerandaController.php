@@ -92,6 +92,8 @@ class BerandaController extends Controller
 
         // Auto-reconciliation: Pastikan alur status progres konsumen selalu ngeflow sinkron dengan transaksi riil
         try {
+            \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing();
+
             $bastCustIds = BAST::pluck('id_customer')->filter()->toArray();
             if (!empty($bastCustIds)) {
                 Customer::whereIn('id', $bastCustIds)->where('id_status_progres', '!=', 5)->update(['id_status_progres' => 5]);

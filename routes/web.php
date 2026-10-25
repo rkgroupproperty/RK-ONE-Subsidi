@@ -139,6 +139,10 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
         abort(403);
     }
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    try {
+        \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing('mysql_subsidi');
+        \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing('mysql');
+    } catch (\Throwable $e) {}
     return response()->json([
         'status' => 'success',
         'message' => 'Cache Laravel berhasil dibersihkan!',

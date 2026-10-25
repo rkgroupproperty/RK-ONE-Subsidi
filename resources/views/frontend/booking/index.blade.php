@@ -731,11 +731,10 @@
                                 <div class="form-group row">
                                     <label class="col-sm-2 col-form-label">Marketing <span style="color: red;">*</span></label>
                                     <div class="col-sm-4">
-                                        <select class="form-control select-marketing" name="id_marketing" id="id_marketing">
+                                        <select class="form-control select-marketing" name="id_marketing" id="id_marketing" required>
                                             <option value=""></option>
-                                            <option value="0">Non Marketing</option>
                                             @foreach ($marketing as $m)
-                                                @if ($m->status == 1 || !isset($m->status))
+                                                @if (($m->status == 1 || !isset($m->status)) && !str_contains(strtolower($m->nama_marketing), 'non marketing'))
                                                     <option value="{{ $m->id }}">{{ $m->nama_marketing }}</option>
                                                 @endif
                                             @endforeach

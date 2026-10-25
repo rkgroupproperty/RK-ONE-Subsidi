@@ -366,6 +366,71 @@ class PengajuanHoldController extends Controller
         return $this->bookingSubsidi($request);
     }
 
+    public static function ensureKantorMarketing($targetConn = null)
+    {
+        try {
+            $conn = $targetConn ?? (session('app_type') === 'komersil' ? 'mysql_komersil' : 'mysql_subsidi');
+            try {
+                DB::connection($conn)->getPdo();
+            } catch (\Throwable $e) {
+                $conn = 'mysql';
+            }
+
+            // Cari atau buat record Marketing 'Kantor'
+            $kantor = MarketingOffline::on($conn)->whereRaw('LOWER(nama_marketing) = ?', ['kantor'])->first();
+            if (!$kantor) {
+                $kantor = MarketingOffline::on($conn)->create([
+                    'kode_marketing' => 'MKT-KTR',
+                    'nama_marketing' => 'Kantor',
+                    'jenis_kelamin'  => 1,
+                    'alamat'         => 'Kantor RK Group Property',
+                    'status'         => 1,
+                ]);
+            }
+
+            // Cari ID marketing yang bernama 'Non Marketing' jika ada
+            $nonMarketingIds = MarketingOffline::on($conn)
+                ->where(function ($q) {
+                    $q->whereRaw('LOWER(nama_marketing) LIKE ?', ['%non marketing%'])
+                      ->orWhereRaw('LOWER(nama_marketing) = ?', ['non marketing'])
+                      ->orWhereRaw('LOWER(nama_marketing) = ?', ['non-marketing']);
+                })
+                ->pluck('id')
+                ->toArray();
+
+            $allNonIds = array_unique(array_merge($nonMarketingIds, [0]));
+
+            // Alihkan data customer non marketing ke Kantor
+            Customer::on($conn)
+                ->where(function ($q) use ($allNonIds) {
+                    $q->whereIn('id_marketing', $allNonIds)
+                      ->orWhereNull('id_marketing');
+                })
+                ->update(['id_marketing' => $kantor->id]);
+
+            // Alihkan data pengajuan_hold non marketing ke Kantor
+            PengajuanHold::on($conn)
+                ->where(function ($q) use ($allNonIds) {
+                    $q->whereIn('id_marketing', $allNonIds)
+                      ->orWhereNull('id_marketing');
+                })
+                ->update(['id_marketing' => $kantor->id]);
+
+            // Nonaktifkan record Non Marketing agar tidak muncul di pilihan mana pun
+            MarketingOffline::on($conn)
+                ->where(function ($q) {
+                    $q->whereRaw('LOWER(nama_marketing) LIKE ?', ['%non marketing%'])
+                      ->orWhereRaw('LOWER(nama_marketing) = ?', ['non marketing'])
+                      ->orWhereRaw('LOWER(nama_marketing) = ?', ['non-marketing']);
+                })
+                ->update(['status' => 0]);
+
+            return $kantor;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public function bookingSubsidi(Request $request)
     {
         Carbon::setLocale('id');
@@ -378,14 +443,32 @@ class PengajuanHoldController extends Controller
             $targetConn = 'mysql';
         }
 
-        $marketing = MarketingOffline::on($targetConn)->where('status', 1)->orderBy('nama_marketing', 'asc')->get();
+        self::ensureKantorMarketing($targetConn);
+
+        $marketing = MarketingOffline::on($targetConn)
+            ->where('status', 1)
+            ->whereRaw('LOWER(nama_marketing) NOT LIKE ?', ['%non marketing%'])
+            ->orderBy('nama_marketing', 'asc')
+            ->get();
         $bank      = Bank::on($targetConn)->get();
         $progres   = ProgresListPenjualan::on($targetConn)->get();
+        
+        // Tampilkan 3 lokasi subsidi (Alzafa Residence 3, Bukit Intan Residence 4, Bukit Intan Residen 2)
         $lokasi    = LokasiKavling::on($targetConn)
             ->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills'])
-            ->where('stt_tampil', 1)
+            ->whereIn('stt_tampil', [1, 3])
             ->orderBy('urutan')
+            ->orderBy('id')
             ->get();
+
+        if ($lokasi->count() < 3) {
+            $lokasi = LokasiKavling::on($targetConn)
+                ->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills'])
+                ->orderBy('urutan')
+                ->orderBy('id')
+                ->get();
+        }
+
         $bg        = PengaturanMedia::on($targetConn)->where('jenis_data', 'Background booking')->first();
         $tgl       = Carbon::now()->translatedFormat('j F Y');
 
@@ -414,12 +497,19 @@ class PengajuanHoldController extends Controller
             $targetConn = 'mysql';
         }
 
-        $marketing = MarketingOffline::on($targetConn)->where('status', 1)->orderBy('nama_marketing', 'asc')->get();
+        self::ensureKantorMarketing($targetConn);
+
+        $marketing = MarketingOffline::on($targetConn)
+            ->where('status', 1)
+            ->whereRaw('LOWER(nama_marketing) NOT LIKE ?', ['%non marketing%'])
+            ->orderBy('nama_marketing', 'asc')
+            ->get();
         $bank      = Bank::on($targetConn)->get();
         $progres   = ProgresListPenjualan::on($targetConn)->get();
         $lokasi    = LokasiKavling::on($targetConn)
-            ->where('stt_tampil', 1)
+            ->whereIn('stt_tampil', [1, 3])
             ->orderBy('urutan')
+            ->orderBy('id')
             ->get();
         $bg        = PengaturanMedia::on($targetConn)->where('jenis_data', 'Background booking')->first();
         $tgl       = Carbon::now()->translatedFormat('j F Y');
@@ -723,9 +813,16 @@ class PengajuanHoldController extends Controller
 
     public function bookingStore(Request $request)
     {
+        $idMarketing = $request->id_marketing;
+        if (empty($idMarketing) || $idMarketing == '0' || $idMarketing === 0) {
+            $kantor = self::ensureKantorMarketing();
+            $idMarketing = $kantor ? $kantor->id : 1;
+        }
+
         $request->merge([
-            'booking_fee' => $request->booking_fee ? str_replace('.', '', $request->booking_fee) : 0,
-            'total_harga' => $request->total_harga ? str_replace('.', '', $request->total_harga) : 0,
+            'booking_fee'  => $request->booking_fee ? str_replace('.', '', $request->booking_fee) : 0,
+            'total_harga'  => $request->total_harga ? str_replace('.', '', $request->total_harga) : 0,
+            'id_marketing' => $idMarketing,
         ]);
 
         $request->validate([
