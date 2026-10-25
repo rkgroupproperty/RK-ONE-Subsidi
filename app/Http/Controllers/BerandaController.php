@@ -26,7 +26,7 @@ class BerandaController extends Controller
 {
     public function index(Request $request)
     {
-        $username = Auth::user()->username;
+        $username = Auth::user()?->username ?? 'admin';
 
         Carbon::setLocale('id');
         $now = Carbon::now('Asia/Jakarta');

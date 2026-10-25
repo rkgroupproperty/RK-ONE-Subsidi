@@ -144,37 +144,9 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
         \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing('mysql');
     } catch (\Throwable $e) {}
 
-    // Diagnostic query for Komersil & Subsidi project resumes verification
-    $diagnostic = [];
-    try {
-        $beranda = app(\App\Http\Controllers\BerandaController::class);
-        $method = new \ReflectionMethod($beranda, 'getProjectResumes');
-        $method->setAccessible(true);
-        $diagnostic['resumes'] = $method->invoke($beranda);
-    } catch (\Throwable $e) {
-        $diagnostic['error'] = $e->getMessage();
-    }
-
-    // Test execute beranda index method with authenticated user
-    $berandaTest = 'ok';
-    try {
-        $dummyUser = \App\Models\User::first();
-        if ($dummyUser) {
-            \Illuminate\Support\Facades\Auth::login($dummyUser);
-        }
-        $req = \Illuminate\Http\Request::create('/admin/beranda', 'GET');
-        $beranda = app(\App\Http\Controllers\BerandaController::class);
-        $res = $beranda->index($req);
-        $berandaTest = 'Index render SUCCESS! Type: ' . get_class($res);
-    } catch (\Throwable $e) {
-        $berandaTest = 'Error: ' . $e->getMessage() . ' on line ' . $e->getLine() . ' in ' . $e->getFile();
-    }
-
     return response()->json([
         'status' => 'success',
         'message' => 'Cache Laravel berhasil dibersihkan!',
-        'beranda_test' => $berandaTest,
-        'resumes' => $diagnostic,
         'output' => \Illuminate\Support\Facades\Artisan::output(),
     ]);
 })->name('system.clear-cache');
