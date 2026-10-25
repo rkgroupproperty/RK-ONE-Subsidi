@@ -43,24 +43,24 @@
 
       $slidesKomersil = [
           [
-              'image' => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1400&auto=format&fit=crop',
-              'title' => 'Ultra Modern Living & Prestige',
-              'subtitle' => 'Koleksi hunian komersil eksklusif dengan arsitektur modern tropis 2 lantai berkelas dunia.',
+              'image' => $bgImage,
+              'title' => 'Hunian Asri Subsidi Berkualitas',
+              'subtitle' => 'Wujudkan rumah impian keluarga dengan angsuran terjangkau, lingkungan asri dan fasilitas nyaman.',
           ],
           [
-              'image' => 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1400&auto=format&fit=crop',
-              'title' => 'High-Return Property Investment',
-              'subtitle' => 'Portofolio aset komersil bernilai tinggi di lokasi prima dengan pertumbuhan capital gain optimal.',
+              'image' => 'https://subsidi.rkgroupproperti.com/config_media/ChatGPT%20Image%20Jul%2016,%202026,%2002_42_39%20PM.png',
+              'title' => 'Kehangatan Keluarga & Masa Depan',
+              'subtitle' => 'Kawasan perumahan terpadu ramah keluarga dengan tata ruang hijau dan lingkungan aman.',
           ],
           [
-              'image' => 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1400&auto=format&fit=crop',
-              'title' => 'Private Sanctuary & Smart Living',
-              'subtitle' => 'Privasi maksimal 24 jam one-gate system, clubhouse privat, dan standar gaya hidup urban premium.',
+              'image' => 'https://subsidi.rkgroupproperti.com/config_media/86721873-9c19-47f6-94a4-a64a3ca22888.jpg',
+              'title' => 'Kemudahan KPR Subsidi Terpercaya',
+              'subtitle' => 'Proses kepemilikan rumah mudah dan cepat dengan pendampingan penuh dari tim profesional.',
           ],
           [
-              'image' => 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=1400&auto=format&fit=crop',
-              'title' => 'Desain Estetik Arsitektur Mewah',
-              'subtitle' => 'Sentuhan material premium, pencahayaan alami berlimpah, dan tata ruang terbuka yang memukau.',
+              'image' => 'https://subsidi.rkgroupproperti.com/config_media/WhatsApp%20Image%202025-08-05%20at%2011.55.27%20(1).webp',
+              'title' => 'Komunitas Asri & Bebas Banjir',
+              'subtitle' => 'Lokasi strategis dengan infrastruktur matang yang dirancang untuk kenyamanan jangka panjang.',
           ],
       ];
   @endphp
