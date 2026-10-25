@@ -143,9 +143,42 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
         \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing('mysql_subsidi');
         \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing('mysql');
     } catch (\Throwable $e) {}
+
+    // Diagnostic query for Komersil & Subsidi projects
+    $diagnostic = [];
+    foreach (['mysql_komersil', 'mysql_subsidi'] as $conn) {
+        try {
+            $lokasis = \Illuminate\Support\Facades\DB::connection($conn)->table('lokasi_kavling')->get();
+            $diagConn = [];
+            foreach ($lokasis as $l) {
+                $kavlings = \Illuminate\Support\Facades\DB::connection($conn)->table('kavling_peta')->where('id_lokasi', $l->id)->get();
+                $custs = \Illuminate\Support\Facades\DB::connection($conn)->table('customer')->where('id_lokasi', $l->id)->where('stt_arsip', 0)->get();
+                $holds = \Illuminate\Support\Facades\DB::connection($conn)->table('pengajuan_hold')->where('id_lokasi', $l->id)->where('stt_reg', '!=', 2)->get();
+                
+                $statusCounts = $custs->groupBy('id_status_progres')->map->count();
+                $kavStatusCounts = $kavlings->groupBy('status')->map->count();
+
+                $diagConn[] = [
+                    'id' => $l->id,
+                    'nama' => $l->nama_kavling,
+                    'total_kavling' => $kavlings->count(),
+                    'kavling_by_status' => $kavStatusCounts,
+                    'customer_count' => $custs->count(),
+                    'customer_by_status' => $statusCounts,
+                    'hold_count' => $holds->count(),
+                    'sample_kavling_cols' => $kavlings->first() ? array_keys((array)$kavlings->first()) : [],
+                ];
+            }
+            $diagnostic[$conn] = $diagConn;
+        } catch (\Throwable $e) {
+            $diagnostic[$conn] = ['error' => $e->getMessage()];
+        }
+    }
+
     return response()->json([
         'status' => 'success',
         'message' => 'Cache Laravel berhasil dibersihkan!',
+        'diagnostic' => $diagnostic,
         'output' => \Illuminate\Support\Facades\Artisan::output(),
     ]);
 })->name('system.clear-cache');
