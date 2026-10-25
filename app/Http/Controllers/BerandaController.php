@@ -188,21 +188,26 @@ class BerandaController extends Controller
             }
         }
 
-        $totalUnit = KavlingPeta::count();
-        $unitTerjual = Customer::where('stt_arsip', 0)->count();
-        $unitReady = KavlingPeta::where('status', 0)->count();
-        $piutangTotal = (int) \App\Models\Piutang::sum('sisa_bayar');
-        $piutangCustomer = \App\Models\Piutang::where('sisa_bayar', '>', 0)->distinct('id_customer')->count('id_customer');
-        $tagihanTempoCust = \App\Models\CustomerTempo::count();
-        $tagihanTempoTotal = (int) \App\Models\CustomerTempo::sum('total_harga');
-
         $isKomersil = session('app_type') === 'komersil';
-        $lokasiQuery = LokasiKavling::whereIn('stt_tampil', [1, 3]);
+        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+        $lokasiQuery = DB::connection($conn)->table('lokasi_kavling')->whereIn('stt_tampil', [1, 3]);
         if ($isKomersil) {
             $lokasiQuery->whereIn('id', [1, 2]);
         } else {
             $lokasiQuery->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills']);
         }
+        $targetLokasiIds = (clone $lokasiQuery)->pluck('id')->toArray();
+
+        $totalUnit = DB::connection($conn)->table('kavling_peta')->whereIn('id_lokasi', $targetLokasiIds)->count();
+        $unitAkad = DB::connection($conn)->table('customer')->whereIn('id_lokasi', $targetLokasiIds)->where('stt_arsip', 0)->where('id_status_progres', 3)->count();
+        $unitCash = DB::connection($conn)->table('customer')->whereIn('id_lokasi', $targetLokasiIds)->where('stt_arsip', 0)->where('jenis_pembelian', 'Cash')->where('id_status_progres', '!=', 3)->count();
+        $unitTerjual = $unitAkad + $unitCash;
+        $unitOnProses = DB::connection($conn)->table('customer')->whereIn('id_lokasi', $targetLokasiIds)->where('stt_arsip', 0)->whereIn('id_status_progres', [1, 4, 7, 8, 10, 11])->count();
+        $unitReady = max(0, $totalUnit - $unitTerjual - $unitOnProses);
+        $piutangTotal = (int) DB::connection($conn)->table('piutang')->sum('sisa_bayar');
+        $piutangCustomer = DB::connection($conn)->table('piutang')->where('sisa_bayar', '>', 0)->distinct('id_customer')->count('id_customer');
+        $tagihanTempoCust = DB::connection($conn)->table('customer_tempo')->count();
+        $tagihanTempoTotal = (int) DB::connection($conn)->table('customer_tempo')->sum('total_harga');
 
         $summaryMetrics = [
             'jumlah_project' => (clone $lokasiQuery)->count(),
@@ -744,7 +749,13 @@ class BerandaController extends Controller
     private function getProjectResumes()
     {
         $isKomersil = session('app_type') === 'komersil';
-        $query = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('urutan', 'asc')->orderBy('id', 'asc');
+        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+
+        $query = DB::connection($conn)->table('lokasi_kavling')
+            ->whereIn('stt_tampil', [1, 3])
+            ->orderBy('urutan', 'asc')
+            ->orderBy('id', 'asc');
+
         if ($isKomersil) {
             $query->whereIn('id', [1, 2]);
         } else {
@@ -759,6 +770,7 @@ class BerandaController extends Controller
         $totalAllCash = 0;
         $totalAllProses = 0;
         $totalAllFisik = 0;
+        $totalAllSisa = 0;
         $allProsesItems = [
             'SP3K' => ['unit' => 0, 'fisik' => 0, 'icon' => 'fa-file-invoice', 'color' => '#8b5cf6'],
             'Proses Bank' => ['unit' => 0, 'fisik' => 0, 'icon' => 'fa-building-columns', 'color' => '#f97316'],
@@ -770,39 +782,74 @@ class BerandaController extends Controller
         foreach ($lokasis as $lokasi) {
             $lokasiId = $lokasi->id;
             $key = 'lok_' . $lokasiId;
-            $totalUnit = KavlingPeta::where('id_lokasi', $lokasiId)->count();
+            $totalUnit = DB::connection($conn)->table('kavling_peta')->where('id_lokasi', $lokasiId)->count();
 
-            $akad = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 3)->where('stt_arsip', 0)->count()
-                + AkadDetail::whereHas('customer', fn ($q) => $q->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('customer', fn ($q) => $q->where('id_status_progres', 3))->count();
+            // 1. Realisasi Terjual: Akad Kredit (id_status_progres = 3) dan Cash Lunas
+            $akad = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_arsip', 0)
+                ->where('id_status_progres', 3)
+                ->count();
 
-            $cash = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->where('jenis_pembelian', 'Cash')->count();
+            $cash = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_arsip', 0)
+                ->where('jenis_pembelian', 'Cash')
+                ->where('id_status_progres', '!=', 3)
+                ->count();
 
-            $sp3k = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 4)->where('stt_arsip', 0)->count()
-                + WawancaraSp3k::where('status', 1)->whereHas('wawancara.customer', fn ($q) => $q->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('wawancara.customer', fn ($q) => $q->where('id_status_progres', 4))->count();
+            $terjual = $akad + $cash;
 
-            $bank = Customer::where('id_lokasi', $lokasiId)->whereIn('id_status_progres', [7, 10])->where('stt_arsip', 0)->count()
-                + SPPR::whereHas('customer', fn ($q) => $q->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('customer', fn ($q) => $q->where('id_status_progres', 10))->count()
-                + Wawancara::where('status', 1)->whereHas('customer', fn ($q) => $q->where('id_lokasi', $lokasiId)->where('stt_arsip', 0))->whereDoesntHave('customer', fn ($q) => $q->where('id_status_progres', 7))->count();
+            // 2. Sedang On Proses: Konsumen aktif dalam alur pembelian (SP3K, Bank, Admin, Marketing)
+            $sp3k = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_arsip', 0)
+                ->where('id_status_progres', 4)
+                ->count();
 
-            $admin = Customer::where('id_lokasi', $lokasiId)->whereIn('id_status_progres', [1, 8])->where('stt_arsip', 0)->count();
+            $bank = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_arsip', 0)
+                ->whereIn('id_status_progres', [7, 10])
+                ->count();
 
-            $marketing = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 11)->where('stt_arsip', 0)->count()
-                + PengajuanHold::where('id_lokasi', $lokasiId)->where('stt_reg', '!=', 2)->count();
+            $admin = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_arsip', 0)
+                ->whereIn('id_status_progres', [1, 8])
+                ->count();
 
-            $terjual = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->count();
-            if ($terjual < ($akad + $cash)) $terjual = $akad + $cash;
+            $marketingCust = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_arsip', 0)
+                ->where('id_status_progres', 11)
+                ->pluck('id_kavling')
+                ->filter()
+                ->toArray();
+
+            $holdNonCust = DB::connection($conn)->table('pengajuan_hold')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_reg', '!=', 2)
+                ->whereNotIn('id_kavling', $marketingCust)
+                ->count();
+
+            $marketing = count($marketingCust) + $holdNonCust;
 
             $onProses = $sp3k + $bank + $admin + $marketing;
-            $sisaUnit = max(0, $totalUnit - $terjual);
+
+            // 3. Sisa Unit Ready: Secara matematis 100% konsisten (Total Unit - Terjual - On Proses)
+            $sisaUnit = max(0, $totalUnit - $terjual - $onProses);
 
             $pctTerjual = $totalUnit > 0 ? round(($terjual / $totalUnit) * 100, 1) : 0;
             $pctProses = $totalUnit > 0 ? round(($onProses / $totalUnit) * 100, 1) : 0;
-            $pctSisa = $totalUnit > 0 ? round(($sisaUnit / $totalUnit) * 100, 1) : 0;
+            $pctSisa = $totalUnit > 0 ? max(0, round(100 - $pctTerjual - $pctProses, 1)) : 0;
 
+            // 4. Rincian Progres Fisik (Kesiapan Bangunan 80% - 100%):
+            // Unit SP3K & Proses Bank sudah dipersiapkan kesiapan fisiknya (80-100%)
             $fSP3K = $sp3k;
             $fBank = $bank;
-            $fAdmin = $admin;
-            $fMkt = $marketing;
+            $fAdmin = 0;
+            $fMkt = 0;
             $fBelum = 0;
             $totalFisik = $fSP3K + $fBank + $fAdmin + $fMkt + $fBelum;
 
@@ -818,7 +865,7 @@ class BerandaController extends Controller
                 'id' => $lokasiId,
                 'nama' => $lokasi->nama_kavling,
                 'short_name' => $lokasi->nama_singkat ?: $lokasi->nama_kavling,
-                'badge' => $lokasi->nama_singkat ?: 'Komersil',
+                'badge' => $lokasi->nama_singkat ?: ($isKomersil ? 'Komersil' : 'Subsidi'),
                 'total_unit' => $totalUnit,
                 'total_terjual' => $terjual,
                 'persentase_terjual' => $pctTerjual,
@@ -840,6 +887,7 @@ class BerandaController extends Controller
             $totalAllCash += $cash;
             $totalAllProses += $onProses;
             $totalAllFisik += $totalFisik;
+            $totalAllSisa += $sisaUnit;
 
             $allProsesItems['SP3K']['unit'] += $sp3k;
             $allProsesItems['SP3K']['fisik'] += $fSP3K;
@@ -864,24 +912,28 @@ class BerandaController extends Controller
             ];
         }
 
+        $allPctTerjual = $totalAllUnits > 0 ? round(($totalAllTerjual / $totalAllUnits) * 100, 1) : 0;
+        $allPctProses = $totalAllUnits > 0 ? round(($totalAllProses / $totalAllUnits) * 100, 1) : 0;
+        $allPctSisa = $totalAllUnits > 0 ? max(0, round(100 - $allPctTerjual - $allPctProses, 1)) : 0;
+
         $resumes['all'] = [
             'id' => 'all',
-            'nama' => 'Total Keseluruhan Proyek',
+            'nama' => $isKomersil ? 'Total Keseluruhan Proyek Komersil' : 'Total Keseluruhan Proyek Subsidi',
             'short_name' => 'Semua Proyek',
             'badge' => 'Konsolidasi',
             'total_unit' => $totalAllUnits,
             'total_terjual' => $totalAllTerjual,
-            'persentase_terjual' => $totalAllUnits > 0 ? round(($totalAllTerjual / $totalAllUnits) * 100, 1) : 0,
+            'persentase_terjual' => $allPctTerjual,
             'kpr_akad' => $totalAllAkad,
             'terjual_cash' => $totalAllCash,
             'on_proses' => $totalAllProses,
-            'persentase_proses' => $totalAllUnits > 0 ? round(($totalAllProses / $totalAllUnits) * 100, 1) : 0,
-            'sisa_unit' => max(0, $totalAllUnits - $totalAllTerjual),
-            'persentase_sisa' => $totalAllUnits > 0 ? round((max(0, $totalAllUnits - $totalAllTerjual) / $totalAllUnits) * 100, 1) : 0,
+            'persentase_proses' => $allPctProses,
+            'sisa_unit' => $totalAllSisa,
+            'persentase_sisa' => $allPctSisa,
             'proses_items' => $allProsesList,
             'total_unit_proses' => $totalAllProses,
             'total_fisik_proses' => $totalAllFisik,
-            'catatan' => 'Total konsolidasi seluruh Perumahan Komersil (sinkron otomatis dari database)',
+            'catatan' => $isKomersil ? 'Total konsolidasi seluruh Perumahan Komersil (sinkron otomatis dari database)' : 'Total konsolidasi seluruh Perumahan Subsidi (sinkron otomatis dari database)',
         ];
 
         return $resumes;
