@@ -154,6 +154,20 @@ class BerandaController extends Controller
             // Fallback aman
         }
 
+        $akadCountQuery = Customer::where('id_status_progres', 3)->where('stt_arsip', 0);
+        if ($isFilteredByDate && $startCarbon && $endCarbon) {
+            $startDateStr = $startCarbon->toDateString();
+            $endDateStr = $endCarbon->toDateString();
+            $akadCountQuery->where(function ($q) use ($startDateStr, $endDateStr) {
+                $q->whereHas('akadDetail.akad', function ($qa) use ($startDateStr, $endDateStr) {
+                    $qa->whereBetween('tgl_akad', [$startDateStr, $endDateStr]);
+                })->orWhere(function ($qb) use ($startDateStr, $endDateStr) {
+                    $qb->whereBetween('tanggal_verif', [$startDateStr . ' 00:00:00', $endDateStr . ' 23:59:59']);
+                });
+            });
+        }
+        $akadPipelineCount = $akadCountQuery->count();
+
         $pipelineCounts = [
             'booking' => PengajuanHold::where('stt_reg', '!=', 2)->count()
                 + Customer::where('id_status_progres', 2)->where('stt_arsip', 0)->count(),
@@ -162,7 +176,7 @@ class BerandaController extends Controller
             'wawancara' => Customer::where('id_status_progres', 7)->where('stt_arsip', 0)->count(),
             'acc_bank' => Customer::where('id_status_progres', 4)->where('stt_arsip', 0)->count(),
             'ppjb' => Customer::where('id_status_progres', 6)->where('stt_arsip', 0)->count(),
-            'akad' => Customer::where('id_status_progres', 3)->where('stt_arsip', 0)->count(),
+            'akad' => $akadPipelineCount,
             'bast' => Customer::where('id_status_progres', 5)->where('stt_arsip', 0)->count(),
         ];
 
@@ -211,7 +225,7 @@ class BerandaController extends Controller
             ->orderBy('urutan')
             ->orderBy('id')
             ->get()
-            ->map(function (LokasiKavling $lokasi) {
+            ->map(function (LokasiKavling $lokasi) use ($isFilteredByDate, $startCarbon, $endCarbon) {
                 $lokasiId = $lokasi->id;
                 $totalUnit = KavlingPeta::where('id_lokasi', $lokasiId)->count();
                 $booking = PengajuanHold::where('id_lokasi', $lokasiId)->where('stt_reg', '!=', 2)->count()
@@ -221,7 +235,21 @@ class BerandaController extends Controller
                 $wawancara = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 7)->where('stt_arsip', 0)->count();
                 $accBank = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 4)->where('stt_arsip', 0)->count();
                 $ppjb = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 6)->where('stt_arsip', 0)->count();
-                $akad = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 3)->where('stt_arsip', 0)->count();
+
+                $akadLokasiQuery = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 3)->where('stt_arsip', 0);
+                if ($isFilteredByDate && $startCarbon && $endCarbon) {
+                    $startDateStr = $startCarbon->toDateString();
+                    $endDateStr = $endCarbon->toDateString();
+                    $akadLokasiQuery->where(function ($q) use ($startDateStr, $endDateStr) {
+                        $q->whereHas('akadDetail.akad', function ($qa) use ($startDateStr, $endDateStr) {
+                            $qa->whereBetween('tgl_akad', [$startDateStr, $endDateStr]);
+                        })->orWhere(function ($qb) use ($startDateStr, $endDateStr) {
+                            $qb->whereBetween('tanggal_verif', [$startDateStr . ' 00:00:00', $endDateStr . ' 23:59:59']);
+                        });
+                    });
+                }
+                $akad = $akadLokasiQuery->count();
+
                 $bast = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 5)->where('stt_arsip', 0)->count();
                 $terjual = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->count();
 

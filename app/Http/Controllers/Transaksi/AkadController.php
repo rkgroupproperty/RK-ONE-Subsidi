@@ -8,6 +8,8 @@ use App\Models\Akad;
 use App\Models\AkadDetail;
 use App\Models\Customer;
 use App\Models\KavlingPeta;
+use App\Models\LokasiKavling;
+use App\Models\MarketingOffline;
 use App\Models\PersyaratanLegal;
 use App\Models\Wawancara;
 use App\Models\WawancaraSp3k;
@@ -56,64 +58,187 @@ class AkadController extends Controller
         $this->refreshDeadlineAkad();
 
         if ($request->ajax()) {
+            $tab = $request->get('tab', 'konsumen');
             $now = Carbon::now('Asia/Jakarta');
             $filter = $request->get('filter', 'bulan_ini');
-            $query = Akad::query();
+
+            if ($tab === 'jadwal') {
+                $query = Akad::query();
+
+                if ($filter === 'semua') {
+                    // Tampilkan semua data tanpa filter tanggal
+                } elseif ($filter === 'bulan_kemarin') {
+                    $lastMonth = $now->copy()->subMonth();
+                    $query->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
+                } elseif ($filter === 'pilih_bulan' && $request->filled('bulan') && $request->filled('tahun')) {
+                    $bulan = (int) $request->get('bulan');
+                    $tahun = (int) $request->get('tahun');
+                    $query->whereYear('tgl_akad', $tahun)->whereMonth('tgl_akad', $bulan);
+                } elseif ($filter === 'custom' && $request->filled('start_date') && $request->filled('end_date')) {
+                    $startDate = Carbon::parse($request->get('start_date'))->startOfDay()->toDateString();
+                    $endDate = Carbon::parse($request->get('end_date'))->endOfDay()->toDateString();
+                    $query->whereBetween('tgl_akad', [$startDate, $endDate]);
+                } else {
+                    // Default: bulan ini
+                    $query->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
+                }
+
+                $data = $query->orderBy('tgl_akad', 'desc')->orderBy('id', 'desc');
+
+                return DataTables::of($data)
+                    ->addIndexColumn()
+                    ->addColumn('total_akad', function ($row) {
+                        return AkadDetail::where('id_akad', $row->id)->count();
+                    })
+                    ->editColumn('tgl_akad', function ($row) {
+                        return Carbon::parse($row->tgl_akad)->translatedFormat('d F Y');
+                    })
+                    ->addColumn('action', function ($row) use ($permissions) {
+                        $detailUrl = route('akad.show', $row->id);
+                        $editUrl   = route('akad.edit', $row->id);
+                        $deleteUrl = route('akad.destroy', $row->id);
+
+                        $btn = '<div class="d-flex justify-content-center">';
+                        if ($permissions['edit']) {
+                            $btn .= '<a href="' . e($detailUrl) . '" class="btn btn-info btn-xs mr-1"><i class="fas fa-eye mr-1"></i>Detail</a>';
+                            $btn .= '<button class="btn btn-primary btn-xs mx-1 edit-button" data-id="' . e($row->id) . '" data-url="' . e($editUrl) . '"><i class="fas fa-edit mr-1"></i>Edit</button>';
+                        }
+                        if ($permissions['hapus']) {
+                            $btn .= '<form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">'
+                                . csrf_field()
+                                . method_field('DELETE')
+                                . '<button type="submit" class="delete-button btn btn-danger btn-xs"><i class="fas fa-trash mr-1"></i>Hapus</button></form>';
+                        }
+                        return $btn . '</div>';
+                    })
+                    ->rawColumns(['action'])
+                    ->make(true);
+            }
+
+            // Tab Konsumen (Default): Data Nama Konsumen Akad
+            $query = Customer::where('id_status_progres', 3)
+                ->where('stt_arsip', 0)
+                ->with(['lokasi', 'kavling', 'marketing', 'akadDetail.akad']);
+
+            if ($request->filled('id_lokasi')) {
+                $query->where('id_lokasi', $request->get('id_lokasi'));
+            }
+
+            if ($request->filled('id_marketing')) {
+                $query->where('id_marketing', $request->get('id_marketing'));
+            }
 
             if ($filter === 'semua') {
-                // Tampilkan semua data tanpa filter tanggal
+                // Tampilkan semua data konsumen akad
             } elseif ($filter === 'bulan_kemarin') {
                 $lastMonth = $now->copy()->subMonth();
-                $query->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
+                $query->where(function ($q) use ($lastMonth) {
+                    $q->whereHas('akadDetail.akad', function ($qa) use ($lastMonth) {
+                        $qa->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
+                    })->orWhere(function ($qb) use ($lastMonth) {
+                        $qb->whereYear('tanggal_verif', $lastMonth->year)->whereMonth('tanggal_verif', $lastMonth->month);
+                    });
+                });
             } elseif ($filter === 'pilih_bulan' && $request->filled('bulan') && $request->filled('tahun')) {
                 $bulan = (int) $request->get('bulan');
                 $tahun = (int) $request->get('tahun');
-                $query->whereYear('tgl_akad', $tahun)->whereMonth('tgl_akad', $bulan);
+                $query->where(function ($q) use ($bulan, $tahun) {
+                    $q->whereHas('akadDetail.akad', function ($qa) use ($bulan, $tahun) {
+                        $qa->whereYear('tgl_akad', $tahun)->whereMonth('tgl_akad', $bulan);
+                    })->orWhere(function ($qb) use ($bulan, $tahun) {
+                        $qb->whereYear('tanggal_verif', $tahun)->whereMonth('tanggal_verif', $bulan);
+                    });
+                });
             } elseif ($filter === 'custom' && $request->filled('start_date') && $request->filled('end_date')) {
                 $startDate = Carbon::parse($request->get('start_date'))->startOfDay()->toDateString();
                 $endDate = Carbon::parse($request->get('end_date'))->endOfDay()->toDateString();
-                $query->whereBetween('tgl_akad', [$startDate, $endDate]);
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereHas('akadDetail.akad', function ($qa) use ($startDate, $endDate) {
+                        $qa->whereBetween('tgl_akad', [$startDate, $endDate]);
+                    })->orWhere(function ($qb) use ($startDate, $endDate) {
+                        $qb->whereBetween('tanggal_verif', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+                    });
+                });
             } else {
                 // Default: bulan ini
-                $query->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
+                $query->where(function ($q) use ($now) {
+                    $q->whereHas('akadDetail.akad', function ($qa) use ($now) {
+                        $qa->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
+                    })->orWhere(function ($qb) use ($now) {
+                        $qb->whereYear('tanggal_verif', $now->year)->whereMonth('tanggal_verif', $now->month);
+                    });
+                });
             }
 
-            $data = $query->orderBy('tgl_akad', 'desc')->orderBy('id', 'desc');
+            $data = $query->orderBy('id', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->addColumn('total_akad', function ($row) {
-                    return AkadDetail::where('id_akad', $row->id)->count();
-                })
-
-                ->editColumn('tgl_akad', function ($row) {
-                    return Carbon::parse($row->tgl_akad)->translatedFormat('d F Y');
-                })
-
-                ->addColumn('action', function ($row) use ($permissions) {
-                    $detailUrl = route('akad.show', $row->id);
-                    $editUrl   = route('akad.edit', $row->id);
-                    $deleteUrl = route('akad.destroy', $row->id);
-
-                    $btn = '<div class="d-flex justify-content-center">';
-
-                    if ($permissions['edit']) {
-                        $btn .= '<a href="' . e($detailUrl) . '" class="btn btn-info btn-xs">Detail</a>';
-                        $btn .= '<button class="btn btn-primary btn-xs mx-1 edit-button" data-id="' . e($row->id) . '" data-url="' . e($editUrl) . '">Edit</button>';
+                ->addColumn('tgl_akad', function ($row) {
+                    $firstDetail = $row->akadDetail->first();
+                    if ($firstDetail && $firstDetail->akad && $firstDetail->akad->tgl_akad) {
+                        return '<span class="font-weight-bold text-dark"><i class="far fa-calendar-alt text-primary mr-1"></i>' . Carbon::parse($firstDetail->akad->tgl_akad)->translatedFormat('d F Y') . '</span>';
                     }
-
-                    if ($permissions['hapus']) {
-                        $btn .= '<form action="' . e($deleteUrl) . '" method="POST" style="display:inline;">'
-                            . csrf_field()
-                            . method_field('DELETE')
-                            . '<button type="submit" class="delete-button btn btn-danger btn-xs">Hapus</button></form>';
+                    if ($row->tanggal_verif) {
+                        return '<span class="text-secondary"><i class="far fa-calendar-alt mr-1"></i>' . Carbon::parse($row->tanggal_verif)->translatedFormat('d F Y') . '</span>';
                     }
-
-                    return $btn . '</div>';
+                    return '<span class="text-muted">-</span>';
                 })
-                ->rawColumns(['action'])
+                ->addColumn('nama_lengkap', function ($row) {
+                    $nama = '<span class="font-weight-bold text-primary" style="font-size:14px">' . e($row->nama_lengkap) . '</span>';
+                    if ($row->nik) {
+                        $nama .= '<br><small class="text-muted"><i class="far fa-id-card mr-1"></i>NIK: ' . e($row->nik) . '</small>';
+                    }
+                    return $nama;
+                })
+                ->addColumn('no_telp', function ($row) {
+                    $telp = $row->no_telp ?? $row->no_hp ?? '-';
+                    if ($telp && $telp !== '-') {
+                        $cleanTelp = preg_replace('/[^0-9]/', '', $telp);
+                        $waNum = str_starts_with($cleanTelp, '0') ? ('62' . substr($cleanTelp, 1)) : $cleanTelp;
+                        return '<a href="https://wa.me/' . $waNum . '" target="_blank" class="btn btn-xs btn-outline-success font-weight-bold px-2 py-1"><i class="fab fa-whatsapp mr-1"></i>' . e($telp) . '</a>';
+                    }
+                    return '<span class="text-muted">-</span>';
+                })
+                ->addColumn('marketing', function ($row) {
+                    return $row->marketing ? '<span class="badge badge-light border text-dark font-weight-bold"><i class="fas fa-user-tie text-info mr-1"></i>' . e($row->marketing->nama_marketing) . '</span>' : '<span class="text-muted">Non Marketing</span>';
+                })
+                ->addColumn('lokasi_kavling', function ($row) {
+                    $lokasi = $row->lokasi->nama_kavling ?? '-';
+                    $kavling = $row->kavling->nama_kavling ?? ($row->kavling->kode_kavling ?? '-');
+                    return '<strong class="text-indigo"><i class="fas fa-city mr-1"></i>' . e($lokasi) . '</strong><br><span class="badge badge-light border font-weight-bold" style="font-size:11px">Blok: ' . e($kavling) . '</span>';
+                })
+                ->addColumn('status_akad', function ($row) {
+                    $firstDetail = $row->akadDetail->first();
+                    if ($firstDetail) {
+                        if ($firstDetail->status == 2) {
+                            $jenis = $firstDetail->jenis_akad ? ' (' . e($firstDetail->jenis_akad) . ')' : '';
+                            return '<span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Selesai Akad' . $jenis . '</span>';
+                        }
+                        return '<span class="badge badge-warning px-2 py-1"><i class="fas fa-clock mr-1"></i>Dijadwalkan</span>';
+                    }
+                    return '<span class="badge badge-info px-2 py-1"><i class="fas fa-file-signature mr-1"></i>Akad Kredit</span>';
+                })
+                ->addColumn('keterangan', function ($row) {
+                    $firstDetail = $row->akadDetail->first();
+                    if ($firstDetail && !empty($firstDetail->keterangan)) {
+                        return '<small class="text-dark">' . e($firstDetail->keterangan) . '</small>';
+                    }
+                    if ($firstDetail && $firstDetail->akad && !empty($firstDetail->akad->keterangan)) {
+                        return '<small class="text-muted">' . e($firstDetail->akad->keterangan) . '</small>';
+                    }
+                    return '<span class="text-muted">-</span>';
+                })
+                ->addColumn('action', function ($row) {
+                    $detailUrl = route('customer.show', $row->id);
+                    return '<div class="d-flex justify-content-center"><a href="' . e($detailUrl) . '" class="btn btn-info btn-xs shadow-sm"><i class="fas fa-eye mr-1"></i>Detail</a></div>';
+                })
+                ->rawColumns(['tgl_akad', 'nama_lengkap', 'no_telp', 'marketing', 'lokasi_kavling', 'status_akad', 'keterangan', 'action'])
                 ->make(true);
         }
+
+        $lokasiList = LokasiKavling::where('status', 1)->orderBy('nama_kavling')->get();
+        $marketingList = MarketingOffline::where('status', 1)->orderBy('nama_marketing')->get();
 
         $now = Carbon::now('Asia/Jakarta');
         $availableYears = Akad::selectRaw('YEAR(tgl_akad) as tahun')
@@ -132,7 +257,7 @@ class AkadController extends Controller
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
 
-        return view('admin.transaksi.akad.index', compact('permissions', 'availableYears', 'availableMonths'));
+        return view('admin.transaksi.akad.index', compact('permissions', 'availableYears', 'availableMonths', 'lokasiList', 'marketingList'));
     }
 
     public function show(Request $request, $id)

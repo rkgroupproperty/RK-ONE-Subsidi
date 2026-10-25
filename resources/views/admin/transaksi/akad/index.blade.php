@@ -6,7 +6,7 @@
             border: 1px solid #e2e8f0;
             border-radius: 12px;
             padding: 14px 18px;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.04);
             display: flex;
             flex-wrap: wrap;
@@ -63,6 +63,29 @@
             border-radius: 10px;
             padding: 14px 16px;
             margin-bottom: 16px;
+        }
+        .nav-view-mode {
+            background: #e2e8f0;
+            padding: 3px;
+            border-radius: 8px;
+            display: inline-flex;
+            gap: 4px;
+        }
+        .nav-view-mode .btn-mode {
+            border: none;
+            background: transparent;
+            color: #475569;
+            font-weight: 600;
+            font-size: 13px;
+            padding: 5px 14px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-view-mode .btn-mode.active {
+            background: #ffffff;
+            color: #4338ca;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
         }
     </style>
 
@@ -155,10 +178,22 @@
                         <div class="card shadow-sm border-0" style="border-radius:12px; overflow:hidden">
                             <div class="card-header bg-white p-3 border-bottom">
                                 <div class="d-flex align-content-center justify-content-between flex-wrap gap-2">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-handshake text-indigo mr-2 fa-lg"></i>
-                                        <h3 class="font-weight-bold text-lg mb-0">Data Jadwal Akad</h3>
+                                    <div class="d-flex align-items-center flex-wrap gap-3">
+                                        <div class="d-flex align-items-center mr-3">
+                                            <i class="fas fa-handshake text-indigo mr-2 fa-lg"></i>
+                                            <h3 class="font-weight-bold text-lg mb-0" id="pageTitleText">Data Konsumen Akad</h3>
+                                        </div>
+                                        <!-- Mode Tab Switcher: Konsumen vs Jadwal -->
+                                        <div class="nav-view-mode">
+                                            <button type="button" class="btn-mode active" data-tab="konsumen">
+                                                <i class="fas fa-users mr-1"></i> Konsumen Akad
+                                            </button>
+                                            <button type="button" class="btn-mode" data-tab="jadwal">
+                                                <i class="fas fa-calendar-alt mr-1"></i> Jadwal Akad
+                                            </button>
+                                        </div>
                                     </div>
+
                                     <div class="d-flex align-items-center">
                                         <a href="{{ route('export.transaksi.akad') }}" id="btnExportExcel" target="_blank" class="btn btn-sm btn-success mr-2 shadow-sm" style="border-radius:6px">
                                             <i class="fas fa-file-excel mr-1"></i> Excel
@@ -172,19 +207,70 @@
                                 </div>
                             </div>
                             <div class="card-body p-3">
-                                <table class="table w-100 table-bordered table-striped data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>No</th>
-                                            <th>Jadwal Akad</th>
-                                            <th>Total Akad</th>
-                                            <th>Keterangan</th>
-                                            <th class="text-center" width="15%">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
+                                <!-- Filter Bar Proyek & Marketing (Khusus Tab Konsumen) -->
+                                <div class="row mb-3 bg-light p-2 rounded mx-0 border align-items-center" id="containerFilterKonsumen">
+                                    <div class="col-md-5 mb-2 mb-md-0">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-building mr-1 text-primary"></i> Filter Proyek / Perumahan:</label>
+                                        <select id="filter_lokasi" class="form-control form-control-sm select2" style="border-radius:6px">
+                                            <option value="">-- Semua Proyek --</option>
+                                            @foreach ($lokasiList as $lok)
+                                                <option value="{{ $lok->id }}">{{ $lok->nama_kavling }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5 mb-2 mb-md-0">
+                                        <label class="small font-weight-bold mb-1"><i class="fas fa-user-tie mr-1 text-info"></i> Filter Marketing:</label>
+                                        <select id="filter_marketing" class="form-control form-control-sm select2" style="border-radius:6px">
+                                            <option value="">-- Semua Marketing --</option>
+                                            @foreach ($marketingList as $mkt)
+                                                <option value="{{ $mkt->id }}">{{ $mkt->nama_marketing }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 mt-md-4">
+                                        <button type="button" id="btn-reset-filter" class="btn btn-sm btn-secondary btn-block" style="border-radius:6px">
+                                            <i class="fas fa-redo mr-1"></i> Reset
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Container Tabel 1: Konsumen Akad -->
+                                <div id="tableKonsumenWrapper">
+                                    <table class="table w-100 table-bordered table-striped data-table-konsumen small">
+                                        <thead>
+                                            <tr>
+                                                <th width="3%" class="text-center">No</th>
+                                                <th width="12%">Tanggal Akad</th>
+                                                <th width="20%">Nama Konsumen</th>
+                                                <th width="12%">No. Telp</th>
+                                                <th width="12%">Marketing</th>
+                                                <th width="16%">Lokasi & Kavling</th>
+                                                <th width="12%">Status Akad</th>
+                                                <th>Keterangan</th>
+                                                <th class="text-center" width="8%">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Container Tabel 2: Jadwal Akad -->
+                                <div id="tableJadwalWrapper" style="display: none;">
+                                    <table class="table w-100 table-bordered table-striped data-table-jadwal small">
+                                        <thead>
+                                            <tr>
+                                                <th width="5%" class="text-center">No</th>
+                                                <th width="20%">Jadwal Akad</th>
+                                                <th width="15%" class="text-center">Total Peserta Akad</th>
+                                                <th>Keterangan</th>
+                                                <th class="text-center" width="15%">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             <!-- /.card-body -->
                         </div>
@@ -199,13 +285,13 @@
         <!-- /.content -->
     </div>
 
-    <!-- Modal -->
+    <!-- Modal Form Tambah Jadwal Akad -->
     <div class="modal fade" id="modalForm" tabindex="-1" role="dialog" aria-labelledby="modalFormLabel" aria-hidden="true"
         data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog modal-md" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-indigo">
-                    <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel">Form Akad</h5>
+                    <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel">Form Jadwal Akad</h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -215,28 +301,27 @@
                     <input type="hidden" id="primary_id" name="primary_id">
                     <div class="modal-body">
                         <div class="form-group row mb-3">
-                            <label for="tgl_akad" class="col-sm-4 col-form-label">Tanggal</label>
+                            <label for="tgl_akad" class="col-sm-4 col-form-label font-weight-bold">Tanggal Akad</label>
                             <div class="col-sm-8">
                                 <input type="date" id="tgl_akad" class="form-control" name="tgl_akad"
-                                    value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
+                                    value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" required>
                             </div>
                         </div>
 
                         <div class="form-group row mb-3">
-                            <label for="keterangan" class="col-sm-4 col-form-label">Keterangan</label>
+                            <label for="keterangan" class="col-sm-4 col-form-label font-weight-bold">Keterangan / Bank</label>
                             <div class="col-sm-8">
-                                <input type="text" id="keterangan" class="form-control" name="keterangan">
+                                <input type="text" id="keterangan" class="form-control" name="keterangan" placeholder="Contoh: Bank BTN / Batch 1">
                             </div>
                         </div>
-
                     </div>
 
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary " id="submitBtn">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
                             <span class="spinner-border spinner-border-sm me-2 d-none" role="status"
                                 aria-hidden="true"></span>
-                            <span class="button-text">Simpan</span>
+                            <span class="button-text">Simpan Jadwal</span>
                         </button>
                     </div>
                 </form>
@@ -250,11 +335,14 @@
             var permissions = @json($permissions);
             var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
 
+            var activeTab = 'konsumen';
             var currentFilter = 'bulan_ini';
             var filterBulan = '{{ \Carbon\Carbon::now()->month }}';
             var filterTahun = '{{ \Carbon\Carbon::now()->year }}';
             var customStart = '{{ \Carbon\Carbon::now()->startOfMonth()->toDateString() }}';
             var customEnd = '{{ \Carbon\Carbon::now()->endOfMonth()->toDateString() }}';
+            var filterLokasi = '';
+            var filterMarketing = '';
 
             // Cek URL params
             var urlParams = new URLSearchParams(window.location.search);
@@ -275,6 +363,9 @@
                     $('#panelCustomTanggal').collapse('show');
                 }
             }
+            if (urlParams.has('tab')) {
+                activeTab = urlParams.get('tab');
+            }
 
             function updateFilterUI() {
                 $('.filter-pill-nav .pill-btn').removeClass('active');
@@ -294,8 +385,9 @@
                 }
                 $('#filterStatusText').text(label);
 
-                // Update Excel download link with current filter
+                // Update Excel download link
                 var exportUrl = new URL("{{ route('export.transaksi.akad') }}", window.location.origin);
+                exportUrl.searchParams.set('tab', activeTab);
                 exportUrl.searchParams.set('filter', currentFilter);
                 if (currentFilter === 'pilih_bulan') {
                     exportUrl.searchParams.set('bulan', filterBulan);
@@ -304,19 +396,59 @@
                     exportUrl.searchParams.set('start_date', customStart);
                     exportUrl.searchParams.set('end_date', customEnd);
                 }
+                if (filterLokasi) exportUrl.searchParams.set('id_lokasi', filterLokasi);
+                if (filterMarketing) exportUrl.searchParams.set('id_marketing', filterMarketing);
                 $('#btnExportExcel').attr('href', exportUrl.toString());
             }
 
-            updateFilterUI();
-
-            var table = $('.data-table').DataTable({
-                processing: false,
-                serverSide: false,
+            // Inisialisasi DataTable Konsumen Akad
+            var tableKonsumen = $('.data-table-konsumen').DataTable({
+                processing: true,
+                serverSide: true,
                 ordering: false,
                 responsive: true,
                 ajax: {
                     url: "{{ route('akad.index') }}",
                     data: function(d) {
+                        d.tab = 'konsumen';
+                        d.filter = currentFilter;
+                        d.bulan = filterBulan;
+                        d.tahun = filterTahun;
+                        d.start_date = customStart;
+                        d.end_date = customEnd;
+                        d.id_lokasi = filterLokasi;
+                        d.id_marketing = filterMarketing;
+                    }
+                },
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
+                    { data: 'tgl_akad', name: 'tgl_akad', orderable: false, searchable: false },
+                    { data: 'nama_lengkap', name: 'nama_lengkap', orderable: false, searchable: true },
+                    { data: 'no_telp', name: 'no_telp', orderable: false, searchable: false },
+                    { data: 'marketing', name: 'marketing', orderable: false, searchable: false },
+                    { data: 'lokasi_kavling', name: 'lokasi_kavling', orderable: false, searchable: false },
+                    { data: 'status_akad', name: 'status_akad', orderable: false, searchable: false },
+                    { data: 'keterangan', name: 'keterangan', orderable: false, searchable: true },
+                    { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
+                ],
+                columnDefs: [{
+                    targets: 0,
+                    render: function(data, type, row, meta) {
+                        return meta.row + meta.settings._iDisplayStart + 1;
+                    }
+                }]
+            });
+
+            // Inisialisasi DataTable Jadwal Akad
+            var tableJadwal = $('.data-table-jadwal').DataTable({
+                processing: true,
+                serverSide: true,
+                ordering: false,
+                responsive: true,
+                ajax: {
+                    url: "{{ route('akad.index') }}",
+                    data: function(d) {
+                        d.tab = 'jadwal';
                         d.filter = currentFilter;
                         d.bulan = filterBulan;
                         d.tahun = filterTahun;
@@ -324,47 +456,53 @@
                         d.end_date = customEnd;
                     }
                 },
-                columns: [{
-                        data: 'DT_RowIndex',
-                        name: 'DT_RowIndex',
-                        orderable: false,
-                        searchable: false,
-                        className: 'text-center'
-                    },
-                    {
-                        data: 'tgl_akad',
-                        name: 'tgl_akad',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'total_akad',
-                        name: 'total_akad',
-                        orderable: false,
-                        searchable: false
-                    },
-                    {
-                        data: 'keterangan',
-                        name: 'keterangan',
-                        orderable: false,
-                        searchable: true
-                    },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        visible: showActionColumn,
-                        className: 'text-center'
-                    }
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
+                    { data: 'tgl_akad', name: 'tgl_akad', orderable: false, searchable: false },
+                    { data: 'total_akad', name: 'total_akad', orderable: false, searchable: false, className: 'text-center' },
+                    { data: 'keterangan', name: 'keterangan', orderable: false, searchable: true },
+                    { data: 'action', name: 'action', orderable: false, searchable: false, visible: showActionColumn, className: 'text-center' }
                 ],
                 columnDefs: [{
                     targets: 0,
                     render: function(data, type, row, meta) {
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
-                }, ]
+                }]
             });
+
+            // Switch Tab Handler
+            function switchTab(tab) {
+                activeTab = tab;
+                $('.nav-view-mode .btn-mode').removeClass('active');
+                $('.nav-view-mode .btn-mode[data-tab="' + tab + '"]').addClass('active');
+
+                if (tab === 'konsumen') {
+                    $('#pageTitleText').text('Data Konsumen Akad');
+                    $('#tableKonsumenWrapper').show();
+                    $('#tableJadwalWrapper').hide();
+                    $('#containerFilterKonsumen').show();
+                    tableKonsumen.ajax.reload();
+                } else {
+                    $('#pageTitleText').text('Data Jadwal Akad');
+                    $('#tableKonsumenWrapper').hide();
+                    $('#tableJadwalWrapper').show();
+                    $('#containerFilterKonsumen').hide();
+                    tableJadwal.ajax.reload();
+                }
+                updateFilterUI();
+            }
+
+            $('.nav-view-mode .btn-mode').on('click', function() {
+                var tab = $(this).data('tab');
+                switchTab(tab);
+            });
+
+            if (activeTab === 'jadwal') {
+                switchTab('jadwal');
+            } else {
+                updateFilterUI();
+            }
 
             // Filter button click actions
             $('.filter-pill-nav .pill-btn').on('click', function(e) {
@@ -380,13 +518,16 @@
                     return;
                 }
 
-                // If regular filter button (bulan_ini, bulan_kemarin, semua)
                 $('#panelPilihBulan').collapse('hide');
                 $('#panelCustomTanggal').collapse('hide');
 
                 currentFilter = filter;
                 updateFilterUI();
-                table.ajax.reload();
+                if (activeTab === 'konsumen') {
+                    tableKonsumen.ajax.reload();
+                } else {
+                    tableJadwal.ajax.reload();
+                }
             });
 
             // Form submit: Pilih Bulan
@@ -396,7 +537,11 @@
                 filterBulan = $('#selectBulan').val();
                 filterTahun = $('#selectTahun').val();
                 updateFilterUI();
-                table.ajax.reload();
+                if (activeTab === 'konsumen') {
+                    tableKonsumen.ajax.reload();
+                } else {
+                    tableJadwal.ajax.reload();
+                }
             });
 
             // Form submit: Custom Tanggal
@@ -406,9 +551,185 @@
                 customStart = $('#inputStartDate').val();
                 customEnd = $('#inputEndDate').val();
                 updateFilterUI();
-                table.ajax.reload();
+                if (activeTab === 'konsumen') {
+                    tableKonsumen.ajax.reload();
+                } else {
+                    tableJadwal.ajax.reload();
+                }
+            });
+
+            // Filter Lokasi & Marketing
+            $('#filter_lokasi').on('change', function() {
+                filterLokasi = $(this).val();
+                updateFilterUI();
+                tableKonsumen.ajax.reload();
+            });
+
+            $('#filter_marketing').on('change', function() {
+                filterMarketing = $(this).val();
+                updateFilterUI();
+                tableKonsumen.ajax.reload();
+            });
+
+            $('#btn-reset-filter').on('click', function() {
+                $('#filter_lokasi').val('').trigger('change');
+                $('#filter_marketing').val('').trigger('change');
+                filterLokasi = '';
+                filterMarketing = '';
+                updateFilterUI();
+                tableKonsumen.ajax.reload();
+            });
+
+            // Edit Jadwal Button
+            $(document).on('click', '.edit-button', function() {
+                var url = $(this).data('url');
+                $.get(url, function(response) {
+                    if (response.status === 'success') {
+                        $('#primary_id').val(response.data.id);
+                        $('#tgl_akad').val(response.data.tgl_akad);
+                        $('#keterangan').val(response.data.keterangan);
+                        $('#modalForm').modal('show');
+                    }
+                });
+            });
+
+            $('#modalForm').on('hidden.bs.modal', function() {
+                $('#formData')[0].reset();
+                $('#primary_id').val('');
+                $('.is-invalid').removeClass('is-invalid');
+                $('.invalid-feedback').remove();
+
+                let submitBtn = $('#submitBtn');
+                let spinner = submitBtn.find('.spinner-border');
+                let btnText = submitBtn.find('.button-text');
+
+                spinner.addClass('d-none');
+                btnText.text('Simpan Jadwal');
+                submitBtn.prop('disabled', false);
+            });
+
+            $('#formData').on('submit', function(e) {
+                e.preventDefault();
+                let submitBtn = $('#submitBtn');
+                let spinner = submitBtn.find('.spinner-border');
+                let btnText = submitBtn.find('.button-text');
+
+                spinner.removeClass('d-none');
+                btnText.text('Menyimpan...');
+                submitBtn.prop('disabled', true);
+
+                let id = $('#primary_id').val();
+                let url = id ? '{{ route('akad.update', ['akad' => ':id']) }}'.replace(':id', id) : '{{ route('akad.store') }}';
+                let method = id ? 'PUT' : 'POST';
+
+                $('.is-invalid').removeClass('is-invalid');
+                $('.invalid-feedback').remove();
+
+                let formData = new FormData(this);
+                formData.append('_method', method);
+
+                $.ajax({
+                    url: url,
+                    method: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function() {
+                        $('#modalForm').modal('hide');
+                        if (typeof audio !== 'undefined') audio.play();
+                        toastr.success("Data telah disimpan!", "BERHASIL", {
+                            progressBar: true,
+                            timeOut: 3500,
+                            positionClass: "toast-bottom-right",
+                        });
+                        tableJadwal.ajax.reload();
+                        tableKonsumen.ajax.reload();
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 422) {
+                            if (typeof audio !== 'undefined') audio.play();
+                            toastr.error("Ada inputan yang salah!", "GAGAL!", {
+                                progressBar: true,
+                                timeOut: 3500,
+                                positionClass: "toast-bottom-right",
+                            });
+
+                            let errors = xhr.responseJSON.errors;
+                            $.each(errors, function(key, val) {
+                                let input = $('#' + key);
+                                input.addClass('is-invalid');
+                                input.parent().find('.invalid-feedback').remove();
+                                input.parent().append(
+                                    '<span class="invalid-feedback" role="alert"><strong>' +
+                                    val[0] + '</strong></span>'
+                                );
+                            });
+                            spinner.addClass('d-none');
+                            btnText.text('Simpan Jadwal');
+                            submitBtn.prop('disabled', false);
+                        }
+                    }
+                });
+            });
+
+            $(document).on('click', '.delete-button', function(e) {
+                e.preventDefault();
+                const form = $(this).closest('form');
+
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: 'Data ini akan dihapus secara permanen!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '<span class="swal-btn-text">Ya, Hapus</span>',
+                    cancelButtonText: 'Batal',
+                    showLoaderOnConfirm: false,
+                    buttonsStyling: false,
+                    customClass: {
+                        confirmButton: 'btn btn-danger mx-2',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    preConfirm: () => {
+                        return new Promise((resolve) => {
+                            const confirmBtn = Swal.getConfirmButton();
+                            const btnText = confirmBtn.querySelector('.swal-btn-text');
+
+                            btnText.innerHTML = `<span class="spinner-border spinner-border-sm mx-2" role="status" aria-hidden="true"></span> Menghapus...`;
+                            confirmBtn.disabled = true;
+
+                            $.ajax({
+                                url: form.attr('action'),
+                                method: 'POST',
+                                data: form.serialize(),
+                                success: function() {
+                                    if (typeof audio !== 'undefined') audio.play();
+                                    toastr.success("Data telah dihapus!", "BERHASIL", {
+                                        progressBar: true,
+                                        timeOut: 3500,
+                                        positionClass: "toast-bottom-right"
+                                    });
+                                    tableJadwal.ajax.reload(null, false);
+                                    tableKonsumen.ajax.reload(null, false);
+                                    Swal.close();
+                                },
+                                error: function() {
+                                    if (typeof audio !== 'undefined') audio.play();
+                                    toastr.error("Gagal menghapus data.", "GAGAL!", {
+                                        progressBar: true,
+                                        timeOut: 3500,
+                                        positionClass: "toast-bottom-right"
+                                    });
+                                    btnText.innerHTML = `Ya, Hapus`;
+                                    confirmBtn.disabled = false;
+                                }
+                            });
+                        });
+                    }
+                });
             });
         });
+    </script>
+@endpush
 
         $(document).on('click', '.edit-button', function() {
             var url = $(this).data('url');

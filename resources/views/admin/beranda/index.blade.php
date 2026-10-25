@@ -1386,7 +1386,22 @@
             <article class="pipeline-node p-akad">
               <h3>Akad Kredit</h3>
               <div class="count-display">{{ $pipelineCounts['akad'] ?? 0 }}</div>
-              <a class="pipeline-action-btn" href="{{ route('akad.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
+              @php
+                $akadUrlParams = [];
+                $currentPeriodeFilter = $summaryMetrics['periode_filter'] ?? 'bulan_ini';
+                if ($currentPeriodeFilter === 'bulan_kemarin') {
+                    $akadUrlParams = ['filter' => 'bulan_kemarin'];
+                } elseif ($currentPeriodeFilter === 'pilih_bulan') {
+                    $akadUrlParams = ['filter' => 'pilih_bulan', 'bulan' => $summaryMetrics['filter_bulan'] ?? Carbon\Carbon::now()->month, 'tahun' => $summaryMetrics['filter_tahun'] ?? Carbon\Carbon::now()->year];
+                } elseif ($currentPeriodeFilter === 'custom') {
+                    $akadUrlParams = ['filter' => 'custom', 'start_date' => $summaryMetrics['custom_start'] ?? '', 'end_date' => $summaryMetrics['custom_end'] ?? ''];
+                } elseif ($currentPeriodeFilter === 'semua') {
+                    $akadUrlParams = ['filter' => 'semua'];
+                } else {
+                    $akadUrlParams = ['filter' => 'bulan_ini'];
+                }
+              @endphp
+              <a class="pipeline-action-btn" href="{{ route('akad.index', $akadUrlParams) }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
 
             <article class="pipeline-node p-bast">

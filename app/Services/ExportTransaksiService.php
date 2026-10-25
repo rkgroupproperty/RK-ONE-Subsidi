@@ -445,47 +445,9 @@ class ExportTransaksiService
     {
         $now = \Carbon\Carbon::now('Asia/Jakarta');
         $filter = request()->get('filter', 'bulan_ini');
+        $tab = request()->get('tab', 'konsumen');
 
-        $query = AkadDetail::with(['customer.lokasi', 'customer.kavling', 'customer.marketing', 'customer.progres', 'akad'])
-            ->whereHas('customer', function ($q) {
-                $q->where('stt_arsip', 0);
-                if (request()->filled('id_lokasi')) {
-                    $q->where('id_lokasi', request('id_lokasi'));
-                }
-                if (request()->filled('id_marketing')) {
-                    $q->where('id_marketing', request('id_marketing'));
-                }
-            });
-
-        if ($filter === 'semua') {
-            // all
-        } elseif ($filter === 'bulan_kemarin') {
-            $lastMonth = $now->copy()->subMonth();
-            $query->whereHas('akad', function ($q) use ($lastMonth) {
-                $q->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
-            });
-        } elseif ($filter === 'pilih_bulan' && request()->filled('bulan') && request()->filled('tahun')) {
-            $b = (int) request('bulan');
-            $t = (int) request('tahun');
-            $query->whereHas('akad', function ($q) use ($b, $t) {
-                $q->whereYear('tgl_akad', $t)->whereMonth('tgl_akad', $b);
-            });
-        } elseif ($filter === 'custom' && request()->filled('start_date') && request()->filled('end_date')) {
-            $s = \Carbon\Carbon::parse(request('start_date'))->startOfDay()->toDateString();
-            $e = \Carbon\Carbon::parse(request('end_date'))->endOfDay()->toDateString();
-            $query->whereHas('akad', function ($q) use ($s, $e) {
-                $q->whereBetween('tgl_akad', [$s, $e]);
-            });
-        } else {
-            $query->whereHas('akad', function ($q) use ($now) {
-                $q->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
-            });
-        }
-
-        $query->orderByDesc('id');
-        $data = $query->get();
-
-        if ($data->isEmpty()) {
+        if ($tab === 'jadwal') {
             $akadQuery = Akad::query();
             if ($filter === 'semua') {
                 // all
@@ -519,30 +481,103 @@ class ExportTransaksiService
                 ], null, "A{$row}");
                 $row++;
             }
+            return $this->download('Laporan_Jadwal_Akad.xlsx');
+        }
+
+        // Export Konsumen Akad (Default)
+        $query = Customer::where('id_status_progres', 3)
+            ->where('stt_arsip', 0)
+            ->with(['lokasi', 'kavling', 'marketing', 'akadDetail.akad']);
+
+        if (request()->filled('id_lokasi')) {
+            $query->where('id_lokasi', request('id_lokasi'));
+        }
+        if (request()->filled('id_marketing')) {
+            $query->where('id_marketing', request('id_marketing'));
+        }
+
+        if ($filter === 'semua') {
+            // all
+        } elseif ($filter === 'bulan_kemarin') {
+            $lastMonth = $now->copy()->subMonth();
+            $query->where(function ($q) use ($lastMonth) {
+                $q->whereHas('akadDetail.akad', function ($qa) use ($lastMonth) {
+                    $qa->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
+                })->orWhere(function ($qb) use ($lastMonth) {
+                    $qb->whereYear('tanggal_verif', $lastMonth->year)->whereMonth('tanggal_verif', $lastMonth->month);
+                });
+            });
+        } elseif ($filter === 'pilih_bulan' && request()->filled('bulan') && request()->filled('tahun')) {
+            $b = (int) request('bulan');
+            $t = (int) request('tahun');
+            $query->where(function ($q) use ($b, $t) {
+                $q->whereHas('akadDetail.akad', function ($qa) use ($b, $t) {
+                    $qa->whereYear('tgl_akad', $t)->whereMonth('tgl_akad', $b);
+                })->orWhere(function ($qb) use ($b, $t) {
+                    $qb->whereYear('tanggal_verif', $t)->whereMonth('tanggal_verif', $b);
+                });
+            });
+        } elseif ($filter === 'custom' && request()->filled('start_date') && request()->filled('end_date')) {
+            $s = \Carbon\Carbon::parse(request('start_date'))->startOfDay()->toDateString();
+            $e = \Carbon\Carbon::parse(request('end_date'))->endOfDay()->toDateString();
+            $query->where(function ($q) use ($s, $e) {
+                $q->whereHas('akadDetail.akad', function ($qa) use ($s, $e) {
+                    $qa->whereBetween('tgl_akad', [$s, $e]);
+                })->orWhere(function ($qb) use ($s, $e) {
+                    $qb->whereBetween('tanggal_verif', [$s . ' 00:00:00', $e . ' 23:59:59']);
+                });
+            });
         } else {
-            $headers = ['No', 'Tanggal Akad', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Status Kehadiran', 'Keterangan'];
-            $this->sheet->fromArray($headers, null, 'A1');
+            $query->where(function ($q) use ($now) {
+                $q->whereHas('akadDetail.akad', function ($qa) use ($now) {
+                    $qa->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
+                })->orWhere(function ($qb) use ($now) {
+                    $qb->whereYear('tanggal_verif', $now->year)->whereMonth('tanggal_verif', $now->month);
+                });
+            });
+        }
 
-            $row = 2;
-            $no = 1;
-            foreach ($data as $item) {
-                $customer = $item->customer;
-                $marketing = $customer->marketing->nama_marketing ?? 'Non Marketing';
-                $tglAkad = ($item->akad && $item->akad->tgl_akad) ? \Carbon\Carbon::parse($item->akad->tgl_akad)->format('d/m/Y') : '-';
-                $statusHadir = ($item->status == 2) ? 'Hadir' : (($item->status == 1) ? 'Belum Hadir' : '-');
+        $data = $query->orderByDesc('id')->get();
 
-                $this->sheet->fromArray([
-                    $no++,
-                    $tglAkad,
-                    $customer->nama_lengkap ?? '-',
-                    $customer->no_telp ?? '-',
-                    $marketing,
-                    $customer->lokasi->nama_kavling ?? '-',
-                    $customer->kavling->kode_kavling ?? '-',
-                    $statusHadir,
-                    $item->keterangan ?? '-',
-                ], null, "A{$row}");
-                $row++;
+        $headers = ['No', 'Tanggal Akad', 'Nama Nasabah', 'No Telp', 'Marketing', 'Lokasi / Perumahan', 'Blok / Unit', 'Status Kehadiran', 'Keterangan'];
+        $this->sheet->fromArray($headers, null, 'A1');
+
+        $row = 2;
+        $no = 1;
+        foreach ($data as $customer) {
+            $firstDetail = $customer->akadDetail->first();
+            $tglAkad = '-';
+            if ($firstDetail && $firstDetail->akad && $firstDetail->akad->tgl_akad) {
+                $tglAkad = \Carbon\Carbon::parse($firstDetail->akad->tgl_akad)->format('d/m/Y');
+            } elseif ($customer->tanggal_verif) {
+                $tglAkad = \Carbon\Carbon::parse($customer->tanggal_verif)->format('d/m/Y');
+            }
+
+            $statusHadir = 'Akad Kredit';
+            if ($firstDetail) {
+                $statusHadir = ($firstDetail->status == 2) ? 'Selesai Akad' . ($firstDetail->jenis_akad ? ' (' . $firstDetail->jenis_akad . ')' : '') : 'Dijadwalkan';
+            }
+
+            $ket = '-';
+            if ($firstDetail && !empty($firstDetail->keterangan)) {
+                $ket = $firstDetail->keterangan;
+            } elseif ($firstDetail && $firstDetail->akad && !empty($firstDetail->akad->keterangan)) {
+                $ket = $firstDetail->akad->keterangan;
+            }
+
+            $this->sheet->fromArray([
+                $no++,
+                $tglAkad,
+                $customer->nama_lengkap ?? '-',
+                $customer->no_telp ?? ($customer->no_hp ?? '-'),
+                $customer->marketing->nama_marketing ?? 'Non Marketing',
+                $customer->lokasi->nama_kavling ?? '-',
+                $customer->kavling->nama_kavling ?? ($customer->kavling->kode_kavling ?? '-'),
+                $statusHadir,
+                $ket,
+            ], null, "A{$row}");
+            $row++;
+        }
             }
         }
 
