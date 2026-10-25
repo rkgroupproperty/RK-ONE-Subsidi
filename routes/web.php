@@ -155,9 +155,13 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
         $diagnostic['error'] = $e->getMessage();
     }
 
-    // Test execute beranda index method
+    // Test execute beranda index method with authenticated user
     $berandaTest = 'ok';
     try {
+        $dummyUser = \App\Models\User::first();
+        if ($dummyUser) {
+            \Illuminate\Support\Facades\Auth::login($dummyUser);
+        }
         $req = \Illuminate\Http\Request::create('/admin/beranda', 'GET');
         $beranda = app(\App\Http\Controllers\BerandaController::class);
         $res = $beranda->index($req);
