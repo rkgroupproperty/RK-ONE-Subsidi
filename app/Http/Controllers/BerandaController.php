@@ -232,7 +232,7 @@ class BerandaController extends Controller
             ->orderBy('urutan')
             ->orderBy('id')
             ->get()
-            ->map(function (LokasiKavling $lokasi) use ($isFilteredByDate, $startCarbon, $endCarbon) {
+            ->map(function ($lokasi) use ($isFilteredByDate, $startCarbon, $endCarbon) {
                 $lokasiId = $lokasi->id;
                 $totalUnit = KavlingPeta::where('id_lokasi', $lokasiId)->count();
                 $booking = PengajuanHold::where('id_lokasi', $lokasiId)->where('stt_reg', '!=', 2)->count()
