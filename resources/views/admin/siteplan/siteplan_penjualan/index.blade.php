@@ -124,7 +124,7 @@
             cursor: pointer !important;
         }
         @else
-        /* Styling Subsidi (Asli 100% Cerah & Jelas, Tanpa Efek Gelap/Multiply pada denah background) */
+        /* Styling Subsidi (Asli 100% Cerah & Jelas: unit Ready tetap Putih #ffffff dengan garis rapi, unit berprogres sesuai warnanya) */
         polygon.kavling-poly,
         path.kavling-poly,
         polyline.kavling-poly,
@@ -135,6 +135,8 @@
             vector-effect: non-scaling-stroke;
             cursor: pointer !important;
         }
+
+        /* Blok unit Ready (putih #ffffff) di Subsidi dibuat putih bersih agar tidak tembus ke denah hitam di bawahnya */
         polygon.kavling-poly[style*="#ffffff"],
         polygon.kavling-poly[style*="#FFFFFF"],
         polygon.kavling-poly[style*="fill:#ffffff"],
@@ -159,10 +161,12 @@
         a.detail-button polyline[style*="#FFFFFF"],
         a.detail-button polyline[style*="fill:#ffffff"],
         a.detail-button polyline[style*="fill: #ffffff"] {
-            fill: transparent !important;
-            stroke: rgba(37, 99, 235, 0.35) !important;
+            fill: #ffffff !important;
+            stroke: #444444 !important;
             stroke-width: 1px !important;
         }
+
+        /* Efek hover interaktif */
         polygon.kavling-poly:hover,
         path.kavling-poly:hover,
         polyline.kavling-poly:hover,
