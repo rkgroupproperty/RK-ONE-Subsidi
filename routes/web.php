@@ -148,8 +148,9 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
     $diagnostic = [];
     foreach (['mysql_komersil', 'mysql_subsidi'] as $conn) {
         try {
+            $allTables = collect(\Illuminate\Support\Facades\DB::connection($conn)->select('SHOW TABLES'))->map(fn($t) => array_values((array)$t)[0])->filter(fn($t) => preg_match('/progres|kavling|bangun|peta|unit/i', $t))->values()->all();
             $lokasis = \Illuminate\Support\Facades\DB::connection($conn)->table('lokasi_kavling')->get();
-            $diagConn = [];
+            $diagConn = ['matching_tables' => $allTables];
             foreach ($lokasis as $l) {
                 $kavlings = \Illuminate\Support\Facades\DB::connection($conn)->table('kavling_peta')->where('id_lokasi', $l->id)->get();
                 $custs = \Illuminate\Support\Facades\DB::connection($conn)->table('customer')->where('id_lokasi', $l->id)->where('stt_arsip', 0)->get();
@@ -166,7 +167,6 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
                     'customer_count' => $custs->count(),
                     'customer_by_status' => $statusCounts,
                     'hold_count' => $holds->count(),
-                    'sample_kavling_cols' => $kavlings->first() ? array_keys((array)$kavlings->first()) : [],
                 ];
             }
             $diagnostic[$conn] = $diagConn;
