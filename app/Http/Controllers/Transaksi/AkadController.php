@@ -237,8 +237,8 @@ class AkadController extends Controller
                 ->make(true);
         }
 
-        $lokasiList = LokasiKavling::where('status', 1)->orderBy('nama_kavling')->get();
-        $marketingList = MarketingOffline::where('status', 1)->orderBy('nama_marketing')->get();
+        $lokasiList = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('nama_kavling')->get();
+        $marketingList = MarketingOffline::orderBy('nama_marketing')->get();
 
         $now = Carbon::now('Asia/Jakarta');
         $availableYears = Akad::selectRaw('YEAR(tgl_akad) as tahun')
