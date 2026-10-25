@@ -675,9 +675,7 @@ class PengajuanHoldController extends Controller
     {
         $idInt = (int)$id;
         $portalType = request('portal') ?? request('type') ?? session('app_type');
-        $host = strtolower(request()->getHost());
-
-        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.') || in_array($idInt, [1, 2]));
+        $isKomersil = ($portalType === 'komersil');
         $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
 
         try {
@@ -699,33 +697,13 @@ class PengajuanHoldController extends Controller
             ->orderBy('id', 'asc')
             ->get(['id', 'kode_kavling', 'luas_tanah', 'tipe_bangunan', 'hrg_jual']);
 
-        // Fallback jika tidak ada data di koneksi target
-        if ($kavling->isEmpty()) {
-            $altConn = ($targetConn === 'mysql_komersil') ? 'mysql_subsidi' : 'mysql_komersil';
-            try {
-                $kavling = KavlingPeta::on($altConn)
-                    ->where('id_lokasi', $id)
-                    ->where(function ($query) {
-                        $query->whereIn('status', [0, 1])
-                            ->orWhereNull('status');
-                    })
-                    ->where(function ($query) {
-                        $query->whereNull('id_customer')
-                            ->orWhere('id_customer', 0);
-                    })
-                    ->orderBy('id', 'asc')
-                    ->get(['id', 'kode_kavling', 'luas_tanah', 'tipe_bangunan', 'hrg_jual']);
-            } catch (\Throwable $e) {}
-        }
-
         return response()->json($kavling);
     }
 
     public function getHargaKavling($id)
     {
         $portalType = request('portal') ?? request('type') ?? session('app_type');
-        $host = strtolower(request()->getHost());
-        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.'));
+        $isKomersil = ($portalType === 'komersil');
         $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
 
         try {
@@ -738,13 +716,6 @@ class PengajuanHoldController extends Controller
         try {
             $data = KavlingPeta::on($targetConn)->find($id);
         } catch (\Throwable $e) {}
-
-        if (!$data) {
-            $altConn = ($targetConn === 'mysql_komersil') ? 'mysql_subsidi' : 'mysql_komersil';
-            try {
-                $data = KavlingPeta::on($altConn)->find($id);
-            } catch (\Throwable $e) {}
-        }
 
         if (!$data) {
             return response()->json(['error' => 'Kavling tidak ditemukan'], 404);
@@ -897,9 +868,7 @@ class PengajuanHoldController extends Controller
         ]);
 
         $portalType = $request->input('portal_type') ?? $request->query('portal') ?? session('app_type');
-        $host = strtolower($request->getHost());
-        $idLokasiInt = (int)$request->id_lokasi;
-        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.') || in_array($idLokasiInt, [1, 2]));
+        $isKomersil = ($portalType === 'komersil');
         $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
 
         try {
@@ -909,17 +878,6 @@ class PengajuanHoldController extends Controller
         }
 
         $kavling = KavlingPeta::on($targetConn)->find($request->id_kavling);
-        if (!$kavling) {
-            $altConn = ($targetConn === 'mysql_komersil') ? 'mysql_subsidi' : 'mysql_komersil';
-            try {
-                $altKavling = KavlingPeta::on($altConn)->find($request->id_kavling);
-                if ($altKavling) {
-                    $kavling = $altKavling;
-                    $targetConn = $altConn;
-                    $isKomersil = ($targetConn === 'mysql_komersil');
-                }
-            } catch (\Throwable $e) {}
-        }
 
         $hargaKav = 0;
         if ($kavling) {

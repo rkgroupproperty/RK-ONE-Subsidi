@@ -30,6 +30,8 @@ class CustomerController extends Controller
     use LogAktivitasTrait;
     public function index(Request $request)
     {
+        \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing();
+
         $permissions = HakAksesController::getUserPermissions();
         $docTemplates = DocumentTemplate::where('is_active', true)->get(['kode', 'nama']);
 
@@ -76,7 +78,14 @@ class CustomerController extends Controller
                     return "$tgl<br>$kode<br>$jenisPembelian";
                 })
                 ->editColumn('id_marketing', function ($row) {
-                    return $row->marketing->nama_marketing ?? '<span class="badge bg-danger"> ' . 'None Marketing' . '</span>';
+                    $mkt = $row->marketing ? $row->marketing->nama_marketing : 'Kantor';
+                    if (stripos($mkt, 'non marketing') !== false || stripos($mkt, 'none marketing') !== false) {
+                        $mkt = 'Kantor';
+                    }
+                    if ($mkt === 'Kantor') {
+                        return '<span class="badge bg-info">Kantor</span>';
+                    }
+                    return e($mkt);
                 })
 
                 ->editColumn('id_lokasi', function ($row) {
@@ -149,10 +158,13 @@ class CustomerController extends Controller
                 ->make(true);
         }
 
-        $marketing = MarketingOffline::all();
+        $marketing = MarketingOffline::where('status', 1)
+            ->whereRaw('LOWER(nama_marketing) NOT LIKE ?', ['%non marketing%'])
+            ->orderBy('nama_marketing')
+            ->get();
         $bank      = Bank::all();
-        $progres   = ProgresListPenjualan::all();
-        $lokasi    = LokasiKavling::all();
+        $progres   = ProgresListPenjualan::orderBy('id')->get();
+        $lokasi    = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('nama_kavling')->get();
 
         $user = Auth::user();
 
@@ -974,7 +986,14 @@ class CustomerController extends Controller
                     return "$tgl<br>$kode<br>$jenisPembelian";
                 })
                 ->editColumn('id_marketing', function ($row) {
-                    return $row->marketing->nama_marketing ?? '<span class="badge bg-danger"> ' . 'None Marketing' . '</span>';
+                    $mkt = $row->marketing ? $row->marketing->nama_marketing : 'Kantor';
+                    if (stripos($mkt, 'non marketing') !== false || stripos($mkt, 'none marketing') !== false) {
+                        $mkt = 'Kantor';
+                    }
+                    if ($mkt === 'Kantor') {
+                        return '<span class="badge bg-info">Kantor</span>';
+                    }
+                    return e($mkt);
                 })
 
                 ->editColumn('id_lokasi', function ($row) {
@@ -1043,10 +1062,13 @@ class CustomerController extends Controller
                 ->make(true);
         }
 
-        $marketing = MarketingOffline::all();
+        $marketing = MarketingOffline::where('status', 1)
+            ->whereRaw('LOWER(nama_marketing) NOT LIKE ?', ['%non marketing%'])
+            ->orderBy('nama_marketing')
+            ->get();
         $bank      = Bank::all();
-        $progres   = ProgresListPenjualan::all();
-        $lokasi    = LokasiKavling::all();
+        $progres   = ProgresListPenjualan::orderBy('id')->get();
+        $lokasi    = LokasiKavling::whereIn('stt_tampil', [1, 3])->orderBy('nama_kavling')->get();
 
         return view('admin.customer.customer.tempo', compact('marketing', 'lokasi', 'progres', 'bank'));
     }

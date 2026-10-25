@@ -40,6 +40,52 @@
                             </div>
 
                             <div class="card-body">
+                                <!-- Filter Customer -->
+                                <div class="card card-outline card-secondary mb-3 shadow-none border">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                                                <label class="mb-1 font-weight-bold text-xs text-uppercase text-secondary">
+                                                    <i class="fas fa-building mr-1 text-primary"></i> Proyek Perumahan
+                                                </label>
+                                                <select id="filter_lokasi" class="form-control form-control-sm select-filter-lokasi">
+                                                    <option value="">-- Semua Proyek --</option>
+                                                    @foreach ($lokasi as $l)
+                                                        <option value="{{ $l->id }}">{{ $l->nama_kavling }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                                                <label class="mb-1 font-weight-bold text-xs text-uppercase text-secondary">
+                                                    <i class="fas fa-user-tie mr-1 text-success"></i> Marketing
+                                                </label>
+                                                <select id="filter_marketing" class="form-control form-control-sm select-filter-marketing">
+                                                    <option value="">-- Semua Marketing --</option>
+                                                    @foreach ($marketing as $m)
+                                                        <option value="{{ $m->id }}">{{ $m->nama_marketing }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-2 mb-md-0">
+                                                <label class="mb-1 font-weight-bold text-xs text-uppercase text-secondary">
+                                                    <i class="fas fa-stream mr-1 text-warning"></i> Status Progres
+                                                </label>
+                                                <select id="filter_status_progres" class="form-control form-control-sm select-filter-progres">
+                                                    <option value="">-- Semua Status Progres --</option>
+                                                    @foreach ($progres as $p)
+                                                        <option value="{{ $p->id }}">{{ $p->status_progres }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-2 mb-md-0 d-flex align-items-end pt-md-4">
+                                                <button type="button" id="btn_reset_filter" class="btn btn-sm btn-outline-danger btn-block">
+                                                    <i class="fas fa-undo mr-1"></i> Reset Filter
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <table class="table table-bordered w-100 table-striped data-table">
                                     <thead>
                                         <tr>
@@ -1091,6 +1137,22 @@
             var permissions = @json($permissions);
             var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
 
+            const initialParams = new URLSearchParams(window.location.search);
+            if (initialParams.get('id_lokasi')) {
+                $('#filter_lokasi').val(initialParams.get('id_lokasi'));
+            }
+            if (initialParams.get('id_marketing')) {
+                $('#filter_marketing').val(initialParams.get('id_marketing'));
+            }
+            if (initialParams.get('id_status_progres')) {
+                $('#filter_status_progres').val(initialParams.get('id_status_progres'));
+            }
+
+            $('.select-filter-lokasi, .select-filter-marketing, .select-filter-progres').select2({
+                theme: "bootstrap4",
+                width: '100%'
+            });
+
             var table = $('.data-table').DataTable({
                 processing: false,
                 serverSide: false,
@@ -1099,16 +1161,9 @@
                 ajax: {
                     url: "{{ route('customer.index') }}",
                     data: function(d) {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        if (urlParams.get('id_status_progres')) {
-                            d.id_status_progres = urlParams.get('id_status_progres');
-                        }
-                        if (urlParams.get('id_lokasi')) {
-                            d.id_lokasi = urlParams.get('id_lokasi');
-                        }
-                        if (urlParams.get('id_marketing')) {
-                            d.id_marketing = urlParams.get('id_marketing');
-                        }
+                        d.id_lokasi = $('#filter_lokasi').val() || '';
+                        d.id_marketing = $('#filter_marketing').val() || '';
+                        d.id_status_progres = $('#filter_status_progres').val() || '';
                     }
                 },
                 columns: [{
@@ -1163,6 +1218,17 @@
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
                 }]
+            });
+
+            $('#filter_lokasi, #filter_marketing, #filter_status_progres').on('change', function() {
+                table.ajax.reload();
+            });
+
+            $('#btn_reset_filter').on('click', function() {
+                $('#filter_lokasi').val('').trigger('change.select2');
+                $('#filter_marketing').val('').trigger('change.select2');
+                $('#filter_status_progres').val('').trigger('change.select2');
+                table.ajax.reload();
             });
         });
 
