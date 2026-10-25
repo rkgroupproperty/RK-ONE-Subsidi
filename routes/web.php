@@ -157,13 +157,25 @@ Route::get('/system/git-pull/{secret}', function ($secret) {
     }
     $output = [];
     $code = 0;
-    @exec('cd ' . base_path() . ' && git pull origin main 2>&1', $output, $code);
-    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    try {
+        @exec('cd ' . base_path() . ' && git pull origin main 2>&1', $output, $code);
+    } catch (\Throwable $e) {
+        $output[] = 'Exec error: ' . $e->getMessage();
+    }
+    try {
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    } catch (\Throwable $e) {
+        $output[] = 'Artisan clear error: ' . $e->getMessage();
+    }
+    $head = '';
+    try {
+        $head = trim(@shell_exec('cd ' . base_path() . ' && git log -1 --oneline 2>&1') ?? '');
+    } catch (\Throwable $e) {}
     return response()->json([
         'status' => $code === 0 ? 'success' : 'info',
         'code' => $code,
         'output' => $output,
-        'head' => trim(@shell_exec('cd ' . base_path() . ' && git log -1 --oneline 2>&1') ?? '')
+        'head' => $head
     ]);
 })->name('system.git-pull');
 
