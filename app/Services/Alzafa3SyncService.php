@@ -15,6 +15,7 @@ use App\Models\SPPR;
 use App\Models\Wawancara;
 use App\Models\WawancaraSp3k;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -43,6 +44,9 @@ class Alzafa3SyncService
 
     public function syncFromCsv(string $csvPath): array
     {
+        Config::set('database.default', 'mysql_subsidi');
+        DB::setDefaultConnection('mysql_subsidi');
+
         DB::beginTransaction();
         try {
             $this->addLog("=== MEMULAI SINKRONISASI ALZAFA RESIDENCE TAHAP 3 ===");
@@ -345,9 +349,18 @@ class Alzafa3SyncService
                         SPPR::updateOrCreate(
                             ['id_customer' => $customer->id],
                             [
-                                'tgl_sppr'    => $tglAdminParsed,
-                                'admin_entri' => $namaAdmin ?: 'Admin',
-                                'status'      => 'PROSES',
+                                'nama'                     => $customer->nama_lengkap,
+                                'nik'                      => $customer->nik ?: '1671000000000000',
+                                'alamat'                   => $customer->alamat_ktp ?: 'Palembang',
+                                'blok'                     => $blok,
+                                'no'                       => $blok,
+                                'harga_jual'               => (int) ($customer->total_harga ?: 168000000),
+                                'asumsi_plafon_kpr'        => (int) ($customer->total_harga ?: 168000000),
+                                'total_yang_harus_dibayar' => (int) ($customer->total_harga ?: 168000000),
+                                'no_sppr'                  => 'SPPR/ALZ3/' . sprintf('%04d', $customer->id) . '/' . date('Y'),
+                                'keterangan'               => 'SPPR Alzafa 3 Spreadsheet',
+                                'id_marketing'             => $customer->id_marketing,
+                                'penandatangan'            => $namaAdmin ?: 'Admin',
                             ]
                         );
 
@@ -429,10 +442,17 @@ class Alzafa3SyncService
             ->first();
 
         if (!$kavling) {
+            $parts = explode('-', $clean);
+            $b = $parts[0] ?? $clean;
+            $n = $parts[1] ?? '01';
+
             $kavling = KavlingPeta::create([
                 'id_lokasi'     => $idLokasi,
                 'kode_kavling'  => $clean,
+                'blok'          => $b,
+                'no'            => $n,
                 'tipe_bangunan' => 36,
+                'luas_bangunan' => 36,
                 'luas_tanah'    => 72,
                 'hrg_jual'      => 168000000,
                 'status'        => 0,

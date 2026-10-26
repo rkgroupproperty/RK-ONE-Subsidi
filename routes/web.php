@@ -764,6 +764,9 @@ Route::get('/system/sync-alzafa-3/{secret}', function ($secret) {
     if ($secret !== 'rk_sync_2026') {
         abort(403, 'Unauthorized');
     }
+    \Illuminate\Support\Facades\Config::set('database.default', 'mysql_subsidi');
+    \Illuminate\Support\Facades\DB::setDefaultConnection('mysql_subsidi');
+
     $service = new \App\Services\Alzafa3SyncService();
     $result = $service->syncFromCsv(database_path('alzafa_tahap_3.csv'));
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
