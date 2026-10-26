@@ -767,6 +767,17 @@ Route::get('/system/sync-alzafa-3/{secret}', function ($secret) {
     \Illuminate\Support\Facades\Config::set('database.default', 'mysql_subsidi');
     \Illuminate\Support\Facades\DB::setDefaultConnection('mysql_subsidi');
 
+    // Nonaktifkan status Unit Sudah Laku dari legenda & siteplan
+    try {
+        \Illuminate\Support\Facades\DB::table('progres_list_penjualan')
+            ->where('status_progres', 'LIKE', '%Unit Sudah Laku%')
+            ->update(['stt_tampil' => 0]);
+
+        \Illuminate\Support\Facades\DB::table('customer')
+            ->where('id_status_progres', 9)
+            ->update(['id_status_progres' => 11]);
+    } catch (\Throwable $e) {}
+
     $service = new \App\Services\Alzafa3SyncService();
     $result = $service->syncFromCsv(database_path('alzafa_tahap_3.csv'));
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');

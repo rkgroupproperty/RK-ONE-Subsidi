@@ -34,17 +34,21 @@ class SiteplanPenjualanController extends Controller
         $legend = ProgresListPenjualan::whereNotNull('warna')
             ->where('warna', '!=', '')
             ->where('stt_tampil', 1)
+            ->where('status_progres', 'NOT LIKE', '%Unit Sudah Laku%')
             ->orderBy('urutan', 'asc')
             ->get();
 
-        $manual = collect([
-            (object) [
+        // Pastikan Booking ada dan tidak duplikat
+        if (!$legend->contains(function ($item) { return strtolower(trim($item->status_progres)) === 'booking'; })) {
+            $legend->prepend((object) [
                 'status_progres' => 'Booking',
                 'warna'          => '#42f202',
-            ],
-        ]);
+            ]);
+        }
 
-        $legend = $manual->merge($legend);
+        $legend = $legend->unique(function ($item) {
+            return strtolower(trim($item->status_progres));
+        })->values();
 
         return view('admin.siteplan.siteplan_penjualan.index', compact('lokasiKavling', 'legend'));
     }
@@ -238,8 +242,20 @@ class SiteplanPenjualanController extends Controller
             ->whereNotNull('warna')
             ->where('warna', '!=', '')
             ->where('stt_tampil', 1)
+            ->where('status_progres', 'NOT LIKE', '%Unit Sudah Laku%')
             ->orderBy('urutan', 'asc')
             ->get();
+
+        if (!$legends->contains(function ($item) { return strtolower(trim($item->status_progres)) === 'booking'; })) {
+            $legends->prepend((object) [
+                'status_progres' => 'Booking',
+                'warna'          => '#42f202',
+            ]);
+        }
+
+        $legends = $legends->unique(function ($item) {
+            return strtolower(trim($item->status_progres));
+        })->values();
 
         $legendH = 140;
         $destImg = imagecreatetruecolor($srcW, $srcH + $legendH);

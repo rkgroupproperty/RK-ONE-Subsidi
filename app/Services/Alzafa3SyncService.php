@@ -12,6 +12,7 @@ use App\Models\LokasiKavling;
 use App\Models\MarketingOffline;
 use App\Models\Notaris;
 use App\Models\PersyaratanLegal;
+use App\Models\ProgresListPenjualan;
 use App\Models\SPPR;
 use App\Models\Wawancara;
 use App\Models\WawancaraSp3k;
@@ -51,6 +52,21 @@ class Alzafa3SyncService
         DB::beginTransaction();
         try {
             $this->addLog("=== MEMULAI SINKRONISASI ALZAFA RESIDENCE TAHAP 3 ===");
+
+            // 0. Nonaktifkan status "Unit Sudah Laku" di database agar tidak tampil di legenda
+            ProgresListPenjualan::where('status_progres', 'LIKE', '%Unit Sudah Laku%')
+                ->update(['stt_tampil' => 0]);
+
+            // Cari ID progres untuk Pemberkasan Marketing (ID 11)
+            $mktProgres = ProgresListPenjualan::where(function ($q) {
+                $q->where('status_progres', 'LIKE', '%Pemberkasan%')
+                  ->orWhere('status_progres', 'LIKE', '%Marketing%');
+            })->first();
+            $idMarketingProgres = $mktProgres ? $mktProgres->id : 11;
+            $this->addLog("ID Progres Pemberkasan Marketing: {$idMarketingProgres}");
+
+            // Alihkan customer yang tadinya status 9 (Unit Sudah Laku) ke Pemberkasan Marketing
+            Customer::where('id_status_progres', 9)->update(['id_status_progres' => $idMarketingProgres]);
 
             if (!file_exists($csvPath)) {
                 throw new \Exception("File CSV tidak ditemukan di: " . $csvPath);
@@ -193,7 +209,7 @@ class Alzafa3SyncService
                 $tglVerif = $this->parseDate($tglBooking) ?: ($this->parseDate($tglAdmin) ?: Carbon::now('Asia/Jakarta')->toDateString());
 
                 // Tentukan Status Progres & Alur Pipeline
-                $idStatusProgres = 9; // Default: Pemberkasan Marketing
+                $idStatusProgres = $idMarketingProgres; // Default: Pemberkasan Marketing
                 $jenisPembelian = 'KPR';
 
                 if (str_contains($keterangan, 'CASH') || str_contains(strtoupper($namaKonsumen), 'CASH')) {
@@ -208,7 +224,7 @@ class Alzafa3SyncService
                 } elseif (str_contains($keterangan, 'PROSES ADMIN') || str_contains($keterangan, 'ON PROSES ADMIN') || !empty($tglAdmin)) {
                     $idStatusProgres = 10; // SPPR / Proses Admin
                 } elseif (str_contains($keterangan, 'PEMBERKASAN MARKETING')) {
-                    $idStatusProgres = 9; // Pemberkasan Marketing
+                    $idStatusProgres = $idMarketingProgres; // Pemberkasan Marketing
                 }
 
                 // Cari atau buat Customer untuk kavling ini
@@ -386,7 +402,9 @@ class Alzafa3SyncService
                         AkadDetail::where('id_customer', $customer->id)->delete();
                         break;
 
-                    case 9: // PEMBERKASAN MARKETING
+                    case 11:
+                    case 9:
+                    default: // PEMBERKASAN MARKETING
                     default:
                         $this->stats['marketing_synced']++;
                         // Bersihkan sisa transaksi lanjutan lama agar murni di tahap pemberkasan
