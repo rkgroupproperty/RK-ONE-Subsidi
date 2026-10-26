@@ -405,7 +405,6 @@ class Alzafa3SyncService
                     case 11:
                     case 9:
                     default: // PEMBERKASAN MARKETING
-                    default:
                         $this->stats['marketing_synced']++;
                         // Bersihkan sisa transaksi lanjutan lama agar murni di tahap pemberkasan
                         SPPR::where('id_customer', $customer->id)->delete();
