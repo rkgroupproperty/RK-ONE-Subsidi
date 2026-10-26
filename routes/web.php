@@ -878,3 +878,108 @@ Route::get('/system/check-bir-2-units/{secret}', function ($secret) {
     ]);
 });
 
+Route::get('/system/check-bir-4-units/{secret}', function ($secret) {
+    if ($secret !== 'rk_sync_2026') abort(403);
+    \Illuminate\Support\Facades\Config::set('database.default', 'mysql_subsidi');
+    \Illuminate\Support\Facades\DB::setDefaultConnection('mysql_subsidi');
+
+    $lokasi = \App\Models\LokasiKavling::where('id', 2)
+        ->orWhere('nama_kavling', 'LIKE', '%Tahap 4%')
+        ->first();
+
+    $lokasiId = $lokasi ? $lokasi->id : 2;
+
+    $allKavling = \App\Models\KavlingPeta::where('id_lokasi', $lokasiId)->get();
+    $withMap = $allKavling->filter(fn($k) => !empty($k->map))->pluck('kode_kavling')->toArray();
+    $withoutMap = $allKavling->filter(fn($k) => empty($k->map))->pluck('kode_kavling')->toArray();
+
+    $f13Units = $allKavling->filter(fn($k) => stripos($k->kode_kavling, 'F13') !== false)->pluck('kode_kavling')->values();
+
+    $csvPath = database_path('bir_4.csv');
+    $csvBloks = [];
+    if (file_exists($csvPath)) {
+        $csvLines = array_map('str_getcsv', file($csvPath));
+        for ($i = 2; $i < count($csvLines); $i++) {
+            if (!empty($csvLines[$i][3])) {
+                $csvBloks[] = strtoupper(trim($csvLines[$i][3]));
+            }
+        }
+    }
+
+    $norm = function ($b) {
+        if (preg_match('/^([A-Z]+)0*(\d+)-(0*[\dA-Z]+)$/i', $b, $m)) {
+            $prefix = strtoupper($m[1]);
+            $bNum = (int)$m[2];
+            $uVal = $m[3];
+            if (is_numeric($uVal)) {
+                $uVal = sprintf('%02d', (int)$uVal);
+            }
+            return "{$prefix}{$bNum}-{$uVal}";
+        }
+        return strtoupper(trim($b));
+    };
+
+    $mapNorm = array_map($norm, $withMap);
+    $csvNorm = array_map($norm, $csvBloks);
+
+    $getPrefix = fn($b) => explode('-', $b)[0] ?? $b;
+    
+    $mapByPrefix = [];
+    foreach ($mapNorm as $b) {
+        $p = $getPrefix($b);
+        $mapByPrefix[$p] = ($mapByPrefix[$p] ?? 0) + 1;
+    }
+
+    $csvByPrefix = [];
+    foreach ($csvNorm as $b) {
+        $p = $getPrefix($b);
+        $csvByPrefix[$p] = ($csvByPrefix[$p] ?? 0) + 1;
+    }
+
+    $prefixComparison = [];
+    $allPrefixes = array_unique(array_merge(array_keys($mapByPrefix), array_keys($csvByPrefix)));
+    sort($allPrefixes);
+    foreach ($allPrefixes as $p) {
+        $prefixComparison[$p] = [
+            'map_count' => $mapByPrefix[$p] ?? 0,
+            'csv_count' => $csvByPrefix[$p] ?? 0,
+            'diff' => ($csvByPrefix[$p] ?? 0) - ($mapByPrefix[$p] ?? 0),
+        ];
+    }
+
+    return response()->json([
+        'lokasi' => $lokasi,
+        'total_kavling' => $allKavling->count(),
+        'total_with_map' => count($withMap),
+        'total_without_map' => count($withoutMap),
+        'total_csv_bloks' => count($csvBloks),
+        'f13_units' => $f13Units,
+        'comparison' => $prefixComparison,
+        'in_csv_not_map' => array_values(array_diff($csvNorm, $mapNorm)),
+        'in_map_not_csv' => array_values(array_diff($mapNorm, $csvNorm)),
+    ]);
+});
+
+Route::get('/system/sync-bir-4/{secret}', function ($secret) {
+    if ($secret !== 'rk_sync_2026') abort(403);
+    \Illuminate\Support\Facades\Config::set('database.default', 'mysql_subsidi');
+    \Illuminate\Support\Facades\DB::setDefaultConnection('mysql_subsidi');
+
+    // Nonaktifkan status Unit Sudah Laku dari legenda & siteplan
+    try {
+        \Illuminate\Support\Facades\DB::table('progres_list_penjualan')
+            ->where('status_progres', 'LIKE', '%Unit Sudah Laku%')
+            ->update(['stt_tampil' => 0]);
+
+        \Illuminate\Support\Facades\DB::table('customer')
+            ->where('id_status_progres', 9)
+            ->update(['id_status_progres' => 11]);
+    } catch (\Throwable $e) {}
+
+    $service = new \App\Services\Bir4SyncService();
+    $result = $service->syncFromCsv(database_path('bir_4.csv'));
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return response()->json($result);
+})->name('system.sync-bir-4');
+
+
