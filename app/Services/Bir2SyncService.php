@@ -85,6 +85,13 @@ class Bir2SyncService
 
             $this->addLog("Lokasi ditemukan: {$lokasi->nama_kavling} (ID: {$lokasi->id})");
 
+            // Hapus kavling tanpa koordinat map (misal sisa tes/kavling yang tidak ada di gambar denah)
+            KavlingPeta::where('id_lokasi', $lokasi->id)
+                ->where(function ($q) {
+                    $q->whereNull('map')->orWhere('map', '');
+                })
+                ->delete();
+
             // Cache data master
             $marketings = MarketingOffline::all();
             $banks = BankKPR::all();
@@ -135,8 +142,28 @@ class Bir2SyncService
                 $progresPersen = trim($data[12] ?? '');
                 $keterangan    = strtoupper(trim($data[13] ?? ''));
 
-                if (empty($blok)) {
+                if (empty($blok) || in_array($blok, ['A04-15', 'A04-16', 'A4-15', 'A4-16'])) {
                     continue;
+                }
+
+                $aliasMap = [
+                    'A03-13' => 'A3-12A',
+                    'A3-13'  => 'A3-12A',
+                    'A05-13' => 'A5-12A',
+                    'A5-13'  => 'A5-12A',
+                    'A07-13' => 'A7-12A',
+                    'A7-13'  => 'A7-12A',
+                    'A06-19' => 'A6-10',
+                    'A6-19'  => 'A6-10',
+                    'A06-20' => 'A6-11',
+                    'A6-20'  => 'A6-11',
+                    'B02-25' => 'B2-12A',
+                    'B2-25'  => 'B2-12A',
+                    'B02-26' => 'B2-14',
+                    'B2-26'  => 'B2-14',
+                ];
+                if (isset($aliasMap[$blok])) {
+                    $blok = $aliasMap[$blok];
                 }
 
                 // Cari atau buat Kavling
@@ -473,13 +500,26 @@ class Bir2SyncService
 
         $candidates = array_unique($candidates);
 
+        // Cari kavling yang ada di siteplan map terlebih dahulu
         $kavling = KavlingPeta::where('id_lokasi', $idLokasi)
+            ->whereNotNull('map')
+            ->where('map', '!=', '')
             ->where(function ($q) use ($candidates) {
                 foreach ($candidates as $c) {
                     $q->orWhere('kode_kavling', $c);
                 }
             })
             ->first();
+
+        if (!$kavling) {
+            $kavling = KavlingPeta::where('id_lokasi', $idLokasi)
+                ->where(function ($q) use ($candidates) {
+                    foreach ($candidates as $c) {
+                        $q->orWhere('kode_kavling', $c);
+                    }
+                })
+                ->first();
+        }
 
         if (!$kavling) {
             $parts = explode('-', $clean);
