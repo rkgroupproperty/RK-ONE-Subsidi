@@ -813,7 +813,11 @@ Route::get('/system/check-bir-2-units/{secret}', function ($secret) {
     \Illuminate\Support\Facades\Config::set('database.default', 'mysql_subsidi');
     \Illuminate\Support\Facades\DB::setDefaultConnection('mysql_subsidi');
 
-    $kavlings = \App\Models\KavlingPeta::where('id_lokasi', 1)->get(['id', 'kode_kavling', 'map', 'jenis_map', 'status']);
+    $withMap = \App\Models\KavlingPeta::where('id_lokasi', 1)
+        ->whereNotNull('map')
+        ->where('map', '!=', '')
+        ->pluck('kode_kavling')
+        ->toArray();
     
     $csvLines = array_map('str_getcsv', file(database_path('bir_2_tahap_2.csv')));
     $csvBloks = [];
@@ -822,19 +826,31 @@ Route::get('/system/check-bir-2-units/{secret}', function ($secret) {
             $csvBloks[] = strtoupper(trim($csvLines[$i][3]));
         }
     }
-    
-    $dbCodes = $kavlings->pluck('kode_kavling')->toArray();
-    $withMap = $kavlings->filter(fn($k) => !empty($k->map));
-    $withoutMap = $kavlings->filter(fn($k) => empty($k->map));
+
+    $norm = function ($b) {
+        if (preg_match('/^([A-Z]+)0*(\d+)-(0*[\dA-Z]+)$/i', $b, $m)) {
+            $prefix = strtoupper($m[1]);
+            $bNum = (int)$m[2];
+            $uVal = $m[3];
+            if (is_numeric($uVal)) {
+                $uVal = sprintf('%02d', (int)$uVal);
+            }
+            return "{$prefix}{$bNum}-{$uVal}";
+        }
+        return strtoupper(trim($b));
+    };
+
+    $mapNorm = array_map($norm, $withMap);
+    $csvNorm = array_map($norm, $csvBloks);
+
+    $inCsvNotMap = array_values(array_diff($csvNorm, $mapNorm));
+    $inMapNotCsv = array_values(array_diff($mapNorm, $csvNorm));
 
     return response()->json([
-        'total_db' => count($kavlings),
+        'total_map' => count($withMap),
         'total_csv' => count($csvBloks),
-        'total_with_map' => count($withMap),
-        'total_without_map' => count($withoutMap),
-        'without_map_units' => $withoutMap->map(fn($k) => ['id' => $k->id, 'kode' => $k->kode_kavling])->values(),
-        'in_csv_not_with_map' => array_values(array_diff($csvBloks, $withMap->pluck('kode_kavling')->toArray())),
-        'with_map_not_in_csv' => array_values(array_diff($withMap->pluck('kode_kavling')->toArray(), $csvBloks)),
+        'in_csv_not_on_map' => $inCsvNotMap,
+        'on_map_not_in_csv' => $inMapNotCsv,
     ]);
 });
 
