@@ -843,14 +843,38 @@ Route::get('/system/check-bir-2-units/{secret}', function ($secret) {
     $mapNorm = array_map($norm, $withMap);
     $csvNorm = array_map($norm, $csvBloks);
 
-    $inCsvNotMap = array_values(array_diff($csvNorm, $mapNorm));
-    $inMapNotCsv = array_values(array_diff($mapNorm, $csvNorm));
+    // Group counts by block prefix (A1, A2, A3, etc.)
+    $getPrefix = fn($b) => explode('-', $b)[0] ?? $b;
+    
+    $mapByPrefix = [];
+    foreach ($mapNorm as $b) {
+        $p = $getPrefix($b);
+        $mapByPrefix[$p] = ($mapByPrefix[$p] ?? 0) + 1;
+    }
+
+    $csvByPrefix = [];
+    foreach ($csvNorm as $b) {
+        $p = $getPrefix($b);
+        $csvByPrefix[$p] = ($csvByPrefix[$p] ?? 0) + 1;
+    }
+
+    $prefixComparison = [];
+    $allPrefixes = array_unique(array_merge(array_keys($mapByPrefix), array_keys($csvByPrefix)));
+    sort($allPrefixes);
+    foreach ($allPrefixes as $p) {
+        $prefixComparison[$p] = [
+            'map_count' => $mapByPrefix[$p] ?? 0,
+            'csv_count' => $csvByPrefix[$p] ?? 0,
+            'diff' => ($csvByPrefix[$p] ?? 0) - ($mapByPrefix[$p] ?? 0),
+        ];
+    }
 
     return response()->json([
         'total_map' => count($withMap),
         'total_csv' => count($csvBloks),
-        'in_csv_not_on_map' => $inCsvNotMap,
-        'on_map_not_in_csv' => $inMapNotCsv,
+        'comparison' => $prefixComparison,
+        'in_csv_not_map' => array_values(array_diff($csvNorm, $mapNorm)),
+        'in_map_not_csv' => array_values(array_diff($mapNorm, $csvNorm)),
     ]);
 });
 
