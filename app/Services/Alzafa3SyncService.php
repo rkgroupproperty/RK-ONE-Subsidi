@@ -11,6 +11,7 @@ use App\Models\KavlingPeta;
 use App\Models\LokasiKavling;
 use App\Models\MarketingOffline;
 use App\Models\Notaris;
+use App\Models\PersyaratanLegal;
 use App\Models\SPPR;
 use App\Models\Wawancara;
 use App\Models\WawancaraSp3k;
@@ -280,15 +281,20 @@ class Alzafa3SyncService
                             ['keterangan' => 'Akad Massal Alzafa Residence Tahap 3']
                         );
 
+                        $persyaratan = PersyaratanLegal::firstOrCreate(
+                            ['id_customer' => $customer->id]
+                        );
+
                         AkadDetail::updateOrCreate(
                             [
                                 'id_customer' => $customer->id,
                             ],
                             [
-                                'id_akad'    => $akadEvent->id,
-                                'status'     => 2, // Hadir / Selesai
-                                'jenis_akad' => $jenisPembelian === 'Cash' ? 'Cash Keras' : 'Akad KPR',
-                                'keterangan' => 'Akad Done Spreadsheet',
+                                'id_akad'        => $akadEvent->id,
+                                'id_persyaratan' => $persyaratan->id,
+                                'status'         => 2, // Hadir / Selesai
+                                'jenis_akad'     => $jenisPembelian === 'Cash' ? 'Cash Keras' : 'Akad KPR',
+                                'keterangan'     => 'Akad Done Spreadsheet',
                             ]
                         );
                         break;
