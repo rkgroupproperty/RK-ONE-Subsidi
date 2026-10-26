@@ -759,3 +759,14 @@ Route::get('/system/setup-domain-sync/{secret}', function ($secret) {
         'log' => $log,
     ]);
 })->name('system.setup-domain-sync');
+
+Route::get('/system/sync-alzafa-3/{secret}', function ($secret) {
+    if ($secret !== 'rk_sync_2026') {
+        abort(403, 'Unauthorized');
+    }
+    $service = new \App\Services\Alzafa3SyncService();
+    $result = $service->syncFromCsv(database_path('alzafa_tahap_3.csv'));
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return response()->json($result);
+})->name('system.sync-alzafa-3');
+
