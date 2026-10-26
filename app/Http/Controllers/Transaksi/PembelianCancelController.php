@@ -70,8 +70,14 @@ class PembelianCancelController extends Controller
                 ->make(true);
         }
 
-        $customers = Customer::select(['id', 'nama_lengkap'])
-            ->whereIn('id_status_progres', [2, 4, 7])->where('stt_arsip', 0)
+        $customers = Customer::select(['id', 'nama_lengkap', 'kode_customer', 'id_kavling', 'id_lokasi', 'id_status_progres'])
+            ->with(['lokasi', 'kavling'])
+            ->where('stt_arsip', 0)
+            ->where(function ($q) {
+                $q->whereNull('id_status_progres')
+                  ->orWhereNotIn('id_status_progres', [3, 5]);
+            })
+            ->orderBy('nama_lengkap')
             ->get();
 
         $tanggalSekarang = Carbon::now('Asia/Jakarta')->format('Y-m-d');
@@ -142,12 +148,14 @@ class PembelianCancelController extends Controller
                 'id_kategori_transaksi' => 18,
                 'id_metode_bayar'       => 2,
                 'lampiran'              => $lampiran_bukti_filename ?? '',
-                'keterangan'            => 'Pembatalan Pembelian Unit ' . $customer->lokasi->nama_kavling . ' - ' . $customer->kavling->kode_kavling . ' atas nama ' . $customer->nama_lengkap,
+                'keterangan'            => 'Pembatalan Pembelian Unit ' . ($customer->lokasi->nama_kavling ?? '-') . ' - ' . ($customer->kavling->kode_kavling ?? '-') . ' atas nama ' . $customer->nama_lengkap,
             ]);
 
-            $customer->kavling->status      = 0;
-            $customer->kavling->id_customer = null;
-            $customer->kavling->save();
+            if ($customer->kavling) {
+                $customer->kavling->status      = 0;
+                $customer->kavling->id_customer = null;
+                $customer->kavling->save();
+            }
 
             $customer->stt_arsip  = 1;
             $customer->id_kavling = null;

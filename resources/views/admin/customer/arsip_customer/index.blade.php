@@ -26,7 +26,7 @@
                                             <th>Marketing</th>
                                             <th>Lokasi Rumah</th>
                                             <th>Progres Terakhir</th>
-                                            <th class="text-center">Action</th>
+                                            <th class="text-center" width="18%">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -44,7 +44,7 @@
     <script>
         $(function() {
             var permissions = @json($permissions);
-            var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1);
+            var showActionColumn = (permissions['edit'] == 1 || permissions['hapus'] == 1 || permissions['tambah'] == 1);
             var table = $('.data-table').DataTable({
                 processing: false,
                 serverSide: false,
@@ -98,11 +98,72 @@
             });
         });
 
-        // Hapus data
+        // Kembalikan Customer (Restore)
+        $(document).on('click', '.restore-button', function(e) {
+            e.preventDefault();
+            const url = $(this).data('url');
+
+            Swal.fire({
+                title: 'Kembalikan Customer?',
+                text: 'Data customer ini akan dikembalikan ke daftar customer aktif!',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<span class="swal-btn-text">Ya, Kembalikan</span>',
+                cancelButtonText: 'Batal',
+                showLoaderOnConfirm: false,
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'btn btn-success mx-2',
+                    cancelButton: 'btn btn-secondary'
+                },
+                preConfirm: () => {
+                    return new Promise((resolve) => {
+                        const confirmBtn = Swal.getConfirmButton();
+                        const btnText = confirmBtn.querySelector('.swal-btn-text');
+
+                        btnText.innerHTML =
+                            `<span class="spinner-border spinner-border-sm mx-2" role="status" aria-hidden="true"></span> Mengembalikan...`;
+                        confirmBtn.disabled = true;
+
+                        $.ajax({
+                            url: url,
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(res) {
+                                if (typeof audio !== 'undefined' && audio.play) audio.play();
+                                toastr.success(res.message || "Customer berhasil dikembalikan!", "BERHASIL", {
+                                    progressBar: true,
+                                    timeOut: 3500,
+                                    positionClass: "toast-bottom-right"
+                                });
+
+                                $('.data-table').DataTable().ajax.reload(null, false);
+                                Swal.close();
+                            },
+                            error: function(err) {
+                                if (typeof audio !== 'undefined' && audio.play) audio.play();
+                                const msg = err.responseJSON && err.responseJSON.message ? err.responseJSON.message : "Gagal mengembalikan customer.";
+                                toastr.error(msg, "GAGAL!", {
+                                    progressBar: true,
+                                    timeOut: 3500,
+                                    positionClass: "toast-bottom-right"
+                                });
+
+                                btnText.innerHTML = `Ya, Kembalikan`;
+                                confirmBtn.disabled = false;
+                            }
+                        });
+                    });
+                }
+            });
+        });
+
+        // Hapus data secara permanen
         $(document).on('click', '.delete-button', function(e) {
             e.preventDefault();
-
-            const form = $(this).closest('form');
+            const url = $(this).data('url');
 
             Swal.fire({
                 title: 'Apakah Anda yakin?',
@@ -127,24 +188,27 @@
                         confirmBtn.disabled = true;
 
                         $.ajax({
-                            url: form.attr('action'),
+                            url: url,
                             method: 'POST',
-                            data: form.serialize(),
-                            success: function() {
-                                audio.play();
-                                toastr.success("Data telah dihapus!", "BERHASIL", {
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                _method: 'DELETE'
+                            },
+                            success: function(res) {
+                                if (typeof audio !== 'undefined' && audio.play) audio.play();
+                                toastr.success(res.message || "Data telah dihapus secara permanen!", "BERHASIL", {
                                     progressBar: true,
                                     timeOut: 3500,
                                     positionClass: "toast-bottom-right"
                                 });
 
-                                $('.data-table').DataTable().ajax.reload(null,
-                                    false);
+                                $('.data-table').DataTable().ajax.reload(null, false);
                                 Swal.close();
                             },
-                            error: function() {
-                                audio.play();
-                                toastr.error("Gagal menghapus data.", "GAGAL!", {
+                            error: function(err) {
+                                if (typeof audio !== 'undefined' && audio.play) audio.play();
+                                const msg = err.responseJSON && err.responseJSON.message ? err.responseJSON.message : "Gagal menghapus data.";
+                                toastr.error(msg, "GAGAL!", {
                                     progressBar: true,
                                     timeOut: 3500,
                                     positionClass: "toast-bottom-right"

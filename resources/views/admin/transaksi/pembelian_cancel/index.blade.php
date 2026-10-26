@@ -84,7 +84,7 @@
                                     <option value=""></option>
                                     @foreach ($customers as $ctm)
                                         <option value="{{ $ctm->id }}">
-                                            {{ $ctm->nama_lengkap }}
+                                            {{ $ctm->nama_lengkap }}@if($ctm->kavling) - {{ $ctm->kavling->kode_kavling }}@endif
                                         </option>
                                     @endforeach
                                 </select>
@@ -332,6 +332,10 @@
                             if (customer.lokasi && customer.kavling) {
                                 lokasi = customer.lokasi.nama_kavling + ' - ' + customer.kavling
                                     .kode_kavling;
+                            } else if (customer.kavling) {
+                                lokasi = customer.kavling.kode_kavling;
+                            } else if (customer.lokasi) {
+                                lokasi = customer.lokasi.nama_kavling;
                             }
 
                             $('#id_kavling_lama').val(lokasi);

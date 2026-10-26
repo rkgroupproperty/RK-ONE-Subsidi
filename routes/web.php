@@ -355,6 +355,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('customer', CustomerController::class);
 
         Route::resource('upload-file', UploudFileController::class);
+        Route::post('arsip-customer/restore/{id}', [ArsipCustomerController::class, 'restore'])->name('arsip-customer.restore');
         Route::resource('arsip-customer', ArsipCustomerController::class);
     });
 
