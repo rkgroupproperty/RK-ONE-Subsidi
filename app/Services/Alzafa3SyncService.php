@@ -256,6 +256,7 @@ class Alzafa3SyncService
                     $custPayload['status_pernikahan'] = 'Belum Menikah';
                     $custPayload['pekerjaan']     = 'Karyawan Swasta';
                     $custPayload['jenis_perumahan'] = 'Subsidi';
+                    $custPayload['no_telp']       = '0812' . rand(10000000, 99999999);
 
                     $customer = Customer::create($custPayload);
                 }
@@ -352,11 +353,21 @@ class Alzafa3SyncService
                                 'nama'                     => $customer->nama_lengkap,
                                 'nik'                      => $customer->nik ?: '1671000000000000',
                                 'alamat'                   => $customer->alamat_ktp ?: 'Palembang',
+                                'no_telp'                  => $customer->no_telp ?: '0812' . rand(10000000, 99999999),
+                                'luas_bangunan'            => 36,
+                                'luas_tanah'               => 72,
                                 'blok'                     => $blok,
                                 'no'                       => $blok,
                                 'harga_jual'               => (int) ($customer->total_harga ?: 168000000),
                                 'asumsi_plafon_kpr'        => (int) ($customer->total_harga ?: 168000000),
+                                'biaya_surat_surat'        => 0,
+                                'peningkatan_mutu'         => 0,
+                                'biaya_kelebihan_tanah'    => 0,
+                                'biaya_sudut'              => 0,
+                                'biaya_lain_lain'          => 0,
                                 'total_yang_harus_dibayar' => (int) ($customer->total_harga ?: 168000000),
+                                'jumlah_booking_fee'       => 1000000,
+                                'cicilan_per_bulan'        => 1000000,
                                 'no_sppr'                  => 'SPPR/ALZ3/' . sprintf('%04d', $customer->id) . '/' . date('Y'),
                                 'keterangan'               => 'SPPR Alzafa 3 Spreadsheet',
                                 'id_marketing'             => $customer->id_marketing,
