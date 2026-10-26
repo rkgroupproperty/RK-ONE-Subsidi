@@ -895,6 +895,22 @@ Route::get('/system/check-bir-4-units/{secret}', function ($secret) {
 
     $f13Units = $allKavling->filter(fn($k) => stripos($k->kode_kavling, 'F13') !== false)->pluck('kode_kavling')->values();
 
+    $specialUnits = \App\Models\KavlingPeta::with(['customer'])
+        ->where('id_lokasi', $lokasiId)
+        ->whereIn('kode_kavling', ['F4-07', 'F4-08', 'F5-08', 'F5-09', 'F6-11', 'F13-10', 'F04-07', 'F04-08', 'F05-08', 'F05-09', 'F06-11', 'F13-10'])
+        ->get(['id', 'kode_kavling', 'status', 'id_customer'])
+        ->map(function ($k) {
+            return [
+                'kode_kavling' => $k->kode_kavling,
+                'status' => $k->status,
+                'customer' => $k->customer ? [
+                    'id' => $k->customer->id,
+                    'nama_lengkap' => $k->customer->nama_lengkap,
+                    'id_status_progres' => $k->customer->id_status_progres,
+                ] : null,
+            ];
+        });
+
     $csvPath = database_path('bir_4.csv');
     $csvBloks = [];
     if (file_exists($csvPath)) {
@@ -953,6 +969,7 @@ Route::get('/system/check-bir-4-units/{secret}', function ($secret) {
         'total_with_map' => count($withMap),
         'total_without_map' => count($withoutMap),
         'total_csv_bloks' => count($csvBloks),
+        'special_units' => $specialUnits,
         'f13_units' => $f13Units,
         'comparison' => $prefixComparison,
         'in_csv_not_map' => array_values(array_diff($csvNorm, $mapNorm)),
