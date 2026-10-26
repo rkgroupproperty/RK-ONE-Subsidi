@@ -28,6 +28,7 @@ class Bir4SyncService
         'belum_terjual'    => 0,
         'customer_synced'  => 0,
         'akad_synced'      => 0,
+        'cash_synced'      => 0,
         'sp3k_synced'      => 0,
         'bank_synced'      => 0,
         'admin_synced'     => 0,
@@ -83,7 +84,7 @@ class Bir4SyncService
 
             $this->addLog("Lokasi ditemukan: {$lokasi->nama_kavling} (ID: {$lokasi->id})");
 
-            // Hapus kavling tanpa koordinat map (sisa tes/data sampah)
+            // Hapus kavling tanpa koordinat map (sisa tes/data sampah jika ada)
             KavlingPeta::where('id_lokasi', $lokasi->id)
                 ->where(function ($q) {
                     $q->whereNull('map')->orWhere('map', '');
@@ -110,6 +111,17 @@ class Bir4SyncService
 
             $rowNum = 0;
             $syncedKavlingIds = [];
+
+            // Alias mapping untuk penyesuaian nomor blok 13 vs 12A
+            $aliasMap = [
+                'F02-13'  => 'F2-12A',
+                'F2-13'   => 'F2-12A',
+                'F03-13'  => 'F3-12A',
+                'F3-13'   => 'F3-12A',
+                'F12-13'  => 'F12-12A',
+                'F14-13'  => 'F14-12A',
+                'F15-12A' => 'F15-13',
+            ];
 
             while (($data = fgetcsv($handle, 2000, ",")) !== false) {
                 $rowNum++;
@@ -139,8 +151,13 @@ class Bir4SyncService
                 $progresPersen = trim($data[12] ?? '');
                 $keterangan    = strtoupper(trim($data[13] ?? ''));
 
-                if (empty($blok)) {
+                if (empty($blok) || $blok === 'BLOK') {
                     continue;
+                }
+
+                // Terapkan mapping alias
+                if (isset($aliasMap[$blok])) {
+                    $blok = $aliasMap[$blok];
                 }
 
                 // Cari atau buat Kavling
@@ -224,6 +241,7 @@ class Bir4SyncService
                 if (str_contains($keterangan, 'CASH') || str_contains(strtoupper($namaKonsumen), 'CASH') || str_contains(strtoupper($namaBank), 'CASH')) {
                     $jenisPembelian = 'Cash';
                     $idStatusProgres = 3; // Akad / Cash Selesai
+                    $this->stats['cash_synced']++;
                 } elseif (str_contains($keterangan, 'AKAD DONE') || str_contains($keterangan, 'AKAD') || !empty($jadwalAkad)) {
                     $idStatusProgres = 3; // Akad
                 } elseif (str_contains($keterangan, 'SP3K') || !empty($tglSp3k)) {
@@ -234,6 +252,20 @@ class Bir4SyncService
                     $idStatusProgres = 10; // SPPR / Proses Admin
                 } elseif (str_contains($keterangan, 'PEMBERKASAN MARKETING')) {
                     $idStatusProgres = $idMarketingProgres;
+                }
+
+                // Khusus kasus duplikat F13-10:
+                // Baris 243 ALVA HASANAH (Pemberkasan Marketing) & Baris 244 INTAN PERMATA SARI (Akad Done).
+                // Jika baris saat ini adalah ALVA HASANAH pada F13-10, arsipkan Alva karena unit F13-10 sudah Akad Done oleh INTAN PERMATA SARI.
+                if ($blok === 'F13-10' && stripos($namaKonsumen, 'ALVA') !== false) {
+                    $alva = Customer::where('id_lokasi', $lokasi->id)
+                        ->where('nama_lengkap', 'LIKE', '%ALVA HASANAH%')
+                        ->first();
+                    if ($alva) {
+                        $alva->update(['id_kavling' => null, 'stt_arsip' => 1]);
+                    }
+                    $this->addLog("Catatan: ALVA HASANAH pada F13-10 diarsipkan karena unit telah Akad Done oleh INTAN PERMATA SARI.");
+                    continue;
                 }
 
                 // Cari atau buat Customer untuk kavling ini
@@ -424,6 +456,25 @@ class Bir4SyncService
             }
 
             fclose($handle);
+
+            // Pastikan unit yang ada di siteplan tapi tidak ada di CSV tetap berstatus Belum Terjual (status = 0)
+            $unmappedUnits = KavlingPeta::where('id_lokasi', $lokasi->id)
+                ->whereNotIn('id', $syncedKavlingIds)
+                ->get();
+
+            foreach ($unmappedUnits as $unmapped) {
+                if ($unmapped->id_customer) {
+                    $oldCust = Customer::find($unmapped->id_customer);
+                    if ($oldCust) {
+                        $oldCust->update(['id_kavling' => null, 'stt_arsip' => 1]);
+                    }
+                }
+                $unmapped->update([
+                    'status'      => 0,
+                    'id_customer' => null,
+                ]);
+                $this->stats['belum_terjual']++;
+            }
 
             DB::commit();
             $this->addLog("=== SINKRONISASI BUKIT INTAN RESIDENCE TAHAP 4 SELESAI ===");
