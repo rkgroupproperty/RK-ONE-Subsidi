@@ -808,3 +808,33 @@ Route::get('/system/sync-bir-2/{secret}', function ($secret) {
     return response()->json($result);
 })->name('system.sync-bir-2');
 
+Route::get('/system/check-bir-2-units/{secret}', function ($secret) {
+    if ($secret !== 'rk_sync_2026') abort(403);
+    \Illuminate\Support\Facades\Config::set('database.default', 'mysql_subsidi');
+    \Illuminate\Support\Facades\DB::setDefaultConnection('mysql_subsidi');
+
+    $kavlings = \App\Models\KavlingPeta::where('id_lokasi', 1)->get(['id', 'kode_kavling', 'map', 'jenis_map', 'status']);
+    
+    $csvLines = array_map('str_getcsv', file(database_path('bir_2_tahap_2.csv')));
+    $csvBloks = [];
+    for ($i = 3; $i < count($csvLines); $i++) {
+        if (!empty($csvLines[$i][3])) {
+            $csvBloks[] = strtoupper(trim($csvLines[$i][3]));
+        }
+    }
+    
+    $dbCodes = $kavlings->pluck('kode_kavling')->toArray();
+    $withMap = $kavlings->filter(fn($k) => !empty($k->map));
+    $withoutMap = $kavlings->filter(fn($k) => empty($k->map));
+
+    return response()->json([
+        'total_db' => count($kavlings),
+        'total_csv' => count($csvBloks),
+        'total_with_map' => count($withMap),
+        'total_without_map' => count($withoutMap),
+        'without_map_units' => $withoutMap->map(fn($k) => ['id' => $k->id, 'kode' => $k->kode_kavling])->values(),
+        'in_csv_not_with_map' => array_values(array_diff($csvBloks, $withMap->pluck('kode_kavling')->toArray())),
+        'with_map_not_in_csv' => array_values(array_diff($withMap->pluck('kode_kavling')->toArray(), $csvBloks)),
+    ]);
+});
+
