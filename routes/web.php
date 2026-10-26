@@ -784,3 +784,27 @@ Route::get('/system/sync-alzafa-3/{secret}', function ($secret) {
     return response()->json($result);
 })->name('system.sync-alzafa-3');
 
+Route::get('/system/sync-bir-2/{secret}', function ($secret) {
+    if ($secret !== 'rk_sync_2026') {
+        abort(403, 'Unauthorized');
+    }
+    \Illuminate\Support\Facades\Config::set('database.default', 'mysql_subsidi');
+    \Illuminate\Support\Facades\DB::setDefaultConnection('mysql_subsidi');
+
+    // Nonaktifkan status Unit Sudah Laku dari legenda & siteplan
+    try {
+        \Illuminate\Support\Facades\DB::table('progres_list_penjualan')
+            ->where('status_progres', 'LIKE', '%Unit Sudah Laku%')
+            ->update(['stt_tampil' => 0]);
+
+        \Illuminate\Support\Facades\DB::table('customer')
+            ->where('id_status_progres', 9)
+            ->update(['id_status_progres' => 11]);
+    } catch (\Throwable $e) {}
+
+    $service = new \App\Services\Bir2SyncService();
+    $result = $service->syncFromCsv(database_path('bir_2_tahap_2.csv'));
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return response()->json($result);
+})->name('system.sync-bir-2');
+
