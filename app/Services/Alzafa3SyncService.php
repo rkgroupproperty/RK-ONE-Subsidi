@@ -52,19 +52,24 @@ class Alzafa3SyncService
             }
 
             // 1. Tentukan Lokasi Alzafa Residence Tahap 3
+            $allLokasi = LokasiKavling::all(['id', 'nama_kavling', 'nama_singkat']);
+            $this->addLog("Daftar Lokasi di DB: " . json_encode($allLokasi));
+
             $lokasi = LokasiKavling::where(function ($q) {
                 $q->where('nama_kavling', 'LIKE', '%Alzafa%3%')
                   ->orWhere('nama_kavling', 'LIKE', '%Alzafa%Tahap%3%')
+                  ->orWhere('nama_kavling', 'LIKE', '%Tahap%3%')
                   ->orWhere('nama_singkat', 'LIKE', '%ALZ%3%')
-                  ->orWhere('nama_singkat', 'LIKE', '%ALZAFA%3%');
+                  ->orWhere('nama_singkat', 'LIKE', '%ALZAFA%3%')
+                  ->orWhere('nama_kavling', 'LIKE', '%Alzafa%');
             })->first();
 
             if (!$lokasi) {
-                $lokasi = LokasiKavling::where('nama_kavling', 'LIKE', '%Alzafa%')->first();
+                $lokasi = LokasiKavling::first();
             }
 
             if (!$lokasi) {
-                throw new \Exception("Lokasi Perumahan Alzafa Residence Tahap 3 tidak ditemukan di database!");
+                throw new \Exception("Lokasi Perumahan tidak ditemukan sama sekali di database!");
             }
 
             $this->addLog("Lokasi ditemukan: {$lokasi->nama_kavling} (ID: {$lokasi->id})");
