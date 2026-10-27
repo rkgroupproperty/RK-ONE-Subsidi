@@ -427,28 +427,59 @@ class PembayaranController extends Controller
             $kavling    = $nasabah->kavling ?? KavlingPeta::find($nasabah->id_kavling);
         } catch (\Throwable $e) {}
 
+        $namaLokasi = strtoupper(($lokasi->nama_kavling ?? '') . ' ' . ($lokasi->nama_singkat ?? ''));
+
+        // Penentuan Perusahaan otomatis sesuai perumahan:
+        // 1. Bukit Intan Residence Tahap 4 -> PT Unggul Perkasa Propertindo
+        // 2. Alzafa Residence -> PT Alzafa Perkasa Sriwijaya
+        // 3. The Ammaia Hills, Avana Hills, Bukit Intan Residence 2 Tahap 2 -> PT Unggul Perkasa Sriwijaya
         $perusahaan = null;
         try {
-            if ($kavling && $kavling->id_perusahaan) {
-                $perusahaan = Perusahaan::find($kavling->id_perusahaan);
-            }
-            if (!$perusahaan && $lokasi) {
-                $perusahaan = $lokasi->perusahaan ? $lokasi->perusahaan->first() : null;
-            }
-            if (!$perusahaan) {
-                $perusahaan = Perusahaan::first();
+            if (str_contains($namaLokasi, 'TAHAP 4') || str_contains($namaLokasi, 'BIR4') || str_contains($namaLokasi, 'BIR 4')) {
+                $perusahaan = Perusahaan::where('nama_perusahaan', 'LIKE', '%PROPERTINDO%')->first();
+            } elseif (str_contains($namaLokasi, 'ALZAFA')) {
+                $perusahaan = Perusahaan::where('nama_perusahaan', 'LIKE', '%ALZAFA%')->first();
+            } else {
+                $perusahaan = Perusahaan::where(function ($q) {
+                    $q->where('nama_perusahaan', 'LIKE', '%UNGGUL PERKASA SRIWIJAYA%')
+                      ->orWhere(function ($sub) {
+                          $sub->where('nama_perusahaan', 'LIKE', '%SRIWIJAYA%')
+                              ->where('nama_perusahaan', 'NOT LIKE', '%ALZAFA%');
+                      });
+                })->first();
             }
         } catch (\Throwable $e) {}
 
         if (!$perusahaan) {
+            try {
+                if ($kavling && $kavling->id_perusahaan) {
+                    $perusahaan = Perusahaan::find($kavling->id_perusahaan);
+                }
+                if (!$perusahaan && $lokasi) {
+                    $perusahaan = $lokasi->perusahaan ? $lokasi->perusahaan->first() : null;
+                }
+                if (!$perusahaan) {
+                    $perusahaan = Perusahaan::first();
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        if (!$perusahaan) {
+            $defaultNama = 'PT UNGGUL PERKASA SRIWIJAYA';
+            if (str_contains($namaLokasi, 'TAHAP 4') || str_contains($namaLokasi, 'BIR4') || str_contains($namaLokasi, 'BIR 4')) {
+                $defaultNama = 'PT UNGGUL PERKASA PROPERTINDO';
+            } elseif (str_contains($namaLokasi, 'ALZAFA')) {
+                $defaultNama = 'PT ALZAFA PERKASA SRIWIJAYA';
+            }
+
             $perusahaan = (object) [
-                'nama_perusahaan' => 'PT UNGGUL PERKASA SRIWIJAYA',
-                'alamat_perusahaan' => 'Jl. Sultan M. Mansyur No. 1181 Bukit Lama Palembang',
-                'telp_perusahaan' => '0711 441139',
-                'kota_penandatangan' => 'Palembang',
-                'nama_penandatangan' => 'Admin Keuangan',
+                'nama_perusahaan'       => $defaultNama,
+                'alamat_perusahaan'     => 'Jl. Sultan M. Mansyur No. 1181 Bukit Lama Palembang',
+                'telp_perusahaan'       => '0881-0805-03515',
+                'kota_penandatangan'    => 'Palembang',
+                'nama_penandatangan'    => 'Admin Keuangan',
                 'jabatan_penandatangan' => 'Kasir / Keuangan',
-                'nama_mengetahui' => 'Pimpinan',
+                'nama_mengetahui'       => 'Pimpinan',
             ];
         }
 
@@ -525,20 +556,23 @@ class PembayaranController extends Controller
         };
 
         // 1. Checkbox Perusahaan (Header Atas)
-        $perusahaanName = strtoupper($perusahaan->nama_perusahaan ?? '');
-        if (str_contains($perusahaanName, 'UNGGUL PERKASA PROPERTINDO') || str_contains($perusahaanName, 'PROPERTINDO')) {
+        // Aturan perumahan:
+        // - The Ammaia Hills, Avana Hills, Bukit Intan Residence 2 Tahap 2 -> PT Unggul Perkasa Sriwijaya (Y = 4.8)
+        // - Alzafa Residence -> PT Alzafa Perkasa Sriwijaya (Y = 9.5)
+        // - Bukit Intan Residence Tahap 4 -> PT Unggul Perkasa Propertindo (Y = 14.1)
+        if (str_contains($namaLokasi, 'TAHAP 4') || str_contains($namaLokasi, 'BIR4') || str_contains($namaLokasi, 'BIR 4')) {
             $drawCheck(72.3, 14.1);
-        } elseif (str_contains($perusahaanName, 'ALZAFA')) {
+        } elseif (str_contains($namaLokasi, 'ALZAFA')) {
             $drawCheck(72.3, 9.5);
         } else {
             $drawCheck(72.3, 4.8);
         }
 
-        // 2. Nomor Kwitansi
-        $pdf->SetFont('helvetica', 'B', 9.5);
+        // 2. Nomor Kwitansi (Font size dibuat lebih kecil agar pas dan rapi di dalam kolom)
+        $pdf->SetFont('helvetica', 'B', 7.8);
         $pdf->SetTextColor(20, 20, 20);
-        $pdf->SetXY(16.7, 35.3);
-        $pdf->Cell(20, 4.5, $pembayaran->no_kwitansi ?? '-', 0, 0, 'L');
+        $pdf->SetXY(16.7, 35.8);
+        $pdf->Cell(65, 4.2, $pembayaran->no_kwitansi ?? '-', 0, 0, 'L');
 
         // 3. Nominal Rp
         $pdf->SetFont('helvetica', 'B', 11);
