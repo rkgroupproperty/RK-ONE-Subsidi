@@ -1197,9 +1197,7 @@
         </div>
 
         <div class="top-actions">
-          <a href="{{ route('admin.sync-excel') }}" class="btn-futuristic-sync" onclick="return confirm('Jalankan proses sinkronisasi data dari Excel ke database?')">
-            <i class="fa-solid fa-cloud-arrow-down"></i> Sinkronkan Data Excel
-          </a>
+          {{-- Tombol Sinkronkan Data Excel disembunyikan sesuai permintaan --}}
           <button class="icon-pill-btn" onclick="Swal.fire({title:'Status Sistem', text:'Sistem dan database beroperasi optimal', icon:'success', confirmButtonColor:'#2563eb'})" title="Status Notifikasi">
             <i class="fa-regular fa-bell"></i>
           </button>
