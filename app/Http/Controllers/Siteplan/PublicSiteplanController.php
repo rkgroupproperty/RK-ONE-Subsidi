@@ -24,7 +24,7 @@ class PublicSiteplanController extends Controller
             }
         }
 
-        $lokasiKavling = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres', 'kavlingPeta.progres'])
+        $lokasiKavling = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres', 'kavlingPeta.pengajuanHold', 'kavlingPeta.progres'])
             ->orderBy('urutan', 'asc')
             ->get();
 
@@ -52,7 +52,7 @@ class PublicSiteplanController extends Controller
      */
     public function show($id)
     {
-        $data = KavlingPeta::with(['lokasi', 'customer', 'listrikAir'])->findOrFail($id);
+        $data = KavlingPeta::with(['lokasi', 'customer', 'pengajuanHold', 'listrikAir'])->findOrFail($id);
 
         $tagihanList   = Piutang::where('id_customer', $data->id_customer)->orderBy('id')->get();
         $pemasukanList = Pemasukan::with('kategori')->where('id_customer', $data->id_customer)->get();

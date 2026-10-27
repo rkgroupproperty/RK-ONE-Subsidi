@@ -259,7 +259,7 @@
 
                                                         if ($pt->customer) {
                                                             $warna = $pt->customer->progres->warna ?? '#ffffff';
-                                                        } elseif ($pt->status == 2) {
+                                                        } elseif ($pt->status == 1 || $pt->status == 2 || $pt->pengajuanHold) {
                                                             $warna = '#42f202';
                                                         }
                                                     @endphp
@@ -797,6 +797,17 @@
                         $('#alamat_domisili').val(response.data.customer.alamat_domisili);
                         $('#npwp').val(response.data.customer.npwp);
                         $('#jenis_pembelian').val(response.data.customer.jenis_pembelian);
+                    } else if (response.data.pengajuan_hold) {
+                        $('#nama_lengkap').val(response.data.pengajuan_hold.nama_lengkap + ' (Sedang Booking)');
+                        $('#nik').val(response.data.pengajuan_hold.nik);
+                        $('#no_telp').val(response.data.pengajuan_hold.no_telp);
+                        $('#tempat_lahir').val(response.data.pengajuan_hold.tempat_lahir);
+                        $('#tgl_lahir').val(response.data.pengajuan_hold.tgl_lahir);
+                        $('#jenis_kelamin').val(response.data.pengajuan_hold.jenis_kelamin);
+                        $('#alamat_ktp').val(response.data.pengajuan_hold.alamat_ktp);
+                        $('#alamat_domisili').val(response.data.pengajuan_hold.alamat_domisili);
+                        $('#npwp').val(response.data.pengajuan_hold.npwp);
+                        $('#jenis_pembelian').val(response.data.pengajuan_hold.jenis_pembelian || 'KPR');
                     } else {
                         $('#nama_lengkap, #nik, #no_telp, #tempat_lahir, #tgl_lahir, #jenis_kelamin, #alamat_ktp, #alamat_domisili, #npwp, #jenis_pembelian')
                             .val('');

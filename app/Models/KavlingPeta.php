@@ -61,6 +61,10 @@ class KavlingPeta extends Model
     {
         return $this->hasOne(Customer::class, 'id_kavling', 'id');
     }
+    public function pengajuanHold()
+    {
+        return $this->hasOne(PengajuanHold::class, 'id_kavling', 'id')->where('stt_reg', '!=', 2)->latest();
+    }
     public function progres()
     {
         return $this->belongsTo(ProgresListPenjualan::class, 'id_status_progres', 'id');

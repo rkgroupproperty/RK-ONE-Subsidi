@@ -28,7 +28,8 @@ class SiteplanPenjualanController extends Controller
 
          $lokasiKavling = LokasiKavling::with([
         'masterSvg',
-        'kavlingPeta.customer.progres'  // ← tambahkan ini
+        'kavlingPeta.customer.progres',
+        'kavlingPeta.pengajuanHold',
     ])->orderBy('urutan', 'asc')->get();
 
         $legend = ProgresListPenjualan::whereNotNull('warna')
@@ -56,7 +57,7 @@ class SiteplanPenjualanController extends Controller
 
     public function show($id)
     {
-        $data = KavlingPeta::with(['lokasi', 'customer', 'listrikAir'])->findOrFail($id);
+        $data = KavlingPeta::with(['lokasi', 'customer.marketing', 'customer.progres', 'pengajuanHold.marketing', 'listrikAir'])->findOrFail($id);
 
         $tagihanList   = Piutang::where('id_customer', $data->id_customer)->orderBy('id')->get();
         $pemasukanList = Pemasukan::with('kategori')->where('id_customer', $data->id_customer)->get();
@@ -74,7 +75,7 @@ class SiteplanPenjualanController extends Controller
 
     private function generateSVG($id_lokasi, $width = '100%', $height = '100%')
     {
-        $lokasi = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres'])
+        $lokasi = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres', 'kavlingPeta.pengajuanHold'])
             ->findOrFail($id_lokasi);
 
         if (! $lokasi->masterSvg) {
@@ -90,7 +91,7 @@ class SiteplanPenjualanController extends Controller
 
             if ($pt->customer) {
                 $warna = $pt->customer->progres->warna ?? '#ffffff';
-            } elseif ($pt->status == 2) {
+            } elseif ($pt->status == 1 || $pt->status == 2 || $pt->pengajuanHold) {
                 $warna = '#42f202';
             }
 

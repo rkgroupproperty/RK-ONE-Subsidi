@@ -530,8 +530,14 @@ class PengajuanHoldController extends Controller
     public function bookingSukses(Request $request)
     {
         $portalType = $request->get('portal') ?? $request->get('type') ?? session('app_type');
-        $host = strtolower($request->getHost());
-        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.'));
+        if ($portalType === 'subsidi') {
+            $isKomersil = false;
+        } elseif ($portalType === 'komersil') {
+            $isKomersil = true;
+        } else {
+            $host = strtolower($request->getHost());
+            $isKomersil = str_starts_with($host, 'komersil.');
+        }
         $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
 
         $bg = null;
@@ -1370,8 +1376,14 @@ class PengajuanHoldController extends Controller
     public function cetakKwitansiSementara($id)
     {
         $portalType = request('portal') ?? request('type') ?? session('app_type');
-        $host = strtolower(request()->getHost());
-        $isKomersil = ($portalType === 'komersil' || str_contains($host, 'sistem.'));
+        if ($portalType === 'subsidi') {
+            $isKomersil = false;
+        } elseif ($portalType === 'komersil') {
+            $isKomersil = true;
+        } else {
+            $host = strtolower(request()->getHost());
+            $isKomersil = str_starts_with($host, 'komersil.');
+        }
         $targetConn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
 
         $booking = null;
@@ -1701,9 +1713,25 @@ class PengajuanHoldController extends Controller
                 $sheetName = 'BIR2';
             }
 
-            $blok = trim($kavling->kode_kavling ?? '');
-            if (empty($blok)) {
+            $rawBlok = trim($kavling->kode_kavling ?? '');
+            if (empty($rawBlok)) {
                 return;
+            }
+
+            // Normalisasi format blok sesuai standar kolom Google Sheet: [Blok] NO [Nomor]
+            $blokFormatted = $rawBlok;
+            if (preg_match('/^([A-Za-z]+)\s*0*(\d+)[\s\-\.]*0*(\d+[A-Za-z]?)$/', $rawBlok, $m)) {
+                $prefix = strtoupper($m[1]);
+                $bNum = (int)$m[2];
+                $uNum = sprintf('%02d', (int)$m[3]);
+                if (str_starts_with($sheetName, 'AR')) {
+                    // Di Alzafa: E1 NO 01
+                    $blokFormatted = "{$prefix}{$bNum} NO {$uNum}";
+                } else {
+                    // Di BIR2 & BIRT4: F01 NO 01, A01 NO 01, B06 NO 08
+                    $bNum2 = sprintf('%02d', $bNum);
+                    $blokFormatted = "{$prefix}{$bNum2} NO {$uNum}";
+                }
             }
 
             $namaKonsumen = trim($pengajuan->nama_lengkap ?? '');
@@ -1715,33 +1743,45 @@ class PengajuanHoldController extends Controller
                 } catch (\Throwable $e) {}
             }
 
-            $payload = json_encode([
-                'sheetName'    => $sheetName,
-                'blok'         => $blok,
-                'namaKonsumen' => $namaKonsumen,
-                'marketing'    => $namaMarketing,
-                'booking'      => $tglBooking,
-            ]);
-
             $url = 'https://script.google.com/macros/s/AKfycbxiIkWh0FtoVkOURdEWtMo29OdoXmPvHsOH4wr1ZKPm2siecmzZOLkyl6ac52CQY4KC/exec';
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 6);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            $sendGas = function ($blokToSend) use ($url, $sheetName, $namaKonsumen, $namaMarketing, $tglBooking) {
+                $payload = json_encode([
+                    'sheetName'    => $sheetName,
+                    'blok'         => $blokToSend,
+                    'namaKonsumen' => $namaKonsumen,
+                    'marketing'    => $namaMarketing,
+                    'booking'      => $tglBooking,
+                ]);
 
-            $res = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $url);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-            Log::info("Sync Google Sheets Booking: Sheet=$sheetName, Blok=$blok, HTTP=$httpCode, Res=$res, Err=$curlError");
+                $res = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $curlError = curl_error($ch);
+                curl_close($ch);
+
+                return [$httpCode, $res, $curlError];
+            };
+
+            // Kirim dengan format standar Google Sheet terlebih dahulu
+            [$httpCode, $res, $curlError] = $sendGas($blokFormatted);
+            Log::info("Sync Google Sheets Booking (Attempt 1): Sheet=$sheetName, Blok=$blokFormatted, HTTP=$httpCode, Res=$res, Err=$curlError");
+
+            // Jika belum berhasil dan blok awal berbeda, coba kirim blok mentah
+            if (($httpCode != 200 || str_contains($res, '"error"')) && $blokFormatted !== $rawBlok) {
+                [$httpCode2, $res2, $curlError2] = $sendGas($rawBlok);
+                Log::info("Sync Google Sheets Booking (Attempt 2 - Raw): Sheet=$sheetName, Blok=$rawBlok, HTTP=$httpCode2, Res=$res2, Err=$curlError2");
+            }
         } catch (\Throwable $e) {
             Log::error("Sync Google Sheets Exception: " . $e->getMessage());
         }
