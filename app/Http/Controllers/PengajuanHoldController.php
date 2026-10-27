@@ -1737,9 +1737,9 @@ class PengajuanHoldController extends Controller
             $namaKonsumen = trim($pengajuan->nama_lengkap ?? '');
             $namaMarketing = strtoupper(trim($marketing->nama_marketing ?? ''));
             $tglBooking = now()->format('d/m/Y');
-            if (!empty($pengajuan->created_at)) {
+            if (!empty($pengajuan->tgl_booking)) {
                 try {
-                    $tglBooking = \Carbon\Carbon::parse($pengajuan->created_at)->format('d/m/Y');
+                    $tglBooking = \Carbon\Carbon::parse($pengajuan->tgl_booking)->format('d/m/Y');
                 } catch (\Throwable $e) {}
             }
 
