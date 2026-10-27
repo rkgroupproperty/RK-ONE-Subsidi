@@ -464,13 +464,36 @@ class PembayaranController extends Controller
         // Data Rincian Pembayaran
         $sppr = SPPR::where('id_customer', $nasabah->id)->latest()->first();
         $hargaDasar = $sppr->harga_jual ?? ($nasabah->hrg_jual ?: ($kavling->hrg_jual ?: 0));
+        
         $klt = $sppr->biaya_kelebihan_tanah ?? 0;
-        $totalDp = $sppr->nominal_dp ?? ($nasabah->piutangs ? $nasabah->piutangs->filter(fn($p) => str_contains(strtoupper($p->kategori->kategori ?? ''), 'DP'))->sum('nominal') : 0);
+        if ($klt <= 0 && $nasabah->piutangs) {
+            $klt = $nasabah->piutangs->filter(function ($p) {
+                $str = strtoupper(($p->kategori->kategori ?? '') . ' ' . ($p->deskripsi ?? ''));
+                return str_contains($str, 'KLT') || str_contains($str, 'KELEBIHAN TANAH');
+            })->sum('nominal');
+        }
+
+        $totalDp = $sppr->nominal_dp ?? 0;
+        if ($totalDp <= 0 && $nasabah->piutangs) {
+            $totalDp = $nasabah->piutangs->filter(function ($p) {
+                $str = strtoupper(($p->kategori->kategori ?? '') . ' ' . ($p->deskripsi ?? ''));
+                return str_contains($str, 'DP') || str_contains($str, 'UANG MUKA') || str_contains($str, 'DOWN PAYMENT');
+            })->sum('nominal');
+        }
+
         $potongan = $sppr->biaya_lain_lain ?? 0;
+        if ($potongan <= 0 && $nasabah->piutangs) {
+            $potongan = $nasabah->piutangs->filter(function ($p) {
+                $str = strtoupper(($p->kategori->kategori ?? '') . ' ' . ($p->deskripsi ?? ''));
+                return str_contains($str, 'POTONGAN') || str_contains($str, 'DISKON');
+            })->sum('nominal');
+        }
 
         $dpTerbayar = Pemasukan::where('id_customer', $nasabah->id)
-            ->whereHas('kategori', function ($q) {
-                $q->where('kategori', 'LIKE', '%DP%')->orWhere('kategori', 'LIKE', '%UANG MUKA%');
+            ->where(function ($q) {
+                $q->whereHas('kategori', function ($sub) {
+                    $sub->where('kategori', 'LIKE', '%DP%')->orWhere('kategori', 'LIKE', '%UANG MUKA%');
+                })->orWhere('keterangan', 'LIKE', '%DP%')->orWhere('keterangan', 'LIKE', '%UANG MUKA%');
             })->sum('nominal');
         $sisaDp = max(0, $totalDp - $dpTerbayar);
         $promo = $sppr->promo ?? '-';
@@ -602,11 +625,21 @@ class PembayaranController extends Controller
         }
         $pdf->setCellHeightRatio(1.25);
 
-        // 11. Palembang, Tanggal
+        // 11. Kota & Tanggal
+        $kota = !empty($perusahaan->kota_penandatangan) ? $perusahaan->kota_penandatangan : 'Palembang';
         $tglCarbon = Carbon::parse($pembayaran->tanggal)->locale('id');
-        $pdf->SetFont('helvetica', '', 7);
-        $pdf->SetXY(169.0, 110.0);
-        $pdf->Cell(40, 4.5, $tglCarbon->isoFormat('D MMMM Y'), 0, 0, 'L');
+        $pdf->SetFont('helvetica', '', 7.5);
+        $pdf->SetXY(145.0, 110.0);
+        $pdf->Cell(55, 4.5, $kota . ', ' . $tglCarbon->isoFormat('D MMMM Y'), 0, 0, 'C');
+
+        // 12. Nama Penerima
+        $namaPenerima = !empty($perusahaan->nama_penandatangan)
+            ? $perusahaan->nama_penandatangan
+            : (!empty($sppr->penandatangan) ? $sppr->penandatangan : 'Kasir / Keuangan');
+
+        $pdf->SetFont('helvetica', 'B', 8);
+        $pdf->SetXY(145.0, 122.5);
+        $pdf->Cell(55, 4.5, '( ' . $namaPenerima . ' )', 0, 0, 'C');
 
         $filename = 'Kwitansi-' . ($pembayaran->no_kwitansi ?? 'draft') . '.pdf';
         $pdf->Output($filename, 'I');
