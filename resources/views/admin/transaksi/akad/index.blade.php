@@ -201,7 +201,7 @@
                                         @if ($permissions['tambah'])
                                             <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal"
                                                 data-target="#modalForm" style="border-radius:6px"><i class="fas fa-plus mr-1"></i>
-                                                Tambah Jadwal</button>
+                                                Tambah Jadwal / Konsumen Akad</button>
                                         @endif
                                     </div>
                                 </div>
@@ -285,13 +285,15 @@
         <!-- /.content -->
     </div>
 
-    <!-- Modal Form Tambah Jadwal Akad -->
+    <!-- Modal Form Tambah Jadwal & Konsumen Akad -->
     <div class="modal fade" id="modalForm" tabindex="-1" role="dialog" aria-labelledby="modalFormLabel" aria-hidden="true"
         data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-md" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-indigo">
-                    <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel">Form Jadwal Akad</h5>
+                    <h5 class="modal-title text-white font-weight-bold" id="modalFormLabel">
+                        <i class="fas fa-handshake mr-2"></i>Form Jadwal & Konsumen Akad
+                    </h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -301,17 +303,76 @@
                     <input type="hidden" id="primary_id" name="primary_id">
                     <div class="modal-body">
                         <div class="form-group row mb-3">
-                            <label for="tgl_akad" class="col-sm-4 col-form-label font-weight-bold">Tanggal Akad</label>
-                            <div class="col-sm-8">
+                            <label for="tgl_akad" class="col-sm-3 col-form-label font-weight-bold">Tanggal Akad <span class="text-danger">*</span></label>
+                            <div class="col-sm-9">
                                 <input type="date" id="tgl_akad" class="form-control" name="tgl_akad"
                                     value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" required>
                             </div>
                         </div>
 
                         <div class="form-group row mb-3">
-                            <label for="keterangan" class="col-sm-4 col-form-label font-weight-bold">Keterangan / Bank</label>
-                            <div class="col-sm-8">
-                                <input type="text" id="keterangan" class="form-control" name="keterangan" placeholder="Contoh: Bank BTN / Batch 1">
+                            <label for="keterangan" class="col-sm-3 col-form-label font-weight-bold">Keterangan / Bank <span class="text-danger">*</span></label>
+                            <div class="col-sm-9">
+                                <input type="text" id="keterangan" class="form-control" name="keterangan" placeholder="Contoh: Bank BTN / Batch 1" required>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border p-2 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-user-plus text-primary mr-2 fa-lg"></i>
+                                <span class="font-weight-bold text-dark">Pilih Konsumen Akad (Opsional / Langsung)</span>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Anda dapat langsung memilih satu atau beberapa konsumen untuk dimasukkan ke jadwal ini. Jika hanya ingin membuat jadwal saja, kolom ini dapat dikosongkan.
+                            </small>
+                        </div>
+
+                        <div class="form-group row mb-3">
+                            <label for="id_customer" class="col-sm-3 col-form-label font-weight-bold">
+                                Konsumen
+                            </label>
+                            <div class="col-sm-9">
+                                <select id="id_customer" name="id_customer[]" class="form-control select2-modal" multiple="multiple" style="width: 100%;">
+                                    @foreach($readyCustomers as $cust)
+                                        @php
+                                            $sttLabel = match($cust->id_status_progres) {
+                                                4 => 'SP3K',
+                                                7 => 'Proses Bank',
+                                                10 => 'Proses Admin',
+                                                11 => 'Pemberkasan',
+                                                default => 'Proses'
+                                            };
+                                        @endphp
+                                        <option value="{{ $cust->id }}">
+                                            {{ $cust->nama_lengkap }} — {{ $cust->lokasi->nama_kavling ?? '-' }} [{{ $cust->kavling->kode_kavling ?? '-' }}] (Status: {{ $sttLabel }}{{ $cust->bankKpr ? ' - ' . $cust->bankKpr->nama : '' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row mb-3">
+                            <label for="jenis_akad" class="col-sm-3 col-form-label font-weight-bold">Jenis Akad</label>
+                            <div class="col-sm-9">
+                                <select id="jenis_akad" name="jenis_akad" class="form-control">
+                                    <option value="Akad KPR" selected>Akad KPR</option>
+                                    <option value="Cash Keras">Cash Keras</option>
+                                    <option value="AJB">AJB</option>
+                                    <option value="PPJB">PPJB</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row mb-3">
+                            <label for="status_akad" class="col-sm-3 col-form-label font-weight-bold">Status Kehadiran</label>
+                            <div class="col-sm-9">
+                                <select id="status_akad" name="status_akad" class="form-control">
+                                    <option value="2" selected>Langsung Selesai Akad (Hadir / Masuk ke Data Konsumen Akad)</option>
+                                    <option value="1">Baru Dijadwalkan (Belum Hadir)</option>
+                                </select>
+                                <small class="text-muted d-block mt-1">
+                                    Pilih <strong>Langsung Selesai Akad</strong> agar konsumen otomatis tercatat Akad dan unit di Siteplan langsung berubah warna.
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -321,7 +382,7 @@
                         <button type="submit" class="btn btn-primary" id="submitBtn">
                             <span class="spinner-border spinner-border-sm me-2 d-none" role="status"
                                 aria-hidden="true"></span>
-                            <span class="button-text">Simpan Jadwal</span>
+                            <span class="button-text"><i class="fas fa-save mr-1"></i> Simpan Data Akad</span>
                         </button>
                     </div>
                 </form>
@@ -593,9 +654,19 @@
                 });
             });
 
+            $('#modalForm').on('shown.bs.modal', function() {
+                $('#id_customer').select2({
+                    theme: 'bootstrap4',
+                    dropdownParent: $('#modalForm'),
+                    placeholder: "-- Cari Nama Konsumen / Blok / Perumahan --",
+                    allowClear: true
+                });
+            });
+
             $('#modalForm').on('hidden.bs.modal', function() {
                 $('#formData')[0].reset();
                 $('#primary_id').val('');
+                $('#id_customer').val(null).trigger('change');
                 $('.is-invalid').removeClass('is-invalid');
                 $('.invalid-feedback').remove();
 
@@ -604,7 +675,7 @@
                 let btnText = submitBtn.find('.button-text');
 
                 spinner.addClass('d-none');
-                btnText.text('Simpan Jadwal');
+                btnText.html('<i class="fas fa-save mr-1"></i> Simpan Data Akad');
                 submitBtn.prop('disabled', false);
             });
 
@@ -634,10 +705,13 @@
                     data: formData,
                     contentType: false,
                     processData: false,
-                    success: function() {
+                    success: function(res) {
                         $('#modalForm').modal('hide');
-                        if (typeof audio !== 'undefined') audio.play();
-                        toastr.success("Data telah disimpan!", "BERHASIL", {
+                        if (typeof audio !== 'undefined') {
+                            try { audio.play(); } catch(e) {}
+                        }
+                        let msg = res && res.message ? res.message : "Data telah disimpan!";
+                        toastr.success(msg, "BERHASIL", {
                             progressBar: true,
                             timeOut: 3500,
                             positionClass: "toast-bottom-right",
@@ -646,14 +720,9 @@
                         tableKonsumen.ajax.reload();
                     },
                     error: function(xhr) {
+                        let msg = "Terjadi kesalahan saat menyimpan!";
                         if (xhr.status === 422) {
-                            if (typeof audio !== 'undefined') audio.play();
-                            toastr.error("Ada inputan yang salah!", "GAGAL!", {
-                                progressBar: true,
-                                timeOut: 3500,
-                                positionClass: "toast-bottom-right",
-                            });
-
+                            msg = "Ada inputan yang salah!";
                             let errors = xhr.responseJSON.errors;
                             $.each(errors, function(key, val) {
                                 let input = $('#' + key);
@@ -664,10 +733,22 @@
                                     val[0] + '</strong></span>'
                                 );
                             });
-                            spinner.addClass('d-none');
-                            btnText.text('Simpan Jadwal');
-                            submitBtn.prop('disabled', false);
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
                         }
+                        if (typeof audio !== 'undefined') {
+                            try { audio.play(); } catch(e) {}
+                        }
+                        toastr.error(msg, "GAGAL!", {
+                            progressBar: true,
+                            timeOut: 4000,
+                            positionClass: "toast-bottom-right",
+                        });
+                    },
+                    complete: function() {
+                        spinner.addClass('d-none');
+                        btnText.html('<i class="fas fa-save mr-1"></i> Simpan Data Akad');
+                        submitBtn.prop('disabled', false);
                     }
                 });
             });

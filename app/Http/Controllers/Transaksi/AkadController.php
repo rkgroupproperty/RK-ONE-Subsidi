@@ -257,7 +257,15 @@ class AkadController extends Controller
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
         ];
 
-        return view('admin.transaksi.akad.index', compact('permissions', 'availableYears', 'availableMonths', 'lokasiList', 'marketingList'));
+        // Daftar konsumen yang siap untuk Akad (belum berstatus akad dan tidak diarsip)
+        $readyCustomers = Customer::with(['lokasi', 'kavling', 'bankKpr'])
+            ->where('stt_arsip', 0)
+            ->where('id_status_progres', '!=', 3)
+            ->orderByRaw("CASE WHEN id_status_progres = 4 THEN 0 WHEN id_status_progres = 7 THEN 1 WHEN id_status_progres = 10 THEN 2 WHEN id_status_progres = 11 THEN 3 ELSE 4 END")
+            ->orderBy('nama_lengkap', 'asc')
+            ->get();
+
+        return view('admin.transaksi.akad.index', compact('permissions', 'availableYears', 'availableMonths', 'lokasiList', 'marketingList', 'readyCustomers'));
     }
 
     public function show(Request $request, $id)
@@ -466,8 +474,8 @@ class AkadController extends Controller
                 if ($key == 1) {
 
                     if (! $detail) {
-                        $persyaratan    = PersyaratanLegal::where('id_customer', $idCustomer)->first();
-                        $persyaratanId  = $persyaratan?->id;
+                        $persyaratan    = PersyaratanLegal::firstOrCreate(['id_customer' => $idCustomer]);
+                        $persyaratanId  = $persyaratan->id;
                         $detail         = AkadDetail::create([
                             'id_akad'        => $id,
                             'id_customer'    => $idCustomer,
@@ -530,6 +538,11 @@ class AkadController extends Controller
 
             $detail = AkadDetail::findOrFail($id);
 
+            if (!$detail->id_persyaratan) {
+                $persyaratan = PersyaratanLegal::firstOrCreate(['id_customer' => $detail->id_customer]);
+                $detail->id_persyaratan = $persyaratan->id;
+            }
+
             $detail->update([
                 'status'     => 2,
                 'jenis_akad' => $request->jenis_akad,
@@ -563,21 +576,70 @@ class AkadController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tgl_akad'   => 'required',
+            'tgl_akad'   => 'required|date',
             'keterangan' => 'required',
         ], [
-            'tgl_akad.required'   => 'Kolom tanggal wajib diisi.',
-            'keterangan.required' => 'keterangan wajib diisi.',
+            'tgl_akad.required'   => 'Kolom tanggal akad wajib diisi.',
+            'tgl_akad.date'       => 'Format tanggal tidak valid.',
+            'keterangan.required' => 'Keterangan / Bank wajib diisi.',
         ]);
 
-        $akad = Akad::create([
-            'tgl_akad'   => $request->tgl_akad,
-            'keterangan' => $request->keterangan ?? '',
-        ]);
+        DB::beginTransaction();
+        try {
+            $akad = Akad::create([
+                'tgl_akad'   => $request->tgl_akad,
+                'keterangan' => $request->keterangan ?? '',
+            ]);
 
-        $this->logCreate('Akad', $akad->id);
+            $this->logCreate('Akad', $akad->id);
 
-        return response()->json(['status' => 'success']);
+            // Proses konsumen yang dipilih langsung pada form
+            $customerIds = $request->input('id_customer', []);
+            if (!is_array($customerIds) && !empty($customerIds)) {
+                $customerIds = [$customerIds];
+            }
+
+            $jenisAkad  = $request->input('jenis_akad', 'Akad KPR') ?: 'Akad KPR';
+            $statusAkad = (int) $request->input('status_akad', 2); // 2: Hadir / Selesai Akad, 1: Dijadwalkan
+
+            foreach ($customerIds as $cId) {
+                if (empty($cId)) continue;
+
+                $persyaratan = PersyaratanLegal::firstOrCreate(['id_customer' => $cId]);
+
+                AkadDetail::updateOrCreate(
+                    [
+                        'id_customer' => $cId,
+                    ],
+                    [
+                        'id_akad'        => $akad->id,
+                        'id_persyaratan' => $persyaratan->id,
+                        'status'         => $statusAkad,
+                        'jenis_akad'     => $jenisAkad,
+                        'keterangan'     => $request->keterangan ?? '',
+                    ]
+                );
+
+                if ($statusAkad == 2) {
+                    Customer::where('id', $cId)->update(['id_status_progres' => 3]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Jadwal dan Konsumen Akad berhasil disimpan!'
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Error store akad: ' . $e->getMessage());
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal menyimpan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function edit($id)
@@ -608,20 +670,67 @@ class AkadController extends Controller
             'tgl_akad'   => 'required|date',
             'keterangan' => 'required',
         ], [
-            'keterangan.required' => 'keterangan wajib diisi.',
-            'tgl_akad.required'   => 'Kolom tanggal wajib diisi.',
+            'keterangan.required' => 'Keterangan / Bank wajib diisi.',
+            'tgl_akad.required'   => 'Kolom tanggal akad wajib diisi.',
             'tgl_akad.date'       => 'Format tanggal tidak valid.',
         ]);
 
-        $db = [
-            'tgl_akad'   => $request->tgl_akad,
-            'keterangan' => $request->keterangan,
-        ];
+        DB::beginTransaction();
+        try {
+            $data->update([
+                'tgl_akad'   => $request->tgl_akad,
+                'keterangan' => $request->keterangan,
+            ]);
 
-        $this->logEdit('Akad', $data->id);
-        $data->update($db);
+            $this->logEdit('Akad', $data->id);
 
-        return response()->json(['status' => 'success']);
+            // Tambahkan konsumen jika ada yang dipilih
+            $customerIds = $request->input('id_customer', []);
+            if (!is_array($customerIds) && !empty($customerIds)) {
+                $customerIds = [$customerIds];
+            }
+
+            $jenisAkad  = $request->input('jenis_akad', 'Akad KPR') ?: 'Akad KPR';
+            $statusAkad = (int) $request->input('status_akad', 2);
+
+            foreach ($customerIds as $cId) {
+                if (empty($cId)) continue;
+
+                $persyaratan = PersyaratanLegal::firstOrCreate(['id_customer' => $cId]);
+
+                AkadDetail::updateOrCreate(
+                    [
+                        'id_customer' => $cId,
+                    ],
+                    [
+                        'id_akad'        => $data->id,
+                        'id_persyaratan' => $persyaratan->id,
+                        'status'         => $statusAkad,
+                        'jenis_akad'     => $jenisAkad,
+                        'keterangan'     => $request->keterangan ?? '',
+                    ]
+                );
+
+                if ($statusAkad == 2) {
+                    Customer::where('id', $cId)->update(['id_status_progres' => 3]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Jadwal Akad berhasil diperbarui!'
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Error update akad: ' . $e->getMessage());
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal memperbarui: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function downloadWord($id)

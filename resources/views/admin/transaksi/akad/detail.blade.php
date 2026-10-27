@@ -323,7 +323,9 @@
                 contentType: false,
                 processData: false,
                 success: function(response) {
-                    audio.play();
+                    if (typeof audio !== 'undefined') {
+                        try { audio.play(); } catch(e) {}
+                    }
                     let msg = "Seleksi Customer berhasil disimpan!";
                     toastr.success(msg, "BERHASIL", {
                         progressBar: true,
@@ -333,14 +335,9 @@
                     $('.data-table').DataTable().ajax.reload();
                 },
                 error: function(xhr) {
+                    let msg = "Terjadi kesalahan saat menyimpan!";
                     if (xhr.status === 422) {
-                        audio.play();
-                        toastr.error("Ada inputan yang salah!", "GAGAL!", {
-                            progressBar: true,
-                            timeOut: 3500,
-                            positionClass: "toast-bottom-right",
-                        });
-
+                        msg = "Ada inputan yang salah!";
                         let errors = xhr.responseJSON.errors;
                         $.each(errors, function(key, val) {
                             let input = $('#' + key);
@@ -351,7 +348,17 @@
                                 val[0] + '</strong></span>'
                             );
                         });
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
                     }
+                    if (typeof audio !== 'undefined') {
+                        try { audio.play(); } catch(e) {}
+                    }
+                    toastr.error(msg, "GAGAL!", {
+                        progressBar: true,
+                        timeOut: 4000,
+                        positionClass: "toast-bottom-right",
+                    });
                 },
                 complete: function() {
                     spinner.addClass('d-none');
@@ -420,7 +427,9 @@
                 processData: false,
                 success: function(response) {
                     $('#modalHadir').modal('hide');
-                    audio.play();
+                    if (typeof audio !== 'undefined') {
+                        try { audio.play(); } catch(e) {}
+                    }
                     let msg = "Kehadiran berhasil disimpan!";
                     toastr.success(msg, "BERHASIL", {
                         progressBar: true,
@@ -430,14 +439,9 @@
                     $('.data-table').DataTable().ajax.reload();
                 },
                 error: function(xhr) {
+                    let msg = "Terjadi kesalahan saat menyimpan!";
                     if (xhr.status === 422) {
-                        audio.play();
-                        toastr.error("Ada inputan yang salah!", "GAGAL!", {
-                            progressBar: true,
-                            timeOut: 3500,
-                            positionClass: "toast-bottom-right",
-                        });
-
+                        msg = "Ada inputan yang salah!";
                         let errors = xhr.responseJSON.errors;
                         $.each(errors, function(key, val) {
                             let input = $('#' + key);
@@ -448,7 +452,17 @@
                                 val[0] + '</strong></span>'
                             );
                         });
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
                     }
+                    if (typeof audio !== 'undefined') {
+                        try { audio.play(); } catch(e) {}
+                    }
+                    toastr.error(msg, "GAGAL!", {
+                        progressBar: true,
+                        timeOut: 4000,
+                        positionClass: "toast-bottom-right",
+                    });
                 },
                 complete: function() {
                     spinner.addClass('d-none');
