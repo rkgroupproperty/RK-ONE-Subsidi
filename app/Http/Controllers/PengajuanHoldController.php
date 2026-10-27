@@ -967,6 +967,11 @@ class PengajuanHoldController extends Controller
             $lokasiItem = LokasiKavling::on($targetConn)->find($request->id_lokasi);
             $kavlingItem = KavlingPeta::on($targetConn)->find($request->id_kavling);
 
+            if (! $isKomersil) {
+                $marketingItem = MarketingOffline::on($targetConn)->find($request->id_marketing);
+                $this->syncToGoogleSheet($lokasiItem, $kavlingItem, $marketingItem, $pengajuan);
+            }
+
             session([
                 'booking_id'    => $pengajuan->id,
                 'no_registrasi' => $pengajuan->no_registrasi,
@@ -1675,5 +1680,70 @@ class PengajuanHoldController extends Controller
         }
 
         return trim($hasil);
+    }
+
+    /**
+     * Sinkronkan booking subsidi baru ke Google Sheets Sales Progress RK
+     */
+    protected function syncToGoogleSheet($lokasi, $kavling, $marketing, $pengajuan)
+    {
+        try {
+            $namaLokasi = strtoupper(($lokasi->nama_kavling ?? '') . ' ' . ($lokasi->nama_singkat ?? ''));
+            $sheetName = 'BIR2';
+
+            if (str_contains($namaLokasi, 'TAHAP 4') || str_contains($namaLokasi, 'BIRT4') || str_contains($namaLokasi, 'BIR 4') || ($lokasi->id ?? 0) == 2) {
+                $sheetName = 'BIRT4';
+            } elseif (str_contains($namaLokasi, 'ALZAFA') && (str_contains($namaLokasi, 'TAHAP 2') || str_contains($namaLokasi, 'T2') || str_contains($namaLokasi, 'AR 2'))) {
+                $sheetName = 'AR T2';
+            } elseif (str_contains($namaLokasi, 'ALZAFA') || ($lokasi->id ?? 0) == 3) {
+                $sheetName = 'AR T3';
+            } elseif (str_contains($namaLokasi, 'BIR2') || str_contains($namaLokasi, 'BUKIT INTAN') || ($lokasi->id ?? 0) == 1) {
+                $sheetName = 'BIR2';
+            }
+
+            $blok = trim($kavling->kode_kavling ?? '');
+            if (empty($blok)) {
+                return;
+            }
+
+            $namaKonsumen = trim($pengajuan->nama_lengkap ?? '');
+            $namaMarketing = strtoupper(trim($marketing->nama_marketing ?? ''));
+            $tglBooking = now()->format('d/m/Y');
+            if (!empty($pengajuan->created_at)) {
+                try {
+                    $tglBooking = \Carbon\Carbon::parse($pengajuan->created_at)->format('d/m/Y');
+                } catch (\Throwable $e) {}
+            }
+
+            $payload = json_encode([
+                'sheetName'    => $sheetName,
+                'blok'         => $blok,
+                'namaKonsumen' => $namaKonsumen,
+                'marketing'    => $namaMarketing,
+                'booking'      => $tglBooking,
+            ]);
+
+            $url = 'https://script.google.com/macros/s/AKfycbxiIkWh0FtoVkOURdEWtMo29OdoXmPvHsOH4wr1ZKPm2siecmzZOLkyl6ac52CQY4KC/exec';
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+            $res = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            Log::info("Sync Google Sheets Booking: Sheet=$sheetName, Blok=$blok, HTTP=$httpCode, Res=$res, Err=$curlError");
+        } catch (\Throwable $e) {
+            Log::error("Sync Google Sheets Exception: " . $e->getMessage());
+        }
     }
 }
