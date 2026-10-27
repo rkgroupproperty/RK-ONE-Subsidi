@@ -126,6 +126,23 @@ class AdminPemberkasanController extends Controller
 
             DB::commit();
 
+            try {
+                $ph = PengajuanHold::with(['lokasi', 'kavling', 'marketing'])->find($request->id);
+                if ($ph) {
+                    $admin = AdminPemberkasan::find($request->id_admin_pemberkasan);
+                    $cust = Customer::where('id_kavling', $ph->id_kavling)->first();
+                    if ($cust) {
+                        \App\Services\GoogleSheetProgressSyncService::syncCustomer($cust, [
+                            'entriAdmin' => now()->format('d/m/Y'),
+                            'namaAdmin'  => $admin->nama_admin ?? '',
+                            'keterangan' => 'PROSES ADMIN',
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::error("GAS Sync setAdmin: " . $e->getMessage());
+            }
+
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             DB::rollBack();

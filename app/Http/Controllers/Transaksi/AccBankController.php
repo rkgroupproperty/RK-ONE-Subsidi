@@ -246,6 +246,13 @@ class AccBankController extends Controller
 
             DB::commit();
 
+            try {
+                \App\Services\GoogleSheetProgressSyncService::syncCustomer($customer->id, [
+                    'sp3k'       => $tglTerbit->format('d/m/Y'),
+                    'keterangan' => 'SP3K',
+                ]);
+            } catch (\Throwable $e) {}
+
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Data SP3K berhasil ditambahkan.',

@@ -299,6 +299,20 @@ class SPPRController extends Controller
         }
         Customer::where('id', $request->id_customer)->update($customerUpdate);
 
+        try {
+            $adminName = null;
+            if ($request->filled('id_admin_pemberkasan')) {
+                $adminName = \App\Models\AdminPemberkasan::find($request->id_admin_pemberkasan)?->nama_admin;
+            }
+            \App\Services\GoogleSheetProgressSyncService::syncCustomer($request->id_customer, [
+                'entriAdmin' => $tanggalProses->format('d/m/Y'),
+                'namaAdmin'  => $adminName,
+                'keterangan' => 'PROSES ADMIN',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("GAS Sync SPPR store: " . $e->getMessage());
+        }
+
         return response()->json(['status' => 'success']);
     }
 
@@ -430,6 +444,21 @@ class SPPRController extends Controller
             }
             if (!empty($custUpd)) {
                 Customer::where('id', $custId)->update($custUpd);
+            }
+
+            try {
+                $adminName = null;
+                if ($request->filled('id_admin_pemberkasan')) {
+                    $adminName = \App\Models\AdminPemberkasan::find($request->id_admin_pemberkasan)?->nama_admin;
+                }
+                $tglAdmin = $request->filled('tanggal_proses') ? Carbon::parse($request->tanggal_proses)->format('d/m/Y') : null;
+                \App\Services\GoogleSheetProgressSyncService::syncCustomer($custId, [
+                    'entriAdmin' => $tglAdmin,
+                    'namaAdmin'  => $adminName,
+                    'keterangan' => 'PROSES ADMIN',
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("GAS Sync SPPR update: " . $e->getMessage());
             }
         }
 

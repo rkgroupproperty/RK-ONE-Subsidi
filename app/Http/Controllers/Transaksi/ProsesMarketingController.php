@@ -264,6 +264,10 @@ class ProsesMarketingController extends Controller
 
             DB::commit();
 
+            try {
+                \App\Services\GoogleSheetProgressSyncService::syncCustomer($customer->id);
+            } catch (\Throwable $e) {}
+
             return response()->json(['status' => 'success']);
         } catch (\Exception $e) {
             DB::rollBack();

@@ -224,6 +224,18 @@ class WawancaraController extends Controller
 
             DB::commit();
 
+            try {
+                $bankKpr = \App\Models\BankKPR::find($request->id_bank_kpr);
+                $tglBank = \Carbon\Carbon::parse($request->tgl_wawancara)->format('d/m/Y');
+                \App\Services\GoogleSheetProgressSyncService::syncCustomer($request->id_customer, [
+                    'entriBank'  => $tglBank,
+                    'bank'       => $bankKpr->nama ?? '',
+                    'keterangan' => 'PROSES BANK',
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("GAS Sync Wawancara store: " . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
             ], 200);
@@ -263,6 +275,18 @@ class WawancaraController extends Controller
             $this->logEdit('Proses Bank', $wawancara->id);
 
             DB::commit();
+
+            try {
+                $bankKpr = \App\Models\BankKPR::find($request->id_bank_kpr);
+                $tglBank = \Carbon\Carbon::parse($request->tgl_wawancara)->format('d/m/Y');
+                \App\Services\GoogleSheetProgressSyncService::syncCustomer($wawancara->id_customer, [
+                    'entriBank'  => $tglBank,
+                    'bank'       => $bankKpr->nama ?? '',
+                    'keterangan' => 'PROSES BANK',
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("GAS Sync Wawancara update: " . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -340,6 +364,16 @@ class WawancaraController extends Controller
             $this->logEdit('Proses Bank SP3K', $id);
 
             DB::commit();
+
+            try {
+                \App\Services\GoogleSheetProgressSyncService::syncCustomer($wawancara->id_customer, [
+                    'sp3k'       => $tglTerbit->format('d/m/Y'),
+                    'keterangan' => 'SP3K',
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("GAS Sync SP3K: " . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Data SP3K berhasil disimpan.',

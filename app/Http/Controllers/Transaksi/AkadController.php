@@ -559,6 +559,17 @@ class AkadController extends Controller
             $this->logEdit('Detail Akad', $detail->id);
             DB::commit();
 
+            try {
+                $akadObj = Akad::find($detail->id_akad);
+                $tglAkad = $akadObj ? \Carbon\Carbon::parse($akadObj->tgl_akad)->format('d/m/Y') : now()->format('d/m/Y');
+                \App\Services\GoogleSheetProgressSyncService::syncCustomer($detail->id_customer, [
+                    'akad'       => $tglAkad,
+                    'keterangan' => 'AKAD DONE',
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("GAS Sync updateHadir: " . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
             ]);
@@ -622,6 +633,21 @@ class AkadController extends Controller
 
                 if ($statusAkad == 2) {
                     Customer::where('id', $cId)->update(['id_status_progres' => 3]);
+                    try {
+                        $tglAkad = \Carbon\Carbon::parse($akad->tgl_akad)->format('d/m/Y');
+                        \App\Services\GoogleSheetProgressSyncService::syncCustomer($cId, [
+                            'akad'       => $tglAkad,
+                            'keterangan' => 'AKAD DONE',
+                        ]);
+                    } catch (\Throwable $e) {}
+                } else {
+                    try {
+                        $tglAkad = \Carbon\Carbon::parse($akad->tgl_akad)->format('d/m/Y');
+                        \App\Services\GoogleSheetProgressSyncService::syncCustomer($cId, [
+                            'akad'       => $tglAkad,
+                            'keterangan' => 'JADWAL AKAD',
+                        ]);
+                    } catch (\Throwable $e) {}
                 }
             }
 
@@ -713,6 +739,21 @@ class AkadController extends Controller
 
                 if ($statusAkad == 2) {
                     Customer::where('id', $cId)->update(['id_status_progres' => 3]);
+                    try {
+                        $tglAkad = \Carbon\Carbon::parse($akad->tgl_akad)->format('d/m/Y');
+                        \App\Services\GoogleSheetProgressSyncService::syncCustomer($cId, [
+                            'akad'       => $tglAkad,
+                            'keterangan' => 'AKAD DONE',
+                        ]);
+                    } catch (\Throwable $e) {}
+                } else {
+                    try {
+                        $tglAkad = \Carbon\Carbon::parse($akad->tgl_akad)->format('d/m/Y');
+                        \App\Services\GoogleSheetProgressSyncService::syncCustomer($cId, [
+                            'akad'       => $tglAkad,
+                            'keterangan' => 'JADWAL AKAD',
+                        ]);
+                    } catch (\Throwable $e) {}
                 }
             }
 

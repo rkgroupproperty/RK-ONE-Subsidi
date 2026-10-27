@@ -1145,6 +1145,13 @@ class PengajuanHoldController extends Controller
 
         KavlingPeta::find($data->id_kavling)->update(['id_customer' => $customer->id]);
 
+        try {
+            \App\Services\GoogleSheetProgressSyncService::syncCustomer($customer->id, [
+                'entriAdmin' => Carbon::now()->format('d/m/Y'),
+                'keterangan' => 'PEMBERKASAN MARKETING',
+            ]);
+        } catch (\Throwable $e) {}
+
         PersyaratanLegal::create([
             'id_customer' => $customer->id,
         ]);
@@ -1699,91 +1706,6 @@ class PengajuanHoldController extends Controller
      */
     protected function syncToGoogleSheet($lokasi, $kavling, $marketing, $pengajuan)
     {
-        try {
-            $namaLokasi = strtoupper(($lokasi->nama_kavling ?? '') . ' ' . ($lokasi->nama_singkat ?? ''));
-            $sheetName = 'BIR2';
-
-            if (str_contains($namaLokasi, 'TAHAP 4') || str_contains($namaLokasi, 'BIRT4') || str_contains($namaLokasi, 'BIR 4') || ($lokasi->id ?? 0) == 2) {
-                $sheetName = 'BIRT4';
-            } elseif (str_contains($namaLokasi, 'ALZAFA') && (str_contains($namaLokasi, 'TAHAP 2') || str_contains($namaLokasi, 'T2') || str_contains($namaLokasi, 'AR 2'))) {
-                $sheetName = 'AR T2';
-            } elseif (str_contains($namaLokasi, 'ALZAFA') || ($lokasi->id ?? 0) == 3) {
-                $sheetName = 'AR T3';
-            } elseif (str_contains($namaLokasi, 'BIR2') || str_contains($namaLokasi, 'BUKIT INTAN') || ($lokasi->id ?? 0) == 1) {
-                $sheetName = 'BIR2';
-            }
-
-            $rawBlok = trim($kavling->kode_kavling ?? '');
-            if (empty($rawBlok)) {
-                return;
-            }
-
-            // Normalisasi format blok sesuai standar kolom Google Sheet: [Blok] NO [Nomor]
-            $blokFormatted = $rawBlok;
-            if (preg_match('/^([A-Za-z]+)\s*0*(\d+)[\s\-\.]*0*(\d+[A-Za-z]?)$/', $rawBlok, $m)) {
-                $prefix = strtoupper($m[1]);
-                $bNum = (int)$m[2];
-                $uNum = sprintf('%02d', (int)$m[3]);
-                if (str_starts_with($sheetName, 'AR')) {
-                    // Di Alzafa: E1 NO 01
-                    $blokFormatted = "{$prefix}{$bNum} NO {$uNum}";
-                } else {
-                    // Di BIR2 & BIRT4: F01 NO 01, A01 NO 01, B06 NO 08
-                    $bNum2 = sprintf('%02d', $bNum);
-                    $blokFormatted = "{$prefix}{$bNum2} NO {$uNum}";
-                }
-            }
-
-            $namaKonsumen = trim($pengajuan->nama_lengkap ?? '');
-            $namaMarketing = strtoupper(trim($marketing->nama_marketing ?? ''));
-            $tglBooking = now()->format('d/m/Y');
-            if (!empty($pengajuan->tgl_booking)) {
-                try {
-                    $tglBooking = \Carbon\Carbon::parse($pengajuan->tgl_booking)->format('d/m/Y');
-                } catch (\Throwable $e) {}
-            }
-
-            $url = 'https://script.google.com/macros/s/AKfycbxiIkWh0FtoVkOURdEWtMo29OdoXmPvHsOH4wr1ZKPm2siecmzZOLkyl6ac52CQY4KC/exec';
-
-            $sendGas = function ($blokToSend) use ($url, $sheetName, $namaKonsumen, $namaMarketing, $tglBooking) {
-                $payload = json_encode([
-                    'sheetName'    => $sheetName,
-                    'blok'         => $blokToSend,
-                    'namaKonsumen' => $namaKonsumen,
-                    'marketing'    => $namaMarketing,
-                    'booking'      => $tglBooking,
-                ]);
-
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $url);
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 6);
-                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
-                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-                $res = curl_exec($ch);
-                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                $curlError = curl_error($ch);
-                curl_close($ch);
-
-                return [$httpCode, $res, $curlError];
-            };
-
-            // Kirim dengan format standar Google Sheet terlebih dahulu
-            [$httpCode, $res, $curlError] = $sendGas($blokFormatted);
-            Log::info("Sync Google Sheets Booking (Attempt 1): Sheet=$sheetName, Blok=$blokFormatted, HTTP=$httpCode, Res=$res, Err=$curlError");
-
-            // Jika belum berhasil dan blok awal berbeda, coba kirim blok mentah
-            if (($httpCode != 200 || str_contains($res, '"error"')) && $blokFormatted !== $rawBlok) {
-                [$httpCode2, $res2, $curlError2] = $sendGas($rawBlok);
-                Log::info("Sync Google Sheets Booking (Attempt 2 - Raw): Sheet=$sheetName, Blok=$rawBlok, HTTP=$httpCode2, Res=$res2, Err=$curlError2");
-            }
-        } catch (\Throwable $e) {
-            Log::error("Sync Google Sheets Exception: " . $e->getMessage());
-        }
+        \App\Services\GoogleSheetProgressSyncService::syncPengajuanHold($lokasi, $kavling, $marketing, $pengajuan);
     }
 }
