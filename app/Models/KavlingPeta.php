@@ -63,7 +63,7 @@ class KavlingPeta extends Model
     }
     public function pengajuanHold()
     {
-        return $this->hasOne(PengajuanHold::class, 'id_kavling', 'id')->where('stt_reg', '!=', 2)->orderBy('id', 'desc');
+        return $this->hasOne(PengajuanHold::class, 'id_kavling', 'id')->where('stt_reg', 1)->orderBy('id', 'desc');
     }
     public function progres()
     {

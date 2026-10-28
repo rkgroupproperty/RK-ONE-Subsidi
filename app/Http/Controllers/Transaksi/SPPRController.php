@@ -144,6 +144,8 @@ class SPPRController extends Controller
                 $no = '-';
             }
 
+            $sppr = SPPR::where('id_customer', $id)->first();
+
             return response()->json([
                 'status' => 'success',
                 'data' => [
@@ -159,12 +161,35 @@ class SPPRController extends Controller
                     'luas_tanah' => $customer->kavling->luas_tanah ?? 0,
                     'blok' => $blok,
                     'no' => $no,
-                    'harga_jual' => $customer->hrg_jual ?? 0,
-                    'biaya_surat_surat' => $customer->biaya_surat ?? 0,
-                    'peningkatan_mutu' => $customer->peningkatan_mutu ?? 0,
-                    'jumlah_booking_fee' => $bookingFee,
-                    'pekerjaan' => $customer->pekerjaan ?? '',
-                    'agama' => $customer->agama ?? '',
+                    'harga_jual' => $sppr->harga_jual ?? ($customer->hrg_jual ?? 0),
+                    'asumsi_plafon_kpr' => $sppr->asumsi_plafon_kpr ?? ($customer->estimasi_plafon ?? 0),
+                    'biaya_surat_surat' => $sppr->biaya_surat_surat ?? ($customer->biaya_surat ?? 0),
+                    'peningkatan_mutu' => $sppr->peningkatan_mutu ?? ($customer->peningkatan_mutu ?? 0),
+                    'biaya_kelebihan_tanah' => $sppr->biaya_kelebihan_tanah ?? 0,
+                    'biaya_sudut' => $sppr->biaya_sudut ?? 0,
+                    'biaya_lain_lain' => $sppr->biaya_lain_lain ?? 0,
+                    'cicilan_per_bulan' => $sppr->cicilan_per_bulan ?? 0,
+                    'promo' => $sppr->promo ?? '',
+                    'perubahan_posisi' => $sppr->perubahan_posisi ?? '',
+                    'jumlah_booking_fee' => $sppr->jumlah_booking_fee ?? $bookingFee,
+                    'keterangan_booking' => $sppr->keterangan_booking ?? '',
+                    'nominal_dp' => $sppr->nominal_dp ?? 0,
+                    'keterangan_dp' => $sppr->keterangan_dp ?? '',
+                    'nominal_biaya_posisi_unit' => $sppr->nominal_biaya_posisi_unit ?? 0,
+                    'keterangan_posisi_unit' => $sppr->keterangan_posisi_unit ?? '',
+                    'nominal_biaya_kpr' => $sppr->nominal_biaya_kpr ?? 0,
+                    'keterangan_kpr' => $sppr->keterangan_kpr ?? '',
+                    'nominal_blokir_angsuran' => $sppr->nominal_blokir_angsuran ?? 0,
+                    'keterangan_blokir_angsuran' => $sppr->keterangan_blokir_angsuran ?? '',
+                    'nominal_biaya_materai' => $sppr->nominal_biaya_materai ?? 0,
+                    'keterangan_materai' => $sppr->keterangan_materai ?? '',
+                    'nominal_biaya_buka_tabungan' => $sppr->nominal_biaya_buka_tabungan ?? 0,
+                    'keterangan_tabungan' => $sppr->keterangan_tabungan ?? '',
+                    'keterangan_shm' => $sppr->keterangan_shm ?? '',
+                    'total_yang_harus_dibayar' => $sppr->total_yang_harus_dibayar ?? 0,
+                    'no_sppr' => $sppr->no_sppr ?? '',
+                    'pekerjaan' => $customer->pekerjaan ?? ($sppr->pekerjaan ?? ''),
+                    'agama' => $customer->agama ?? ($sppr->agama ?? ''),
                 ],
             ]);
         } catch (\Exception $e) {

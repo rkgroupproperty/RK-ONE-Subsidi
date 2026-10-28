@@ -15,6 +15,7 @@ use App\Models\PengaturanMedia;
 use App\Models\PersyaratanLegal;
 use App\Models\Piutang;
 use App\Models\ProgresListPenjualan;
+use App\Models\SPPR;
 use App\Models\UploudFile;
 use App\Traits\LogAktivitasTrait;
 use Carbon\Carbon;
@@ -690,16 +691,24 @@ class PengajuanHoldController extends Controller
             $targetConn = 'mysql';
         }
 
+        // Ambil ID kavling yang sedang aktif dibooking (pending stt_reg = 1) atau disetujui (stt_reg = 2)
+        $bookedKavlingIds = PengajuanHold::on($targetConn)
+            ->whereIn('stt_reg', [1, 2])
+            ->pluck('id_kavling')
+            ->filter()
+            ->toArray();
+
         $kavling = KavlingPeta::on($targetConn)
             ->where('id_lokasi', $id)
             ->where(function ($query) {
-                $query->whereIn('status', [0, 1])
+                $query->where('status', 0)
                     ->orWhereNull('status');
             })
             ->where(function ($query) {
                 $query->whereNull('id_customer')
                     ->orWhere('id_customer', 0);
             })
+            ->whereNotIn('id', $bookedKavlingIds)
             ->orderBy('id', 'asc')
             ->get(['id', 'kode_kavling', 'luas_tanah', 'tipe_bangunan', 'hrg_jual']);
 
@@ -760,7 +769,21 @@ class PengajuanHoldController extends Controller
 
     public function getKavlingHold($id)
     {
+        $bookedKavlingIds = PengajuanHold::whereIn('stt_reg', [1, 2])
+            ->pluck('id_kavling')
+            ->filter()
+            ->toArray();
+
         $kavling = KavlingPeta::where('id_lokasi', $id)
+            ->where(function ($query) {
+                $query->where('status', 0)
+                    ->orWhereNull('status');
+            })
+            ->where(function ($query) {
+                $query->whereNull('id_customer')
+                    ->orWhere('id_customer', 0);
+            })
+            ->whereNotIn('id', $bookedKavlingIds)
             ->get(['id', 'kode_kavling']);
 
         return response()->json($kavling);
@@ -897,6 +920,20 @@ class PengajuanHoldController extends Controller
             return response()->json([
                 'errors' => [
                     'id_kavling' => ['Harga kavling belum ditentukan.'],
+                ],
+            ], 422);
+        }
+
+        // Cek apakah kavling sudah dibooking atau dalam proses oleh konsumen lain
+        $isAlreadyBooked = PengajuanHold::on($targetConn)
+            ->where('id_kavling', $request->id_kavling)
+            ->whereIn('stt_reg', [1, 2])
+            ->exists();
+
+        if ($isAlreadyBooked || ($kavling && ($kavling->status != 0 || !empty($kavling->id_customer)))) {
+            return response()->json([
+                'errors' => [
+                    'id_kavling' => ['Kavling / Blok ini sudah dibooking atau dalam proses oleh konsumen lain, silakan pilih kavling lain.'],
                 ],
             ], 422);
         }
@@ -1264,32 +1301,153 @@ class PengajuanHoldController extends Controller
                 $customer = $this->createCustomer($data->id, $request);
                 $tglNow   = Carbon::now('Asia/Jakarta')->toDateString();
 
-                $rincian    = $data->rincian_biaya ?? [];
+                $clean = function ($val) {
+                    if (!$val) return 0;
+                    return (int) str_replace(['.', ',', ' '], '', $val);
+                };
+
                 $bookingFee = (int) ($data->booking_fee ?? 0);
-                $sisaBayar  = $data->total_harga - $bookingFee;
+                $totalDp    = $clean($request->total_dp);
+                $sisaDp     = $clean($request->nominal_dp);
+                if ($totalDp > 0 && $sisaDp <= 0) {
+                    $sisaDp = max(0, $totalDp - $bookingFee);
+                }
 
-                foreach ($rincian as $item) {
-                    $nama  = $item['nama'] ?? '';
-                    $nilai = (int) ($item['nilai'] ?? 0);
-                    if ($nilai <= 0) {
-                        continue;
+                $hargaJual            = $clean($request->harga_jual) ?: ($data->total_harga ?: ($data->kavling->hrg_jual ?? 0));
+                $asumsiPlafon         = $clean($request->asumsi_plafon_kpr);
+                $biayaSurat           = $clean($request->biaya_surat_surat);
+                $biayaKelebihanTanah  = $clean($request->biaya_kelebihan_tanah);
+                $biayaSudut           = $clean($request->biaya_sudut);
+                $biayaLainLain        = $clean($request->biaya_lain_lain);
+                $cicilanPerBulan      = $clean($request->cicilan_per_bulan);
+                $biayaPosisi          = $clean($request->nominal_biaya_posisi_unit);
+                $biayaKpr             = $clean($request->nominal_biaya_kpr);
+                $blokirAngsuran       = $clean($request->nominal_blokir_angsuran);
+                $biayaMaterai         = $clean($request->nominal_biaya_materai);
+                $biayaTabungan        = $clean($request->nominal_biaya_buka_tabungan);
+                $peningkatanShm       = $clean($request->peningkatan_mutu);
+
+                $totalBayar = $bookingFee + $sisaDp + $biayaPosisi + $biayaKpr + $blokirAngsuran + $biayaMaterai + $biayaTabungan + $peningkatanShm + $biayaKelebihanTanah + $biayaSudut + $biayaLainLain + $biayaSurat;
+
+                // Update data customer
+                $customer->update([
+                    'hrg_jual'             => $hargaJual,
+                    'biaya_surat'          => $biayaSurat,
+                    'peningkatan_mutu'     => $peningkatanShm,
+                    'total_harga'          => $hargaJual + $biayaSurat + $biayaKelebihanTanah + $biayaSudut + $peningkatanShm + $biayaLainLain,
+                    'estimasi_plafon'      => $asumsiPlafon,
+                    'id_admin_pemberkasan' => $request->id_admin_pemberkasan ?: $data->id_admin_pemberkasan,
+                ]);
+
+                // Buat atau Update record SPPR (Proses Admin)
+                $noSppr = null;
+                try {
+                    $noSppr = $this->generator->generateNomorDokumen($data->lokasi, 'no_sppr', SPPR::class);
+                } catch (\Throwable $e) {}
+                if (!$noSppr) {
+                    $noSppr = 'SPPR/' . ($data->lokasi->nama_singkat ?? 'RK') . '/' . date('Ymd') . '/' . str_pad($customer->id, 4, '0', STR_PAD_LEFT);
+                }
+
+                SPPR::updateOrCreate(
+                    ['id_customer' => $customer->id],
+                    [
+                        'no_sppr'                     => $noSppr,
+                        'nama'                        => $customer->nama_lengkap,
+                        'alamat'                      => $customer->alamat_domisili ?: $customer->alamat_ktp,
+                        'nik'                         => $customer->nik,
+                        'no_telp'                     => $customer->no_telp,
+                        'luas_bangunan'               => $data->kavling->luas_bangunan ?? 0,
+                        'luas_tanah'                  => $data->kavling->luas_tanah ?? 0,
+                        'blok'                        => $data->kavling->kode_kavling ?? '',
+                        'no'                          => '-',
+                        'harga_jual'                  => $hargaJual,
+                        'asumsi_plafon_kpr'           => $asumsiPlafon,
+                        'biaya_surat_surat'           => $biayaSurat,
+                        'peningkatan_mutu'            => $peningkatanShm,
+                        'biaya_kelebihan_tanah'       => $biayaKelebihanTanah,
+                        'biaya_sudut'                 => $biayaSudut,
+                        'biaya_lain_lain'             => $biayaLainLain,
+                        'total_yang_harus_dibayar'    => $totalBayar,
+                        'jumlah_booking_fee'          => $bookingFee,
+                        'cicilan_per_bulan'           => $cicilanPerBulan,
+                        'id_marketing'                => $data->id_marketing,
+                        'promo'                       => $request->promo,
+                        'perubahan_posisi'            => $request->perubahan_posisi,
+                        'keterangan_booking'          => $request->keterangan_booking,
+                        'nominal_dp'                  => $sisaDp,
+                        'keterangan_dp'               => $request->keterangan_dp ?: ($totalDp > 0 ? ('Total DP: Rp ' . number_format($totalDp, 0, ',', '.') . ' - Booking Fee: Rp ' . number_format($bookingFee, 0, ',', '.') . ' = Rp ' . number_format($sisaDp, 0, ',', '.')) : null),
+                        'nominal_biaya_posisi_unit'   => $biayaPosisi,
+                        'keterangan_posisi_unit'      => $request->keterangan_posisi_unit,
+                        'nominal_biaya_kpr'           => $biayaKpr,
+                        'keterangan_kpr'              => $request->keterangan_kpr,
+                        'nominal_blokir_angsuran'     => $blokirAngsuran,
+                        'keterangan_blokir_angsuran'  => $request->keterangan_blokir_angsuran,
+                        'nominal_biaya_materai'       => $biayaMaterai,
+                        'keterangan_materai'          => $request->keterangan_materai,
+                        'nominal_biaya_buka_tabungan' => $biayaTabungan,
+                        'keterangan_tabungan'         => $request->keterangan_tabungan,
+                        'keterangan_shm'              => $request->keterangan_shm,
+                        'pekerjaan'                   => $data->pekerjaan ?? '',
+                        'agama'                       => $data->agama ?? '',
+                    ]
+                );
+
+                // Buat Piutang untuk rincian tagihan
+                $itemsPiutang = [
+                    ['nama' => 'DP / Uang Muka (Setelah Potong Booking Fee)', 'nilai' => $sisaDp],
+                    ['nama' => 'Biaya Surat-surat', 'nilai' => $biayaSurat],
+                    ['nama' => 'Biaya Kelebihan Tanah', 'nilai' => $biayaKelebihanTanah],
+                    ['nama' => 'Biaya Sudut', 'nilai' => $biayaSudut],
+                    ['nama' => 'Biaya Lain-lain', 'nilai' => $biayaLainLain],
+                    ['nama' => 'Biaya Posisi Unit', 'nilai' => $biayaPosisi],
+                    ['nama' => 'Biaya KPR', 'nilai' => $biayaKpr],
+                    ['nama' => 'Blokir Angsuran', 'nilai' => $blokirAngsuran],
+                    ['nama' => 'Biaya Materai', 'nilai' => $biayaMaterai],
+                    ['nama' => 'Biaya Buka Tabungan', 'nilai' => $biayaTabungan],
+                    ['nama' => 'Biaya Peningkatan SHM', 'nilai' => $peningkatanShm],
+                ];
+
+                $hasCustomPiutang = false;
+                foreach ($itemsPiutang as $piutangItem) {
+                    if ($piutangItem['nilai'] > 0) {
+                        $hasCustomPiutang = true;
+                        Piutang::create([
+                            'id_customer'     => $customer->id,
+                            'id_bank'         => $request->id_bank,
+                            'tanggal_piutang' => $tglNow,
+                            'deskripsi'       => $piutangItem['nama'] . ' Blok ' . $data->kavling->kode_kavling,
+                            'nominal'         => $piutangItem['nilai'],
+                            'lampiran'        => '',
+                            'status'          => 1,
+                            'terbayar'        => 0,
+                            'sisa_bayar'      => $piutangItem['nilai'],
+                            'tgl_pelunasan'   => null,
+                        ]);
                     }
+                }
 
-                    $terbayar = 0;
-                    $sisa     = $nilai;
+                if (!$hasCustomPiutang) {
+                    $rincian = $data->rincian_biaya ?? [];
+                    foreach ($rincian as $item) {
+                        $nama  = $item['nama'] ?? '';
+                        $nilai = (int) ($item['nilai'] ?? 0);
+                        if ($nilai <= 0) {
+                            continue;
+                        }
 
-                    Piutang::create([
-                        'id_customer'     => $customer->id,
-                        'id_bank'         => $request->id_bank,
-                        'tanggal_piutang' => $tglNow,
-                        'deskripsi'       => $nama . ' tipe ' . $data->kavling->tipe_bangunan . ' ' . $data->lokasi->nama_kavling . ' Blok ' . $data->kavling->kode_kavling,
-                        'nominal'         => $nilai,
-                        'lampiran'        => '',
-                        'status'          => 1,
-                        'terbayar'        => $terbayar,
-                        'sisa_bayar'      => $sisa,
-                        'tgl_pelunasan'   => null,
-                    ]);
+                        Piutang::create([
+                            'id_customer'     => $customer->id,
+                            'id_bank'         => $request->id_bank,
+                            'tanggal_piutang' => $tglNow,
+                            'deskripsi'       => $nama . ' tipe ' . $data->kavling->tipe_bangunan . ' ' . $data->lokasi->nama_kavling . ' Blok ' . $data->kavling->kode_kavling,
+                            'nominal'         => $nilai,
+                            'lampiran'        => '',
+                            'status'          => 1,
+                            'terbayar'        => 0,
+                            'sisa_bayar'      => $nilai,
+                            'tgl_pelunasan'   => null,
+                        ]);
+                    }
                 }
 
                 $no_kwitansi = $this->generator->generateNomorDokumen(
@@ -1323,6 +1481,14 @@ class PengajuanHoldController extends Controller
                 ];
 
                 $data->update($db);
+
+                // Jika status ditolak / batal (stt_reg == 3), kembalikan status kavling menjadi tersedia
+                if ($request->stt_reg == 3) {
+                    KavlingPeta::where('id', $data->id_kavling)->update([
+                        'status'      => 0,
+                        'id_customer' => null,
+                    ]);
+                }
             }
 
             DB::commit();
