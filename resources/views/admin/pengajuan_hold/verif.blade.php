@@ -429,20 +429,6 @@
                                         </h5>
 
                                         <div class="form-group row">
-                                            <label for="id_admin_pemberkasan" class="col-sm-2 col-form-label">Admin Pemberkasan</label>
-                                            <div class="col-sm-4">
-                                                <select name="id_admin_pemberkasan" id="id_admin_pemberkasan" class="form-control select-admin-pemberkasan">
-                                                    <option value="">-- Pilih Admin --</option>
-                                                    @foreach ($adminPemberkasanList as $adm)
-                                                        <option value="{{ $adm->id }}" {{ ($data->id_admin_pemberkasan == $adm->id) ? 'selected' : '' }}>
-                                                            {{ $adm->nama_lengkap }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group row">
                                             <label for="promo" class="col-sm-2 col-form-label">Promo</label>
                                             <div class="col-sm-8">
                                                 <input type="text" name="promo" id="promo" class="form-control" placeholder="Promo yang berlaku">

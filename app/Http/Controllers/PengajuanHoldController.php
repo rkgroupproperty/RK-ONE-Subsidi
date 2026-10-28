@@ -1274,25 +1274,26 @@ class PengajuanHoldController extends Controller
         DB::beginTransaction();
         try {
             if ($request->stt_reg == 2) {
+                $adminPemId = $request->filled('id_admin_pemberkasan') ? $request->id_admin_pemberkasan : $data->id_admin_pemberkasan;
                 if ($request->jenis_pembelian === 'Pembelian Cash') {
                     $db = [
                         'stt_reg'              => $request->stt_reg,
                         'jenis_pembelian'      => $request->jenis_pembelian,
                         'an_surat_cash'        => $request->an_surat_cash,
-                        'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
+                        'id_admin_pemberkasan' => $adminPemId,
                     ];
                 } elseif ($request->jenis_pembelian === 'Cash Bertahap') {
                     $db = [
                         'stt_reg'              => $request->stt_reg,
                         'jenis_pembelian'      => $request->jenis_pembelian,
                         'termin_x_cash_b'      => $request->termin_x_cash_b,
-                        'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
+                        'id_admin_pemberkasan' => $adminPemId,
                     ];
                 } elseif ($request->jenis_pembelian === 'KPR') {
                     $db = [
                         'stt_reg'              => $request->stt_reg,
                         'jenis_pembelian'      => $request->jenis_pembelian,
-                        'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
+                        'id_admin_pemberkasan' => $adminPemId,
                     ];
                 }
 
@@ -1477,7 +1478,7 @@ class PengajuanHoldController extends Controller
             } else {
                 $db = [
                     'stt_reg'              => $request->stt_reg,
-                    'id_admin_pemberkasan' => $request->id_admin_pemberkasan,
+                    'id_admin_pemberkasan' => $request->filled('id_admin_pemberkasan') ? $request->id_admin_pemberkasan : $data->id_admin_pemberkasan,
                 ];
 
                 $data->update($db);
