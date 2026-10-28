@@ -806,22 +806,8 @@
                 calculateTotals();
             });
 
-            // Toggle visibility section_proses_admin berdasarkan stt_reg
-            $('#stt_reg').on('change', function() {
-                let stt = $(this).val();
-                if (stt == '2') {
-                    $('#section_proses_admin').slideDown(250);
-                } else {
-                    $('#section_proses_admin').slideUp(250);
-                }
-            });
-
-            if ($('#stt_reg').val() == '2') {
-                $('#section_proses_admin').show();
-            } else {
-                $('#section_proses_admin').hide();
-            }
-
+            // Bagian proses admin & rincian pembayaran selalu tampil untuk diisi/diperiksa admin
+            $('#section_proses_admin').show();
             calculateTotals();
         });
 

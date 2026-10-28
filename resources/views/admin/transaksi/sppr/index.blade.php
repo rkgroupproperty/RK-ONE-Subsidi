@@ -207,206 +207,46 @@
                                 </div>
                             </div>
 
-                            <div class="form-group row">
-                                <label for="promo" class="col-sm-3 col-form-label">Promo</label>
-                                <div class="col-sm-8">
-                                    <input type="text" name="promo" id="promo" class="form-control">
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="perubahan_posisi" class="col-sm-3 col-form-label">Perubahan Posisi</label>
-                                <div class="col-sm-8">
-                                    <textarea name="perubahan_posisi" id="perubahan_posisi" class="form-control" rows="2"></textarea>
-                                </div>
-                            </div>
-
-                            <hr>
-                            <div class="form-group row">
-                                <label for="harga_jual" class="col-sm-3 col-form-label">Harga Jual</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp</span>
-                                        </div>
-                                        <input type="text" name="harga_jual" id="harga_jual" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <label for="asumsi_plafon_kpr" class="col-sm-3 col-form-label">Asumsi Plafon KPR</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp</span>
-                                        </div>
-                                        <input type="text" name="asumsi_plafon_kpr" id="asumsi_plafon_kpr" class="form-control rupiah">
+                            <!-- Kolom Promo, Harga Jual, Asumsi Plafon, Biaya-biaya, dan Rincian Pembayaran telah dipindahkan ke Menu Transaksi > Booking (Verifikasi Data Booking) -->
+                            <div class="alert alert-light border border-info rounded shadow-sm py-2 px-3 my-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-info-circle text-info fa-2x mr-3"></i>
+                                    <div>
+                                        <strong class="text-dark d-block">Data Penjualan & Rincian Pembayaran</strong>
+                                        <small class="text-muted">
+                                            Kolom <em>Promo, Perubahan Posisi, Harga Jual, Asumsi Plafon KPR, Biaya Surat-surat, Biaya Kelebihan Tanah, Biaya Sudut, Biaya Lain-lain, Cicilan per Bulan</em>, serta <em>Rincian Pembayaran (Booking Fee, DP, Biaya Posisi Unit, Biaya KPR, Blokir Angsuran, Materai, Buka Tabungan, Peningkatan SHM)</em> telah dipindahkan ke formulir <strong>Menu Transaksi &rarr; Booking &rarr; Verifikasi Data Booking</strong>.
+                                        </small>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="form-group row">
-                                <label for="biaya_surat_surat" class="col-sm-3 col-form-label">Biaya Surat-surat</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp</span>
-                                        </div>
-                                        <input type="text" name="biaya_surat_surat" id="biaya_surat_surat" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-6"></div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="biaya_kelebihan_tanah" class="col-sm-3 col-form-label">Biaya Kelebihan Tanah <small class="text-muted">(opsional)</small></label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp</span>
-                                        </div>
-                                        <input type="text" name="biaya_kelebihan_tanah" id="biaya_kelebihan_tanah" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <label for="biaya_sudut" class="col-sm-3 col-form-label">Biaya Sudut <small class="text-muted">(opsional)</small></label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp</span>
-                                        </div>
-                                        <input type="text" name="biaya_sudut" id="biaya_sudut" class="form-control rupiah">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="biaya_lain_lain" class="col-sm-3 col-form-label">Biaya Lain-lain <small class="text-muted">(opsional)</small></label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp</span>
-                                        </div>
-                                        <input type="text" name="biaya_lain_lain" id="biaya_lain_lain" class="form-control rupiah">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="cicilan_per_bulan" class="col-sm-3 col-form-label">Cicilan per Bulan</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Rp</span>
-                                        </div>
-                                        <input type="text" name="cicilan_per_bulan" id="cicilan_per_bulan" class="form-control rupiah">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <hr>
-                            <h6 class="font-weight-bold mb-3">Rincian Pembayaran</h6>
-
-                            <div class="form-group row">
-                                <label for="jumlah_booking_fee" class="col-sm-3 col-form-label">Booking Fee</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                                        <input type="text" name="jumlah_booking_fee" id="jumlah_booking_fee" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" name="keterangan_booking" id="keterangan_booking" class="form-control" placeholder="Keterangan booking">
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="nominal_dp" class="col-sm-3 col-form-label">DP</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                                        <input type="text" name="nominal_dp" id="nominal_dp" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" name="keterangan_dp" id="keterangan_dp" class="form-control" placeholder="Keterangan DP">
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="nominal_biaya_posisi_unit" class="col-sm-3 col-form-label">Biaya Posisi Unit</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                                        <input type="text" name="nominal_biaya_posisi_unit" id="nominal_biaya_posisi_unit" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" name="keterangan_posisi_unit" id="keterangan_posisi_unit" class="form-control" placeholder="Keterangan posisi unit">
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="nominal_biaya_kpr" class="col-sm-3 col-form-label">Biaya KPR</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                                        <input type="text" name="nominal_biaya_kpr" id="nominal_biaya_kpr" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" name="keterangan_kpr" id="keterangan_kpr" class="form-control" placeholder="Keterangan KPR">
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="nominal_blokir_angsuran" class="col-sm-3 col-form-label">Blokir Angsuran</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                                        <input type="text" name="nominal_blokir_angsuran" id="nominal_blokir_angsuran" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" name="keterangan_blokir_angsuran" id="keterangan_blokir_angsuran" class="form-control" placeholder="Keterangan blokir angsuran">
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="nominal_biaya_materai" class="col-sm-3 col-form-label">Biaya Materai</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                                        <input type="text" name="nominal_biaya_materai" id="nominal_biaya_materai" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" name="keterangan_materai" id="keterangan_materai" class="form-control" placeholder="Keterangan materai">
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="nominal_biaya_buka_tabungan" class="col-sm-3 col-form-label">Biaya Buka Tabungan</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                                        <input type="text" name="nominal_biaya_buka_tabungan" id="nominal_biaya_buka_tabungan" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" name="keterangan_tabungan" id="keterangan_tabungan" class="form-control" placeholder="Keterangan tabungan">
-                                </div>
-                            </div>
-
-                            <div class="form-group row">
-                                <label for="peningkatan_mutu" class="col-sm-3 col-form-label">Biaya Peningkatan SHM</label>
-                                <div class="col-sm-3">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend"><span class="input-group-text">Rp</span></div>
-                                        <input type="text" name="peningkatan_mutu" id="peningkatan_mutu" class="form-control rupiah">
-                                    </div>
-                                </div>
-                                <div class="col-sm-5">
-                                    <input type="text" name="keterangan_shm" id="keterangan_shm" class="form-control" placeholder="Keterangan SHM">
-                                </div>
-                            </div>
+                            <!-- Hidden inputs agar data dari Verifikasi Booking tetap terjaga jika form ini disimpan -->
+                            <input type="hidden" name="promo" id="promo">
+                            <input type="hidden" name="perubahan_posisi" id="perubahan_posisi">
+                            <input type="hidden" name="harga_jual" id="harga_jual">
+                            <input type="hidden" name="asumsi_plafon_kpr" id="asumsi_plafon_kpr">
+                            <input type="hidden" name="biaya_surat_surat" id="biaya_surat_surat">
+                            <input type="hidden" name="biaya_kelebihan_tanah" id="biaya_kelebihan_tanah">
+                            <input type="hidden" name="biaya_sudut" id="biaya_sudut">
+                            <input type="hidden" name="biaya_lain_lain" id="biaya_lain_lain">
+                            <input type="hidden" name="cicilan_per_bulan" id="cicilan_per_bulan">
+                            <input type="hidden" name="jumlah_booking_fee" id="jumlah_booking_fee">
+                            <input type="hidden" name="keterangan_booking" id="keterangan_booking">
+                            <input type="hidden" name="nominal_dp" id="nominal_dp">
+                            <input type="hidden" name="keterangan_dp" id="keterangan_dp">
+                            <input type="hidden" name="nominal_biaya_posisi_unit" id="nominal_biaya_posisi_unit">
+                            <input type="hidden" name="keterangan_posisi_unit" id="keterangan_posisi_unit">
+                            <input type="hidden" name="nominal_biaya_kpr" id="nominal_biaya_kpr">
+                            <input type="hidden" name="keterangan_kpr" id="keterangan_kpr">
+                            <input type="hidden" name="nominal_blokir_angsuran" id="nominal_blokir_angsuran">
+                            <input type="hidden" name="keterangan_blokir_angsuran" id="keterangan_blokir_angsuran">
+                            <input type="hidden" name="nominal_biaya_materai" id="nominal_biaya_materai">
+                            <input type="hidden" name="keterangan_materai" id="keterangan_materai">
+                            <input type="hidden" name="nominal_biaya_buka_tabungan" id="nominal_biaya_buka_tabungan">
+                            <input type="hidden" name="keterangan_tabungan" id="keterangan_tabungan">
+                            <input type="hidden" name="peningkatan_mutu" id="peningkatan_mutu">
+                            <input type="hidden" name="keterangan_shm" id="keterangan_shm">
+                            <input type="hidden" name="total_yang_harus_dibayar" id="total_yang_harus_dibayar">
 
                             <hr>
                             <div class="form-group row">

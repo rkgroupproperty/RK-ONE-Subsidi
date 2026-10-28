@@ -212,15 +212,15 @@ class SPPRController extends Controller
             'luas_tanah' => 'required|numeric',
             'blok' => 'required',
             'no' => 'nullable',
-            'harga_jual' => 'required|numeric',
-            'asumsi_plafon_kpr' => 'required|numeric',
-            'biaya_surat_surat' => 'required|numeric',
-            'peningkatan_mutu' => 'required|numeric',
+            'harga_jual' => 'nullable|numeric',
+            'asumsi_plafon_kpr' => 'nullable|numeric',
+            'biaya_surat_surat' => 'nullable|numeric',
+            'peningkatan_mutu' => 'nullable|numeric',
             'biaya_kelebihan_tanah' => 'nullable|numeric',
             'biaya_sudut' => 'nullable|numeric',
             'biaya_lain_lain' => 'nullable|numeric',
-            'jumlah_booking_fee' => 'required|numeric',
-            'cicilan_per_bulan' => 'required|numeric',
+            'jumlah_booking_fee' => 'nullable|numeric',
+            'cicilan_per_bulan' => 'nullable|numeric',
             'id_marketing' => 'nullable|integer',
             'penandatangan' => 'nullable',
             'keterangan' => 'nullable',
@@ -251,12 +251,6 @@ class SPPRController extends Controller
             'luas_bangunan.required' => 'Luas Bangunan wajib diisi.',
             'luas_tanah.required' => 'Luas Tanah wajib diisi.',
             'blok.required' => 'Blok wajib diisi.',
-            'harga_jual.required' => 'Harga Jual wajib diisi.',
-            'asumsi_plafon_kpr.required' => 'Asumsi Plafon KPR wajib diisi.',
-            'biaya_surat_surat.required' => 'Biaya Surat-surat wajib diisi.',
-            'peningkatan_mutu.required' => 'Peningkatan Mutu wajib diisi.',
-            'jumlah_booking_fee.required' => 'Jumlah Booking Fee wajib diisi.',
-            'cicilan_per_bulan.required' => 'Cicilan per Bulan wajib diisi.',
         ]);
 
         $total = $this->hitungTotal($request);
@@ -374,15 +368,15 @@ class SPPRController extends Controller
             'luas_tanah' => 'required|numeric',
             'blok' => 'required',
             'no' => 'nullable',
-            'harga_jual' => 'required|numeric',
-            'asumsi_plafon_kpr' => 'required|numeric',
-            'biaya_surat_surat' => 'required|numeric',
-            'peningkatan_mutu' => 'required|numeric',
+            'harga_jual' => 'nullable|numeric',
+            'asumsi_plafon_kpr' => 'nullable|numeric',
+            'biaya_surat_surat' => 'nullable|numeric',
+            'peningkatan_mutu' => 'nullable|numeric',
             'biaya_kelebihan_tanah' => 'nullable|numeric',
             'biaya_sudut' => 'nullable|numeric',
             'biaya_lain_lain' => 'nullable|numeric',
-            'jumlah_booking_fee' => 'required|numeric',
-            'cicilan_per_bulan' => 'required|numeric',
+            'jumlah_booking_fee' => 'nullable|numeric',
+            'cicilan_per_bulan' => 'nullable|numeric',
             'id_marketing' => 'nullable|integer',
             'penandatangan' => 'nullable',
             'keterangan' => 'nullable',
@@ -586,14 +580,14 @@ class SPPRController extends Controller
 
     private function hitungTotal(Request $request)
     {
-        return (int) $request->jumlah_booking_fee
+        return (int) ($request->jumlah_booking_fee ?? 0)
             + (int) ($request->nominal_dp ?? 0)
             + (int) ($request->nominal_biaya_posisi_unit ?? 0)
             + (int) ($request->nominal_biaya_kpr ?? 0)
             + (int) ($request->nominal_blokir_angsuran ?? 0)
             + (int) ($request->nominal_biaya_materai ?? 0)
             + (int) ($request->nominal_biaya_buka_tabungan ?? 0)
-            + (int) $request->peningkatan_mutu
+            + (int) ($request->peningkatan_mutu ?? 0)
             + 4000000;
     }
 }
