@@ -124,6 +124,20 @@ class AdminPemberkasanController extends Controller
                 'id_admin_pemberkasan' => $request->id_admin_pemberkasan ?: null,
             ]);
 
+            $phData = PengajuanHold::find($request->id);
+            if ($phData) {
+                Customer::where(function($q) use ($phData) {
+                    if ($phData->id_kavling) {
+                        $q->where('id_kavling', $phData->id_kavling);
+                    }
+                    if ($phData->nik) {
+                        $q->orWhere('nik', $phData->nik);
+                    }
+                })->update([
+                    'id_admin_pemberkasan' => $request->id_admin_pemberkasan ?: null,
+                ]);
+            }
+
             DB::commit();
 
             try {

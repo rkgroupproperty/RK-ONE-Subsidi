@@ -309,19 +309,29 @@ class SPPRController extends Controller
 
         $this->logCreate('Proses Admin', $sppr->id);
 
+        $adminId = $request->id_admin_pemberkasan;
+        $custObj = Customer::find($request->id_customer);
+        if (!$adminId && $custObj) {
+            $adminId = $custObj->id_admin_pemberkasan;
+        }
+        if (!$adminId && $custObj && $custObj->id_kavling) {
+            $ph = \App\Models\PengajuanHold::where('id_kavling', $custObj->id_kavling)->whereNotNull('id_admin_pemberkasan')->first();
+            $adminId = $ph ? $ph->id_admin_pemberkasan : null;
+        }
+
         $customerUpdate = [
             'id_status_progres' => 10,
             'tanggal_verif' => $tanggalProses->format('Y-m-d'),
         ];
-        if ($request->filled('id_admin_pemberkasan')) {
-            $customerUpdate['id_admin_pemberkasan'] = $request->id_admin_pemberkasan;
+        if ($adminId) {
+            $customerUpdate['id_admin_pemberkasan'] = $adminId;
         }
         Customer::where('id', $request->id_customer)->update($customerUpdate);
 
         try {
             $adminName = null;
-            if ($request->filled('id_admin_pemberkasan')) {
-                $adm = \App\Models\AdminPemberkasan::find($request->id_admin_pemberkasan);
+            if ($adminId) {
+                $adm = \App\Models\AdminPemberkasan::find($adminId);
                 $adminName = $adm ? ($adm->nama_lengkap ?? $adm->nama_admin ?? '') : null;
             }
             \App\Services\GoogleSheetProgressSyncService::syncCustomer($request->id_customer, [
@@ -455,9 +465,19 @@ class SPPRController extends Controller
 
         $custId = $sppr->id_customer ?? $request->id_customer;
         if ($custId) {
+            $custObj = Customer::find($custId);
+            $adminId = $request->id_admin_pemberkasan;
+            if (!$adminId && $custObj) {
+                $adminId = $custObj->id_admin_pemberkasan;
+            }
+            if (!$adminId && $custObj && $custObj->id_kavling) {
+                $ph = \App\Models\PengajuanHold::where('id_kavling', $custObj->id_kavling)->whereNotNull('id_admin_pemberkasan')->first();
+                $adminId = $ph ? $ph->id_admin_pemberkasan : null;
+            }
+
             $custUpd = [];
-            if ($request->filled('id_admin_pemberkasan')) {
-                $custUpd['id_admin_pemberkasan'] = $request->id_admin_pemberkasan;
+            if ($adminId) {
+                $custUpd['id_admin_pemberkasan'] = $adminId;
             }
             if ($request->filled('tanggal_proses')) {
                 $custUpd['tanggal_verif'] = Carbon::parse($request->tanggal_proses)->format('Y-m-d');
@@ -468,8 +488,8 @@ class SPPRController extends Controller
 
             try {
                 $adminName = null;
-                if ($request->filled('id_admin_pemberkasan')) {
-                    $adm = \App\Models\AdminPemberkasan::find($request->id_admin_pemberkasan);
+                if ($adminId) {
+                    $adm = \App\Models\AdminPemberkasan::find($adminId);
                     $adminName = $adm ? ($adm->nama_lengkap ?? $adm->nama_admin ?? '') : null;
                 }
                 $tglAdmin = $request->filled('tanggal_proses') ? Carbon::parse($request->tanggal_proses)->format('d/m/Y') : null;

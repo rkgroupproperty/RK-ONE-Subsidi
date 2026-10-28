@@ -231,7 +231,27 @@ class GoogleSheetProgressSyncService
 
             $rawBlok = trim($customer->kavling->kode_kavling ?? '');
             if (empty($rawBlok)) {
+                $sppr = \App\Models\SPPR::where('id_customer', $customer->id)->first();
+                if ($sppr && (!empty($sppr->blok) || !empty($sppr->no))) {
+                    $rawBlok = trim($sppr->blok . '-' . ($sppr->no ?: ''));
+                }
+            }
+            if (empty($rawBlok)) {
                 return;
+            }
+
+            if (empty($customer->id_kavling) && !empty($rawBlok)) {
+                $foundKav = \App\Models\KavlingPeta::where('id_lokasi', $customer->id_lokasi)
+                    ->where(function($q) use ($rawBlok) {
+                        $q->where('kode_kavling', $rawBlok)
+                          ->orWhere('kode_kavling', str_replace(' ', '', $rawBlok));
+                    })->first();
+                if ($foundKav) {
+                    try {
+                        \App\Models\Customer::where('id', $customer->id)->update(['id_kavling' => $foundKav->id]);
+                        $foundKav->update(['id_customer' => $customer->id]);
+                    } catch (\Throwable $e) {}
+                }
             }
 
             $formattedBlok = self::formatBlockName($rawBlok, $sheetName);
@@ -266,6 +286,22 @@ class GoogleSheetProgressSyncService
                 $payload['namaAdmin'] = strtoupper(trim($extra['namaAdmin']));
             } elseif ($customer->adminPemberkasan) {
                 $payload['namaAdmin'] = strtoupper(trim($customer->adminPemberkasan->nama_lengkap ?? $customer->adminPemberkasan->nama_admin ?? ''));
+            } else {
+                $phAdmin = \App\Models\PengajuanHold::where(function($q) use ($customer) {
+                    if ($customer->id_kavling) {
+                        $q->where('id_kavling', $customer->id_kavling);
+                    }
+                    if ($customer->nik) {
+                        $q->orWhere('nik', $customer->nik);
+                    }
+                })->whereNotNull('id_admin_pemberkasan')->with('adminPemberkasan')->first();
+
+                if ($phAdmin && $phAdmin->adminPemberkasan) {
+                    $payload['namaAdmin'] = strtoupper(trim($phAdmin->adminPemberkasan->nama_lengkap ?? $phAdmin->adminPemberkasan->nama_admin ?? ''));
+                    try {
+                        \App\Models\Customer::where('id', $customer->id)->update(['id_admin_pemberkasan' => $phAdmin->id_admin_pemberkasan]);
+                    } catch (\Throwable $e) {}
+                }
             }
 
             // Entri Bank & Bank

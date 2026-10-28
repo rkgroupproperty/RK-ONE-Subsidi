@@ -98,24 +98,24 @@
                         <input type="hidden" id="primary_id" name="primary_id">
                         <div class="modal-body">
                             <div class="form-group row">
-                                <label for="id_admin_pemberkasan" class="col-sm-3 col-form-label">Admin Pemberkasan</label>
+                                <label for="id_customer" class="col-sm-3 col-form-label">Customer <span class="text-danger">*</span></label>
                                 <div class="col-sm-8">
-                                    <select name="id_admin_pemberkasan" id="id_admin_pemberkasan" class="form-control select-admin-pemberkasan">
+                                    <select name="id_customer" id="id_customer" class="form-control select-customer" required>
                                         <option value=""></option>
-                                        @foreach ($adminPemberkasanList as $ap)
-                                            <option value="{{ $ap->id }}">{{ $ap->nama_lengkap }}</option>
+                                        @foreach ($customerList as $c)
+                                            <option value="{{ $c->id }}">{{ $c->nama_lengkap }} ({{ $c->nik }})</option>
                                         @endforeach
                                     </select>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <label for="id_customer" class="col-sm-3 col-form-label">Customer</label>
+                                <label for="id_admin_pemberkasan" class="col-sm-3 col-form-label">Admin Pemberkasan</label>
                                 <div class="col-sm-8">
-                                    <select name="id_customer" id="id_customer" class="form-control select-customer">
+                                    <select name="id_admin_pemberkasan" id="id_admin_pemberkasan" class="form-control select-admin-pemberkasan">
                                         <option value=""></option>
-                                        @foreach ($customerList as $c)
-                                            <option value="{{ $c->id }}">{{ $c->nama_lengkap }} ({{ $c->nik }})</option>
+                                        @foreach ($adminPemberkasanList as $ap)
+                                            <option value="{{ $ap->id }}">{{ $ap->nama_lengkap }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -435,8 +435,6 @@
                     let d = res.data;
                     if (d.id_admin_pemberkasan) {
                         $('#id_admin_pemberkasan').val(d.id_admin_pemberkasan).trigger('change');
-                    } else {
-                        $('#id_admin_pemberkasan').val('').trigger('change');
                     }
                     $('#nama').val(d.nama_lengkap || '');
                     $('#alamat').val(d.alamat || '');
@@ -539,8 +537,9 @@
                     if (d.tanggal_proses) {
                         $('#tanggal_proses').val(d.tanggal_proses);
                     }
-                    if (d.customer && d.customer.id_admin_pemberkasan) {
-                        $('#id_admin_pemberkasan').val(d.customer.id_admin_pemberkasan).trigger('change');
+                    let adminId = d.id_admin_pemberkasan || (d.customer && d.customer.id_admin_pemberkasan);
+                    if (adminId) {
+                        $('#id_admin_pemberkasan').val(adminId).trigger('change');
                     } else {
                         $('#id_admin_pemberkasan').val('').trigger('change');
                     }
