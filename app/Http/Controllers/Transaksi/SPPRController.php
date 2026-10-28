@@ -302,7 +302,8 @@ class SPPRController extends Controller
         try {
             $adminName = null;
             if ($request->filled('id_admin_pemberkasan')) {
-                $adminName = \App\Models\AdminPemberkasan::find($request->id_admin_pemberkasan)?->nama_admin;
+                $adm = \App\Models\AdminPemberkasan::find($request->id_admin_pemberkasan);
+                $adminName = $adm ? ($adm->nama_lengkap ?? $adm->nama_admin ?? '') : null;
             }
             \App\Services\GoogleSheetProgressSyncService::syncCustomer($request->id_customer, [
                 'entriAdmin' => $tanggalProses->format('d/m/Y'),
@@ -449,7 +450,8 @@ class SPPRController extends Controller
             try {
                 $adminName = null;
                 if ($request->filled('id_admin_pemberkasan')) {
-                    $adminName = \App\Models\AdminPemberkasan::find($request->id_admin_pemberkasan)?->nama_admin;
+                    $adm = \App\Models\AdminPemberkasan::find($request->id_admin_pemberkasan);
+                    $adminName = $adm ? ($adm->nama_lengkap ?? $adm->nama_admin ?? '') : null;
                 }
                 $tglAdmin = $request->filled('tanggal_proses') ? Carbon::parse($request->tanggal_proses)->format('d/m/Y') : null;
                 \App\Services\GoogleSheetProgressSyncService::syncCustomer($custId, [

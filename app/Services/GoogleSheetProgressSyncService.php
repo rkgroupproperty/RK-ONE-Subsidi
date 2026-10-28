@@ -146,6 +146,15 @@ class GoogleSheetProgressSyncService
                 'keterangan'   => 'PEMBERKASAN MARKETING',
             ];
 
+            if (!empty($pengajuan->id_admin_pemberkasan)) {
+                $adm = $pengajuan->adminPemberkasan ?? AdminPemberkasan::find($pengajuan->id_admin_pemberkasan);
+                if ($adm) {
+                    $payload['namaAdmin']  = strtoupper(trim($adm->nama_lengkap ?? $adm->nama_admin ?? ''));
+                    $payload['entriAdmin'] = now()->format('d/m/Y');
+                    $payload['keterangan'] = 'PROSES ADMIN';
+                }
+            }
+
             $result = self::sendToGas($payload);
             Log::info("GAS Sync (Booking): Sheet=$sheetName, Blok=$formattedBlok, HTTP={$result['httpCode']}, Res={$result['response']}");
 
@@ -156,6 +165,48 @@ class GoogleSheetProgressSyncService
             }
         } catch (\Throwable $e) {
             Log::error("GAS Sync Booking Exception: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sinkronkan penugasan admin untuk unit yang masih dalam status PengajuanHold (sebelum di-ACC jadi Customer).
+     */
+    public static function syncPengajuanHoldAdmin($pengajuan, string $adminName): void
+    {
+        try {
+            $lokasi = $pengajuan->lokasi ?? LokasiKavling::find($pengajuan->id_lokasi);
+            $sheetName = self::resolveSheetName($lokasi);
+            if (!$sheetName) {
+                return;
+            }
+
+            $kavling = $pengajuan->kavling ?? KavlingPeta::find($pengajuan->id_kavling);
+            $rawBlok = trim($kavling->kode_kavling ?? '');
+            if (empty($rawBlok)) {
+                return;
+            }
+
+            $formattedBlok = self::formatBlockName($rawBlok, $sheetName);
+            $namaKonsumen  = trim($pengajuan->nama_lengkap ?? '');
+
+            $payload = [
+                'sheetName'    => $sheetName,
+                'blok'         => $formattedBlok,
+                'namaKonsumen' => $namaKonsumen,
+                'entriAdmin'   => now()->format('d/m/Y'),
+                'namaAdmin'    => strtoupper(trim($adminName)),
+                'keterangan'   => 'PROSES ADMIN',
+            ];
+
+            $result = self::sendToGas($payload);
+            Log::info("GAS Sync (PengajuanHold Admin): Sheet=$sheetName, Blok=$formattedBlok, HTTP={$result['httpCode']}, Res={$result['response']}");
+
+            if (($result['httpCode'] != 200 || str_contains($result['response'], '"error"')) && $formattedBlok !== $rawBlok) {
+                $payload['blok'] = $rawBlok;
+                self::sendToGas($payload);
+            }
+        } catch (\Throwable $e) {
+            Log::error("GAS Sync PengajuanHold Admin Exception: " . $e->getMessage());
         }
     }
 
@@ -214,7 +265,7 @@ class GoogleSheetProgressSyncService
             if (!empty($extra['namaAdmin'])) {
                 $payload['namaAdmin'] = strtoupper(trim($extra['namaAdmin']));
             } elseif ($customer->adminPemberkasan) {
-                $payload['namaAdmin'] = strtoupper(trim($customer->adminPemberkasan->nama_admin));
+                $payload['namaAdmin'] = strtoupper(trim($customer->adminPemberkasan->nama_lengkap ?? $customer->adminPemberkasan->nama_admin ?? ''));
             }
 
             // Entri Bank & Bank

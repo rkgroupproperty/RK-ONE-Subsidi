@@ -127,16 +127,19 @@ class AdminPemberkasanController extends Controller
             DB::commit();
 
             try {
-                $ph = PengajuanHold::with(['lokasi', 'kavling', 'marketing'])->find($request->id);
+                $ph = PengajuanHold::with(['lokasi', 'kavling', 'marketing', 'adminPemberkasan'])->find($request->id);
                 if ($ph) {
                     $admin = AdminPemberkasan::find($request->id_admin_pemberkasan);
+                    $adminName = $admin ? ($admin->nama_lengkap ?? $admin->nama_admin ?? '') : '';
                     $cust = Customer::where('id_kavling', $ph->id_kavling)->first();
                     if ($cust) {
                         \App\Services\GoogleSheetProgressSyncService::syncCustomer($cust, [
                             'entriAdmin' => now()->format('d/m/Y'),
-                            'namaAdmin'  => $admin->nama_admin ?? '',
+                            'namaAdmin'  => $adminName,
                             'keterangan' => 'PROSES ADMIN',
                         ]);
+                    } else {
+                        \App\Services\GoogleSheetProgressSyncService::syncPengajuanHoldAdmin($ph, $adminName);
                     }
                 }
             } catch (\Throwable $e) {

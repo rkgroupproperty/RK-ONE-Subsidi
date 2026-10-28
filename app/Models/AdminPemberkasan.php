@@ -16,4 +16,9 @@ class AdminPemberkasan extends Model
     ];
 
     public $timestamps = false;
+
+    public function getNamaAdminAttribute()
+    {
+        return $this->nama_lengkap;
+    }
 }

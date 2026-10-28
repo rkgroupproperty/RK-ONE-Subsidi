@@ -1146,9 +1146,12 @@ class PengajuanHoldController extends Controller
         KavlingPeta::find($data->id_kavling)->update(['id_customer' => $customer->id]);
 
         try {
+            $adminObj = \App\Models\AdminPemberkasan::find($data->id_admin_pemberkasan);
+            $adminNama = $adminObj ? ($adminObj->nama_lengkap ?? $adminObj->nama_admin ?? '') : '';
             \App\Services\GoogleSheetProgressSyncService::syncCustomer($customer->id, [
                 'entriAdmin' => Carbon::now()->format('d/m/Y'),
-                'keterangan' => 'PEMBERKASAN MARKETING',
+                'namaAdmin'  => $adminNama,
+                'keterangan' => $adminNama ? 'PROSES ADMIN' : 'PEMBERKASAN MARKETING',
             ]);
         } catch (\Throwable $e) {}
 
