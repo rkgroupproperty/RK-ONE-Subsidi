@@ -138,6 +138,12 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
     if ($secret !== 'rk_clear_2026') {
         abort(403);
     }
+    if (function_exists('opcache_reset')) {
+        @opcache_reset();
+    }
+    if (function_exists('apcu_clear_cache')) {
+        @apcu_clear_cache();
+    }
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
     try {
         \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing('mysql_subsidi');
@@ -146,7 +152,8 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
 
     return response()->json([
         'status' => 'success',
-        'message' => 'Cache Laravel berhasil dibersihkan!',
+        'message' => 'Cache Laravel dan OPcache berhasil dibersihkan!',
+        'opcache_reset' => function_exists('opcache_reset') ? @opcache_reset() : false,
         'output' => \Illuminate\Support\Facades\Artisan::output(),
     ]);
 })->name('system.clear-cache');
