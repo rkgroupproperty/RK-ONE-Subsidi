@@ -652,8 +652,8 @@
                         <span class="status-indicator-dot" title="Online"></span>
                     </div>
                     <div class="user-info-custom text-truncate">
-                        <div class="user-name-text text-white font-weight-bold text-truncate">{{ Auth::user()->name ?? Auth::user()->username }}</div>
-                        <div class="user-role-badge"><i class="fas fa-circle text-success mr-1" style="font-size: 7px;"></i> {{ Auth::user()->role->nama_role ?? 'Administrator' }}</div>
+                        <div class="user-name-text text-white font-weight-bold text-truncate">{{ Auth::user()->surname ?? Auth::user()->username }}</div>
+                        <div class="user-role-badge"><i class="fas fa-circle text-success mr-1" style="font-size: 7px;"></i> {{ Auth::user()->role->role ?? 'Administrator' }}</div>
                     </div>
                 </div>
                 @endif
