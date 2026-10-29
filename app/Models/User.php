@@ -46,4 +46,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Relasi ke tabel role.
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'id_role');
+    }
 }
