@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 namespace App\Http\Controllers\Transaksi;
 
 use App\Http\Controllers\Controller;
@@ -428,50 +428,51 @@ class PindahUnitController extends Controller
     $customer     = $pindah->customer;
     $kavlingLama  = $pindah->kavlingLama;
     $kavlingBaru  = $pindah->kavlingBaru;
+    $lokasi       = $kavlingBaru?->lokasi ?? $kavlingLama?->lokasi ?? $customer?->lokasiKavling;
+    $kopInfo      = \App\Helpers\KopSuratHelper::resolveInfo($lokasi, $kavlingBaru ?? $kavlingLama, $customer);
+    $kopPath      = $kopInfo['kop_path'];
 
     $pdf = new TCPDF('P', 'mm', 'A4');
     $pdf->SetTitle('Rekap Pindah Unit - ' . $customer->nama_lengkap);
     $pdf->AddPage();
 
-      $mediaRekap = PengaturanMedia::where('jenis_data', 'Logo Rekap')->first();
+    if (file_exists($kopPath)) {
+        // Kop Surat Resmi sesuai perumahan (Rasio 1024 x 342)
+        $pdf->Image($kopPath, 15, 8, 180, 0, 'PNG');
+        $pdf->SetY(71);
+    } else {
+        $mediaRekap = PengaturanMedia::where('jenis_data', 'Logo Rekap')->first();
         $pathRekap  = null;
         if ($mediaRekap && $mediaRekap->nama_file) {
             $pathRekap = public_path('config_media/' . $mediaRekap->nama_file);
         }
 
-         if ($pathRekap && file_exists($pathRekap)) {
+        if ($pathRekap && file_exists($pathRekap)) {
             $pdf->Image($pathRekap, 15, 12, 30, 25);
         }
 
-    $pdf->SetFont('helvetica', 'B', 25);
-    $pdf->SetTextColor(0, 51, 102);
-    $pdf->Cell(0, 7, 'PT. ALAM INDAH SELALU', 0, 1, 'C');
+        $pdf->SetFont('helvetica', 'B', 20);
+        $pdf->SetTextColor(0, 51, 102);
+        $pdf->Cell(0, 7, strtoupper($kopInfo['nama_perusahaan']), 0, 1, 'C');
 
-    $pdf->SetFont('Times', '', 11);
-    $pdf->SetTextColor(218, 0, 0);
-    $pdf->Cell(0, 6, 'KONTRAKTOR - DEVELOPER', 0, 1, 'C');
+        $pdf->SetFont('Times', '', 10);
+        $pdf->SetTextColor(218, 0, 0);
+        $pdf->Cell(0, 6, 'KONTRAKTOR - DEVELOPER', 0, 1, 'C');
 
-    $pdf->SetFont('Times', '', 9);
-    $pdf->SetTextColor(0, 0, 0);
-    $pdf->MultiCell(
-            0,
-            0,
-            'Komplek Ruko Hawai Garden Blok B No. 2 Kelurahan Belian Batan - Center',
-            0,
-            'C'
-        );
-        $pdf->SetX(10);
-        $pdf->cell(0, 0, 'Telp. 0778 - 4173387', 0, 1, 'C');
+        $pdf->SetFont('Times', '', 9);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->Cell(0, 5, $kopInfo['alamat_perusahaan'], 0, 1, 'C');
+        $pdf->Cell(0, 5, 'Telp. ' . $kopInfo['telp_perusahaan'], 0, 1, 'C');
 
-    $pdf->Ln(5);
-    $pdf->SetDrawColor(0, 0, 0);
-    $pdf->SetLineWidth(0.7);
-    $pdf->Line(10, 42, 200, 42);
+        $pdf->Ln(5);
+        $pdf->SetDrawColor(0, 0, 0);
+        $pdf->SetLineWidth(0.7);
+        $pdf->Line(10, 42, 200, 42);
 
-    $pdf->SetLineWidth(0.3);
-    $pdf->Line(10, 41, 200, 41);
-
-    $pdf->Ln(8);
+        $pdf->SetLineWidth(0.3);
+        $pdf->Line(10, 41, 200, 41);
+        $pdf->SetY(48);
+    }
     $pdf->SetFont('Times', 'B', 10);
     $pdf->SetTextColor(218, 0, 0);
     $pdf->Cell(190, 8, 'TABEL REKAP PINDAH UNIT', 0, 1, 'C');
