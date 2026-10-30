@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RK Property">
-  <link rel="apple-touch-icon" href="{{ asset('icons/icon-192x192.png') }}">
+  <link rel="apple-touch-icon" href="{{ url('pwa-icon/192') }}">
   @php
       $logo = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Login')->first();
       $konfigurasi = \App\Models\PengaturanProfil::first();
