@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Pengaturan\HakAksesController;
@@ -1583,9 +1583,12 @@ class PengajuanHoldController extends Controller
         $profil = \App\Models\PengaturanProfil::first();
         $media = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Rekap')->orWhere('jenis_data', 'Logo Aplikasi')->first();
 
-        $namaPerusahaan = $konfigurasi->nama_perusahaan ?? $profil->nama_perusahaan ?? 'RK GROUP PROPERTY';
-        $alamatPerusahaan = $profil->alamat ?? 'Jl. Raya Tanjungpinang - Bintan';
-        $telpPerusahaan = $profil->telp ?? '0812-xxxx-xxxx';
+        // Resolusi Kop Surat & Perusahaan Dinamis Sesuai Perumahan
+        $kopInfo = \App\Helpers\KopSuratHelper::resolveInfo($booking->lokasi, $booking->kavling);
+        $namaPerusahaan = $kopInfo['nama_perusahaan'];
+        $alamatPerusahaan = $kopInfo['alamat_perusahaan'];
+        $telpPerusahaan = $kopInfo['telp_perusahaan'];
+        $kopPath = $kopInfo['kop_path'];
 
         $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
         $pdf->SetCreator('RK Group Property');
@@ -1608,18 +1611,13 @@ class PengajuanHoldController extends Controller
         $pdf->SetAlpha(1);
 
         // 2. Header / Kop Kwitansi
-        $kopPath = public_path('assets/img/kop_surat_pt_unggul.png');
-        if (!file_exists($kopPath)) {
-            $kopPath = base_path('public/assets/img/kop_surat_pt_unggul.png');
-        }
-
         $logoPath = null;
         if ($media && $media->nama_file && file_exists(public_path('config_media/' . $media->nama_file))) {
             $logoPath = public_path('config_media/' . $media->nama_file);
         }
 
         if (file_exists($kopPath)) {
-            // Kop Surat Resmi PT UNGGUL PERKASA SRIWIJAYA (Rasio 1024 x 342)
+            // Kop Surat Resmi sesuai perumahan (Rasio 1024 x 342)
             $pdf->Image($kopPath, 15, 8, 180, 0, 'PNG');
             $pdf->SetY(71);
         } elseif ($logoPath) {
