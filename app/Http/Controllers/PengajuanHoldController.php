@@ -1838,8 +1838,13 @@ class PengajuanHoldController extends Controller
         $pdf->SetTextColor(148, 163, 184);
         $pdf->Cell(0, 4, 'Waktu Cetak: ' . now()->translatedFormat('d F Y H:i:s') . ' WIB | Sistem Penjualan Perumahan Dealaska - RK GROUP Property', 0, 1, 'C');
 
-        return response($pdf->Output('Kwitansi_Sementara_' . ($booking->no_registrasi ?? $booking->id) . '.pdf', 'I'))
-            ->header('Content-Type', 'application/pdf');
+        $holdFilename = 'Kwitansi_Sementara_' . ($booking->no_registrasi ?? $booking->id) . '.pdf';
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        return response($pdf->Output($holdFilename, 'S'), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $holdFilename . '"');
     }
 
     private function terbilang($angka)
