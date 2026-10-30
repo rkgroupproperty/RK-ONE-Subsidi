@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 namespace App\Services;
 
 use App\Models\Customer;
@@ -118,13 +118,19 @@ class DocumentDataContext
     {
         $kavling    = $customer->kavlingPeta;
         $lokasi     = $kavling?->lokasi ?? $customer->lokasiKavling;
-        $perusahaan = $kavling?->perusahaan;
+        $kopInfo    = \App\Helpers\KopSuratHelper::resolveInfo($lokasi, $kavling, $customer);
+        $perusahaan = $kopInfo['perusahaan'];
 
         return array_merge(
             self::fromCustomer($customer),
             self::fromKavlingPeta($kavling),
             self::fromLokasi($lokasi),
             self::fromPerusahaan($perusahaan),
+            [
+                'kop_surat'      => $kopInfo['kop_path'],
+                'kop_filename'   => $kopInfo['kop_filename'],
+                'pt_perusahaan'  => $kopInfo['nama_perusahaan'],
+            ]
         );
     }
 
