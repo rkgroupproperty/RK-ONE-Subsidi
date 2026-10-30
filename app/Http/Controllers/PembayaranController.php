@@ -373,8 +373,13 @@ class PembayaranController extends Controller
         $pdf->Cell(70, 6, '', 0, 0);
         $pdf->Cell(60, 6, $perusahaan->nama_penandatangan ?? 'ADMIN', 'B', 1, 'C');
 
-        $pdf->Output();
-        exit;
+        $filename = 'Rekap_Pembayaran_' . ($customer->nama_lengkap ?? 'customer') . '.pdf';
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        return response($pdf->Output($filename, 'S'), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
     }
 
     public function cetak($id)
@@ -641,8 +646,12 @@ class PembayaranController extends Controller
         $pdf->Cell(55, 4.5, '( ' . $namaPenerima . ' )', 0, 0, 'C');
 
         $filename = 'Kwitansi-' . ($pembayaran->no_kwitansi ?? 'draft') . '.pdf';
-        $pdf->Output($filename, 'I');
-        exit;
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        return response($pdf->Output($filename, 'S'), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
     }
 
     private function terbilang($angka)
@@ -1566,8 +1575,12 @@ class PembayaranController extends Controller
         $pdf->SetFont('Helvetica', 'I', 8.5);
         $pdf->Cell(20, 5, 'NB : Kwitansi ini sah, apabila ada cap perusahaan dan tanda tangan kasir.', 0, 1, 'L');
 
-        return response($pdf->Output('kwitansi.pdf', 'I'), 200)
-            ->header('Content-Type', 'application/pdf');
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        return response($pdf->Output('kwitansi.pdf', 'S'), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="kwitansi.pdf"');
     }
 
     private function bulanRomawi($bulan)
