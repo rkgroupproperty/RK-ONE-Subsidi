@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BerandaController;
@@ -133,6 +133,76 @@ Route::get('/hutang/sisa-bayar/{id}', [HutangController::class, 'getSisaBayar'])
 Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar']);
 
 Route::match(['get', 'post'], 'switch-portal/verify', [AuthController::class, 'verifySwitchPortal'])->name('switch.portal.verify');
+
+// PWA Direct Routes
+Route::get('/manifest.json', function () {
+    $manifestPath = public_path('manifest.json');
+    if (!file_exists($manifestPath)) {
+        $manifestPath = base_path('public/manifest.json');
+    }
+    if (file_exists($manifestPath)) {
+        return response()->file($manifestPath, [
+            'Content-Type' => 'application/manifest+json; charset=utf-8',
+            'Cache-Control' => 'no-cache, private'
+        ]);
+    }
+    return response()->json([
+        'name' => 'RK Group Property - Sistem Penjualan Perumahan',
+        'short_name' => 'RK Property',
+        'description' => 'Sistem Manajemen Penjualan Perumahan RK Group Property',
+        'start_url' => '/admin/beranda',
+        'scope' => '/',
+        'display' => 'standalone',
+        'orientation' => 'any',
+        'background_color' => '#090d16',
+        'theme_color' => '#4f46e5',
+        'icons' => [
+            [
+                'src' => '/favicon.ico',
+                'sizes' => '64x64 32x32 24x24 16x16',
+                'type' => 'image/x-icon',
+                'purpose' => 'any maskable'
+            ],
+            [
+                'src' => '/icons/icon-192x192.png',
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ],
+            [
+                'src' => '/icons/icon-512x512.png',
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ]
+        ]
+    ], 200, ['Content-Type' => 'application/manifest+json; charset=utf-8']);
+});
+
+Route::get('/sw.js', function () {
+    $swPath = public_path('sw.js');
+    if (!file_exists($swPath)) {
+        $swPath = base_path('public/sw.js');
+    }
+    if (file_exists($swPath)) {
+        return response()->file($swPath, [
+            'Content-Type' => 'application/javascript; charset=utf-8',
+            'Service-Worker-Allowed' => '/'
+        ]);
+    }
+    return response("console.log('SW fallback');", 200, ['Content-Type' => 'application/javascript']);
+});
+
+Route::get('/icons/{file}', function ($file) {
+    $path = public_path('icons/' . $file);
+    if (!file_exists($path)) {
+        $path = base_path('public/icons/' . $file);
+    }
+    if (file_exists($path)) {
+        return response()->file($path, ['Content-Type' => 'image/png']);
+    }
+    abort(404);
+})->where('file', '.*');
 
 Route::get('/system/clear-cache/{secret}', function ($secret) {
     if ($secret !== 'rk_clear_2026') {
@@ -1065,5 +1135,6 @@ Route::get('/system/sync-bir-4/{secret}', function ($secret) {
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
     return response()->json($result);
 })->name('system.sync-bir-4');
+
 
 
