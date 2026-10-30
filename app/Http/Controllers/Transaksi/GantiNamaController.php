@@ -425,8 +425,12 @@ class GantiNamaController extends Controller
         $pdf->SetFont('Helvetica', 'I', 8.5);
         $pdf->Cell(20, 5, 'NB : Kwitansi ini sah, apabila ada cap perusahaan dan tanda tangan kasir.', 0, 1, 'L');
 
-        return response($pdf->Output('kwitansi.pdf', 'I'), 200)
-            ->header('Content-Type', 'application/pdf');
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        return response($pdf->Output('kwitansi.pdf', 'S'), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="kwitansi.pdf"');
     }
 
     private function bulanRomawi($bulan)
