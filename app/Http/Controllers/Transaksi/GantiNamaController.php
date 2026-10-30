@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 namespace App\Http\Controllers\Transaksi;
 
 use App\Http\Controllers\Controller;
@@ -337,6 +337,9 @@ class GantiNamaController extends Controller
         $jenisPembayaran = $gantiNama->keterangan_ganti ?? 'Cicilan Pribadi';
         $metodeBayar     = $pembayaran->metode_bayar ?? 'CASH';
 
+        $kopInfo = \App\Helpers\KopSuratHelper::resolveInfo($lokasi, $kavling);
+        $kopPath = $kopInfo['kop_path'];
+
         $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
         $pdf->SetTitle('Kwitansi');
         $pdf->SetPrintHeader(false);
@@ -346,7 +349,13 @@ class GantiNamaController extends Controller
         $pdf->AddPage();
         $pdf->SetTextColor(0, 0, 0);
 
-        $pdf->Ln(40);
+        if (file_exists($kopPath)) {
+            // Kop Surat Resmi sesuai perumahan (Rasio 1024 x 342)
+            $pdf->Image($kopPath, 15, 8, 180, 0, 'PNG');
+            $pdf->SetY(71);
+        } else {
+            $pdf->Ln(40);
+        }
 
         $pdf->SetFont('Helvetica', 'BU', 16);
         $pdf->Cell(170, 6, 'TANDA TERIMA', 0, 1, 'C');
