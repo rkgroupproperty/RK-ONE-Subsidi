@@ -1,9 +1,17 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="id">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  <!-- PWA Primary Meta Tags -->
+  <link rel="manifest" href="{{ asset('manifest.json') }}">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RK Property">
+  <link rel="apple-touch-icon" href="{{ asset('icons/icon-192x192.png') }}">
   @php
       $logo = \App\Models\PengaturanMedia::where('jenis_data', 'Logo Login')->first();
       $konfigurasi = \App\Models\PengaturanProfil::first();
@@ -1261,5 +1269,16 @@
       applyPortalTheme(currentPortal);
     });
   </script>
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register("{{ asset('sw.js') }}").catch(function(err) {
+          console.warn('PWA ServiceWorker registration failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
+
