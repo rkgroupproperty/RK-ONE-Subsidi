@@ -19,7 +19,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RK Property">
-    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192x192.png') }}">
+    <link rel="apple-touch-icon" href="{{ url('pwa-icon/192') }}">
     @php
         $favicon = \App\Models\PengaturanMedia::where('jenis_data', 'fav icon')->where('stt_aktif', 1)->first();
         $faviconPath = $favicon && $favicon->nama_file ? asset('config_media/' . $favicon->nama_file) : asset('default/favicon.ico');
@@ -1075,7 +1075,7 @@
     <div id="pwa-install-banner" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; max-width:420px; margin:0 auto; z-index:99999; background:linear-gradient(135deg, #0f172a, #1e1b4b); color:#fff; border-radius:16px; padding:14px 18px; box-shadow:0 12px 35px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.3); backdrop-filter:blur(10px);">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
             <div style="display:flex; align-items:center; gap:12px;">
-                <img src="{{ asset('icons/icon-192x192.png') }}" alt="App Icon" style="width:42px; height:42px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+                <img src="{{ url('pwa-icon/192') }}" alt="App Icon" style="width:42px; height:42px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
                 <div>
                     <div style="font-weight:700; font-size:13.5px; letter-spacing:0.3px;">Install Aplikasi RK Property</div>
                     <div style="font-size:11px; color:#cbd5e1;">Akses cepat, ringan & bisa di desktop/HP</div>
