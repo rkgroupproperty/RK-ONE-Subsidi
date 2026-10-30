@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -12,6 +12,14 @@
 
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- PWA Primary Meta Tags -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RK Property">
+    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192x192.png') }}">
     @php
         $favicon = \App\Models\PengaturanMedia::where('jenis_data', 'fav icon')->where('stt_aktif', 1)->first();
         $faviconPath = $favicon && $favicon->nama_file ? asset('config_media/' . $favicon->nama_file) : asset('default/favicon.ico');
@@ -1063,6 +1071,147 @@
     </script>
 
     @stack('scripts')
+    <!-- PWA Install Prompt Banner (Auto-detect) -->
+    <div id="pwa-install-banner" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; max-width:420px; margin:0 auto; z-index:99999; background:linear-gradient(135deg, #0f172a, #1e1b4b); color:#fff; border-radius:16px; padding:14px 18px; box-shadow:0 12px 35px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.3); backdrop-filter:blur(10px);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="{{ asset('icons/icon-192x192.png') }}" alt="App Icon" style="width:42px; height:42px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+                <div>
+                    <div style="font-weight:700; font-size:13.5px; letter-spacing:0.3px;">Install Aplikasi RK Property</div>
+                    <div style="font-size:11px; color:#cbd5e1;">Akses cepat, ringan & bisa di desktop/HP</div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" id="btn-pwa-install" class="btn btn-sm btn-primary font-weight-bold" style="background:linear-gradient(135deg, #4f46e5, #7c3aed); border:none; border-radius:8px; padding:6px 14px; font-size:12px; box-shadow:0 2px 10px rgba(99,102,241,0.4);">
+                    <i class="fas fa-download mr-1"></i> Pasang
+                </button>
+                <button type="button" id="btn-pwa-close" style="background:transparent; border:none; color:#94a3b8; font-size:16px; cursor:pointer; padding:4px 6px;">
+                    &times;
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Quick Refresh Button -->
+    <div id="pwa-refresh-container" style="position:fixed; bottom:24px; right:24px; z-index:99990; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+        <div id="pwa-refresh-tooltip" style="display:none; background:rgba(15, 23, 42, 0.92); color:#fff; font-size:11.5px; font-weight:600; padding:5px 12px; border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); white-space:nowrap; backdrop-filter:blur(6px);">
+            Refresh Data Aplikasi
+        </div>
+        <button type="button" id="btn-pwa-refresh" title="Refresh Aplikasi" style="width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color:#fff; border:2px solid rgba(255,255,255,0.3); box-shadow:0 6px 20px rgba(99,102,241,0.45); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:17px; transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1); outline:none;">
+            <i class="fas fa-sync-alt" id="pwa-refresh-icon"></i>
+        </button>
+    </div>
+
+    <!-- PWA & Refresh Client Script -->
+    <script>
+        // 1. Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register("{{ asset('sw.js') }}")
+                    .then(function(reg) {
+                        console.log('PWA ServiceWorker registered with scope:', reg.scope);
+
+                        // Listen for updates
+                        reg.addEventListener('updatefound', function() {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.info('Versi baru tersedia! Klik tombol refresh untuk memperbarui.', 'PWA Update', {
+                                            timeOut: 5000,
+                                            closeButton: true,
+                                            positionClass: 'toast-bottom-right'
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(err) {
+                        console.warn('PWA ServiceWorker registration failed:', err);
+                    });
+            });
+        }
+
+        // 2. Install Prompt Handling
+        let deferredPrompt = null;
+        const installBanner = document.getElementById('pwa-install-banner');
+        const btnInstall = document.getElementById('btn-pwa-install');
+        const btnClose = document.getElementById('btn-pwa-close');
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!localStorage.getItem('pwa_prompt_dismissed')) {
+                if (installBanner) installBanner.style.display = 'block';
+            }
+        });
+
+        if (btnInstall) {
+            btnInstall.addEventListener('click', async function() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('User response to install prompt:', outcome);
+                    deferredPrompt = null;
+                    if (installBanner) installBanner.style.display = 'none';
+                }
+            });
+        }
+
+        if (btnClose) {
+            btnClose.addEventListener('click', function() {
+                if (installBanner) installBanner.style.display = 'none';
+                localStorage.setItem('pwa_prompt_dismissed', '1');
+            });
+        }
+
+        // 3. Quick Refresh Feature
+        const btnRefresh = document.getElementById('btn-pwa-refresh');
+        const refreshIcon = document.getElementById('pwa-refresh-icon');
+        const refreshTooltip = document.getElementById('pwa-refresh-tooltip');
+
+        if (btnRefresh) {
+            btnRefresh.addEventListener('mouseenter', function() {
+                if (refreshTooltip) refreshTooltip.style.display = 'block';
+                btnRefresh.style.transform = 'scale(1.08)';
+            });
+            btnRefresh.addEventListener('mouseleave', function() {
+                if (refreshTooltip) refreshTooltip.style.display = 'none';
+                btnRefresh.style.transform = 'scale(1)';
+            });
+
+            btnRefresh.addEventListener('click', function() {
+                if (refreshIcon) refreshIcon.classList.add('fa-spin');
+                btnRefresh.disabled = true;
+
+                if (typeof toastr !== 'undefined') {
+                    toastr.info('Memuat ulang data aplikasi...', 'Refresh', {
+                        timeOut: 1500,
+                        positionClass: 'toast-bottom-right'
+                    });
+                }
+
+                // Reload active DataTables if available
+                if (typeof $ !== 'undefined' && $.fn && $.fn.DataTable) {
+                    $('.dataTable').each(function() {
+                        try {
+                            $(this).DataTable().ajax.reload(null, false);
+                        } catch(e) {}
+                    });
+                }
+
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+                }
+
+                setTimeout(function() {
+                    window.location.reload();
+                }, 400);
+            });
+        }
+    </script>
 </body>
 
 </html>
+
