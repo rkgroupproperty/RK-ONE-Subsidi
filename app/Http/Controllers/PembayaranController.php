@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -408,6 +408,7 @@ class PembayaranController extends Controller
         $pdf->Cell(70, 6, '', 0, 0);
         $pdf->Cell(60, 6, $perusahaan->nama_penandatangan ?? 'ADMIN', 'B', 1, 'C');
 
+        if (ob_get_length()) { ob_end_clean(); }
         $pdf->Output();
         exit;
     }
@@ -676,6 +677,7 @@ class PembayaranController extends Controller
         $pdf->Cell(55, 4.5, '( ' . $namaPenerima . ' )', 0, 0, 'C');
 
         $filename = 'Kwitansi-' . ($pembayaran->no_kwitansi ?? 'draft') . '.pdf';
+        if (ob_get_length()) { ob_end_clean(); }
         $pdf->Output($filename, 'I');
         exit;
     }
@@ -1834,3 +1836,4 @@ class PembayaranController extends Controller
         return view('admin.pembayaran.rekap', compact('pembayaran', 'lokasi', 'bankList', 'metodeBayar', 'bloks'));
     }
 }
+
