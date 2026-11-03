@@ -971,7 +971,6 @@ class BerandaController extends Controller
             'total_sisa' => $totalAllSisa,
         ];
     }
-    }
 
     public function adminPemberkasanData(Request $request)
     {
