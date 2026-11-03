@@ -1309,9 +1309,9 @@
         <article class="kpi-card kpi-orange">
           <div class="kpi-icon-box orange"><i class="fa-solid fa-receipt"></i></div>
           <div class="kpi-info">
-            <div class="kpi-title">Booking Fee / Periode</div>
-            <div class="kpi-num money" style="color:#f59e0b">Rp {{ number_format($summaryMetrics['booking_fee_periode'] ?? 0, 0, ',', '.') }}</div>
-            <div class="kpi-desc">{{ $summaryMetrics['customer_periode'] ?? 0 }} Customer ({{ $summaryMetrics['label_periode'] ?? 'Bulan Ini' }})</div>
+            <div class="kpi-title">Booking Bulan Ini</div>
+            <div class="kpi-num" style="color:#f59e0b">{{ $summaryMetrics['booking_customer_bulan_ini'] ?? 0 }} <small style="font-size:12px;font-weight:700">Customer</small></div>
+            <div class="kpi-desc">Total Customer Booking ({{ $summaryMetrics['nama_bulan_ini'] ?? 'Bulan Ini' }})</div>
           </div>
         </article>
 
@@ -1646,8 +1646,82 @@
                 <button type="button" class="btn btn-sm font-weight-bold btn-light" id="btnMktSemua" onclick="switchMarketingFilter('semua')" style="border-radius:6px;font-size:11px;padding:4px 10px;color:#64748b">
                   Semua
                 </button>
+                <button type="button" class="btn btn-sm font-weight-bold btn-light" id="btnMktCustom" onclick="toggleMktCustomFilter()" style="border-radius:6px;font-size:11px;padding:4px 10px;color:#64748b">
+                  <i class="fa-solid fa-sliders"></i> Custom Filter
+                </button>
               </div>
             </div>
+
+            <!-- Panel Custom Filter Marketing -->
+            <div id="mktCustomFilterPanel" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:14px">
+              <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+                <label style="font-size:11px;font-weight:700;color:#334155;margin:0;cursor:pointer">
+                  <input type="radio" name="mktFilterMode" value="date" checked onchange="switchMktCustomMode('date')"> Rentang Tanggal
+                </label>
+                <label style="font-size:11px;font-weight:700;color:#334155;margin:0;cursor:pointer">
+                  <input type="radio" name="mktFilterMode" value="month" onchange="switchMktCustomMode('month')"> Rentang Bulan
+                </label>
+              </div>
+
+              <!-- Form Rentang Tanggal -->
+              <div id="mktDateInputs" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+                <div style="flex:1;min-width:120px">
+                  <span style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">Dari Tanggal:</span>
+                  <input type="date" id="mktStartDate" class="form-control form-control-sm" style="font-size:11.5px;border-radius:6px" value="{{ date('Y-m-01') }}">
+                </div>
+                <div style="flex:1;min-width:120px">
+                  <span style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">Sampai Tanggal:</span>
+                  <input type="date" id="mktEndDate" class="form-control form-control-sm" style="font-size:11.5px;border-radius:6px" value="{{ date('Y-m-d') }}">
+                </div>
+                <button type="button" class="btn btn-sm btn-primary" onclick="applyMktCustomFilter()" style="border-radius:6px;font-size:11px;font-weight:700;padding:5px 12px">
+                  <i class="fa-solid fa-check mr-1"></i> Terapkan
+                </button>
+              </div>
+
+              <!-- Form Rentang Bulan -->
+              <div id="mktMonthInputs" style="display:none;gap:8px;align-items:flex-end;flex-wrap:wrap">
+                <div style="flex:1;min-width:130px">
+                  <span style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">Dari Bulan:</span>
+                  <div style="display:flex;gap:4px">
+                    <select id="mktStartMonth" class="form-control form-control-sm" style="font-size:11px">
+                      @foreach($availableMonths as $mNum => $mName)
+                        <option value="{{ $mNum }}" {{ $mNum == 1 ? 'selected' : '' }}>{{ $mName }}</option>
+                      @endforeach
+                    </select>
+                    <select id="mktStartYear" class="form-control form-control-sm" style="font-size:11px;width:75px">
+                      @foreach($availableYears as $yr)
+                        <option value="{{ $yr }}" {{ $yr == $currentYear ? 'selected' : '' }}>{{ $yr }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>
+                <div style="flex:1;min-width:130px">
+                  <span style="font-size:10px;font-weight:700;color:#64748b;display:block;margin-bottom:3px">Sampai Bulan:</span>
+                  <div style="display:flex;gap:4px">
+                    <select id="mktEndMonth" class="form-control form-control-sm" style="font-size:11px">
+                      @foreach($availableMonths as $mNum => $mName)
+                        <option value="{{ $mNum }}" {{ $mNum == Carbon\Carbon::now()->month ? 'selected' : '' }}>{{ $mName }}</option>
+                      @endforeach
+                    </select>
+                    <select id="mktEndYear" class="form-control form-control-sm" style="font-size:11px;width:75px">
+                      @foreach($availableYears as $yr)
+                        <option value="{{ $yr }}" {{ $yr == $currentYear ? 'selected' : '' }}>{{ $yr }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-primary" onclick="applyMktCustomFilter()" style="border-radius:6px;font-size:11px;font-weight:700;padding:5px 12px">
+                  <i class="fa-solid fa-check mr-1"></i> Terapkan
+                </button>
+              </div>
+            </div>
+
+            <div id="mktCustomActiveLabel" style="display:none;margin-bottom:8px;font-size:11.5px;color:#2563eb;font-weight:700">
+              <i class="fa-solid fa-filter"></i> <span id="mktFilterText">Filter Kustom Aktif</span>
+            </div>
+
+            <!-- List Custom AJAX -->
+            <div class="marketing-list" id="mktListCustom" style="display:none;"></div>
 
             <!-- List Bulan Ini (Default) -->
             <div class="marketing-list" id="mktListBulan">
@@ -2217,18 +2291,111 @@
             }
         });
     }
+    function toggleMktCustomFilter() {
+        $('#mktCustomFilterPanel').slideToggle(200);
+    }
+
+    function switchMktCustomMode(mode) {
+        if (mode === 'date') {
+            $('#mktDateInputs').css('display', 'flex');
+            $('#mktMonthInputs').hide();
+        } else {
+            $('#mktDateInputs').hide();
+            $('#mktMonthInputs').css('display', 'flex');
+        }
+    }
+
     function switchMarketingFilter(mode) {
+        $('#mktCustomFilterPanel').slideUp(150);
+        $('#mktCustomActiveLabel').hide();
+        $('#mktListCustom').hide();
+
         if (mode === 'bulan') {
             $('#mktListBulan').fadeIn(150);
             $('#mktListSemua').hide();
             $('#btnMktBulan').removeClass('btn-light').addClass('btn-primary active').css('color', '#fff');
-            $('#btnMktSemua').removeClass('btn-primary active').addClass('btn-light').css('color', '#64748b');
-        } else {
+            $('#btnMktSemua, #btnMktCustom').removeClass('btn-primary active').addClass('btn-light').css('color', '#64748b');
+        } else if (mode === 'semua') {
             $('#mktListBulan').hide();
             $('#mktListSemua').fadeIn(150);
             $('#btnMktSemua').removeClass('btn-light').addClass('btn-primary active').css('color', '#fff');
-            $('#btnMktBulan').removeClass('btn-primary active').addClass('btn-light').css('color', '#64748b');
+            $('#btnMktBulan, #btnMktCustom').removeClass('btn-primary active').addClass('btn-light').css('color', '#64748b');
         }
+    }
+
+    function applyMktCustomFilter() {
+        var mode = $('input[name="mktFilterMode"]:checked').val();
+        var params = {};
+        var labelText = '';
+
+        if (mode === 'date') {
+            var sDate = $('#mktStartDate').val();
+            var eDate = $('#mktEndDate').val();
+            if (!sDate || !eDate) {
+                alert('Silakan pilih tanggal mulai dan tanggal akhir.');
+                return;
+            }
+            params = {
+                filter_type: 'custom_date',
+                start_date: sDate,
+                end_date: eDate
+            };
+            labelText = 'Rentang Tanggal: ' + sDate + ' s/d ' + eDate;
+        } else {
+            var sm = $('#mktStartMonth').val();
+            var sy = $('#mktStartYear').val();
+            var em = $('#mktEndMonth').val();
+            var ey = $('#mktEndYear').val();
+            params = {
+                filter_type: 'custom_month',
+                start_month: sm,
+                start_year: sy,
+                end_month: em,
+                end_year: ey
+            };
+            labelText = 'Rentang Bulan: ' + $('#mktStartMonth option:selected').text() + ' ' + sy + ' s/d ' + $('#mktEndMonth option:selected').text() + ' ' + ey;
+        }
+
+        $('#btnMktCustom').removeClass('btn-light').addClass('btn-primary active').css('color', '#fff');
+        $('#btnMktBulan, #btnMktSemua').removeClass('btn-primary active').addClass('btn-light').css('color', '#64748b');
+        $('#mktListBulan, #mktListSemua').hide();
+        $('#mktListCustom').html('<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin text-primary"></i> Memuat data marketing...</div>').show();
+
+        $.ajax({
+            url: '{{ route("beranda.marketing-stats") }}',
+            data: params,
+            dataType: 'json',
+            success: function(resp) {
+                if (resp.status === 'success' && resp.data && resp.data.length > 0) {
+                    var html = '';
+                    resp.data.forEach(function(item, idx) {
+                        var rankClass = idx === 0 ? 'top-1' : (idx === 1 ? 'top-2' : (idx === 2 ? 'top-3' : ''));
+                        var color = idx === 0 ? '#f59e0b' : (idx === 1 ? '#64748b' : (idx === 2 ? '#b45309' : '#2563eb'));
+                        html += '<a href="' + item.url + '" class="marketing-item">';
+                        html += '  <span class="rank-badge ' + rankClass + '">' + (idx + 1) + '</span>';
+                        html += '  <span class="user-avatar-initials">' + item.inisial + '</span>';
+                        html += '  <div style="flex:1;min-width:0">';
+                        html += '    <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:2px">' + item.nama + '</div>';
+                        html += '    <div style="color:#64748b;font-size:11px">' + item.kode + ' · Marketing Aktif</div>';
+                        html += '  </div>';
+                        html += '  <div style="color:' + color + ';font-weight:900;font-size:13px;background:rgba(37,99,235,0.08);padding:4px 10px;border-radius:8px">';
+                        html += '    ' + item.jumlah + ' Unit';
+                        html += '  </div>';
+                        html += '</a>';
+                    });
+                    $('#mktListCustom').html(html);
+                    $('#mktFilterText').text(labelText);
+                    $('#mktCustomActiveLabel').fadeIn(150);
+                } else {
+                    $('#mktListCustom').html('<div class="text-muted text-center py-4">Tidak ada data penjualan marketing pada rentang ini.</div>');
+                    $('#mktFilterText').text(labelText);
+                    $('#mktCustomActiveLabel').fadeIn(150);
+                }
+            },
+            error: function() {
+                $('#mktListCustom').html('<div class="text-danger text-center py-4">Gagal memuat filter marketing.</div>');
+            }
+        });
     }
 </script>
 @endpush
