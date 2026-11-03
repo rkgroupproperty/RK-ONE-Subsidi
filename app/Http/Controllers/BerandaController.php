@@ -76,19 +76,20 @@ class BerandaController extends Controller
                 break;
         }
 
-        // Hitung Booking Fee & Customer pada periode terpilih
-        $bookingFeeQuery = PengajuanHold::query();
-        $pemasukanBfQuery = \App\Models\Pemasukan::where('id_kategori_transaksi', 1);
-        $customerPeriodeQuery = Customer::where('stt_arsip', 0);
+        // Hitung total customer yang booking secara bulanan murni dari data tanggal booking Form Booking (pengajuan_hold)
+        $startBulanIni = $now->copy()->startOfMonth();
+        $endBulanIni = $now->copy()->endOfMonth();
 
-        if ($isFilteredByDate && $startCarbon && $endCarbon) {
-            $bookingFeeQuery->whereBetween('tgl_booking', [$startCarbon->toDateTimeString(), $endCarbon->toDateTimeString()]);
-            $pemasukanBfQuery->whereBetween('tanggal', [$startCarbon->toDateString(), $endCarbon->toDateString()]);
-            $customerPeriodeQuery->whereBetween('tanggal_verif', [$startCarbon->toDateTimeString(), $endCarbon->toDateTimeString()]);
+        $bookingCustomerBulanIni = PengajuanHold::where('stt_reg', '!=', 2)
+            ->whereBetween('tgl_booking', [$startBulanIni->toDateTimeString(), $endBulanIni->toDateTimeString()])
+            ->count();
+
+        if ($bookingCustomerBulanIni === 0) {
+            $bookingCustomerBulanIni = PengajuanHold::where('stt_reg', '!=', 2)
+                ->whereYear('tgl_booking', $now->year)
+                ->whereMonth('tgl_booking', $now->month)
+                ->count();
         }
-
-        $bookingFeePeriode = (int) $bookingFeeQuery->sum('booking_fee') + (int) $pemasukanBfQuery->sum('nominal');
-        $customerPeriode = $customerPeriodeQuery->count();
 
         // Auto-reconciliation: Pastikan alur status progres konsumen selalu ngeflow sinkron dengan transaksi riil
         try {
@@ -198,12 +199,17 @@ class BerandaController extends Controller
             'bast' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 5)->where('stt_arsip', 0)->count(),
         ];
 
-        $totalUnit = DB::connection($conn)->table('kavling_peta')->whereIn('id_lokasi', $targetLokasiIds)->count();
-        $unitAkad = DB::connection($conn)->table('customer')->whereIn('id_lokasi', $targetLokasiIds)->where('stt_arsip', 0)->where('id_status_progres', 3)->count();
-        $unitCash = DB::connection($conn)->table('customer')->whereIn('id_lokasi', $targetLokasiIds)->where('stt_arsip', 0)->where('jenis_pembelian', 'Cash')->where('id_status_progres', '!=', 3)->count();
-        $unitTerjual = $unitAkad + $unitCash;
-        $unitOnProses = DB::connection($conn)->table('customer')->whereIn('id_lokasi', $targetLokasiIds)->where('stt_arsip', 0)->whereIn('id_status_progres', [1, 4, 7, 8, 10, 11])->count();
-        $unitReady = max(0, $totalUnit - $unitTerjual - $unitOnProses);
+        $lokasisList = (clone $lokasiQuery)->orderBy('urutan')->orderBy('id')->get();
+        $unifiedData = $this->getUnifiedProjectData($lokasisList, $conn, $isKomersil);
+
+        $totalUnit = $unifiedData['total_units'];
+        $unitTerjual = $unifiedData['total_terjual'];
+        $unitOnProses = $unifiedData['total_proses'];
+        $unitReady = $unifiedData['total_sisa'];
+        $projectStats = $unifiedData['stats'];
+        $projectTotals = $unifiedData['totals'];
+        $projectResumes = $unifiedData['resumes'];
+
         $piutangTotal = (int) DB::connection($conn)->table('piutang')->sum('sisa_bayar');
         $piutangCustomer = DB::connection($conn)->table('piutang')->where('sisa_bayar', '>', 0)->distinct('id_customer')->count('id_customer');
         $tagihanTempoCust = DB::connection($conn)->table('customer_tempo')->count();
@@ -214,8 +220,8 @@ class BerandaController extends Controller
             'total_unit' => $totalUnit,
             'unit_terjual' => $unitTerjual,
             'unit_ready' => $unitReady,
-            'booking_fee_periode' => $bookingFeePeriode,
-            'customer_periode' => $customerPeriode,
+            'booking_customer_bulan_ini' => $bookingCustomerBulanIni,
+            'nama_bulan_ini' => $now->translatedFormat('F Y'),
             'label_periode' => $labelPeriode,
             'periode_filter' => $periodeFilter,
             'filter_bulan' => $filterBulan,
@@ -226,68 +232,6 @@ class BerandaController extends Controller
             'piutang_customer' => $piutangCustomer,
             'tagihan_tempo_customer' => $tagihanTempoCust,
             'tagihan_tempo_total' => $tagihanTempoTotal,
-        ];
-
-        $projectStats = (clone $lokasiQuery)
-            ->orderBy('urutan')
-            ->orderBy('id')
-            ->get()
-            ->map(function ($lokasi) use ($isFilteredByDate, $startCarbon, $endCarbon) {
-                $lokasiId = $lokasi->id;
-                $totalUnit = KavlingPeta::where('id_lokasi', $lokasiId)->count();
-                $booking = PengajuanHold::where('id_lokasi', $lokasiId)->where('stt_reg', '!=', 2)->count()
-                    + Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 2)->where('stt_arsip', 0)->count();
-                $marketing = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 11)->where('stt_arsip', 0)->count();
-                $sppr = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 10)->where('stt_arsip', 0)->count();
-                $wawancara = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 7)->where('stt_arsip', 0)->count();
-                $accBank = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 4)->where('stt_arsip', 0)->count();
-                $ppjb = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 6)->where('stt_arsip', 0)->count();
-
-                $akadLokasiQuery = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 3)->where('stt_arsip', 0);
-                if ($isFilteredByDate && $startCarbon && $endCarbon) {
-                    $startDateStr = $startCarbon->toDateString();
-                    $endDateStr = $endCarbon->toDateString();
-                    $akadLokasiQuery->where(function ($q) use ($startDateStr, $endDateStr) {
-                        $q->whereHas('akadDetail.akad', function ($qa) use ($startDateStr, $endDateStr) {
-                            $qa->whereBetween('tgl_akad', [$startDateStr, $endDateStr]);
-                        })->orWhere(function ($qb) use ($startDateStr, $endDateStr) {
-                            $qb->whereBetween('tanggal_verif', [$startDateStr . ' 00:00:00', $endDateStr . ' 23:59:59']);
-                        });
-                    });
-                }
-                $akad = $akadLokasiQuery->count();
-
-                $bast = Customer::where('id_lokasi', $lokasiId)->where('id_status_progres', 5)->where('stt_arsip', 0)->count();
-                $cash = Customer::where('id_lokasi', $lokasiId)->where('stt_arsip', 0)->where('jenis_pembelian', 'Cash')->where('id_status_progres', '!=', 3)->count();
-                $terjual = $akad + $cash;
-
-                return [
-                    'id' => $lokasiId,
-                    'nama' => $lokasi->nama_kavling,
-                    'kode' => $lokasi->nama_singkat,
-                    'total_unit' => $totalUnit,
-                    'booking' => $booking,
-                    'marketing' => $marketing,
-                    'sppr' => $sppr,
-                    'wawancara' => $wawancara,
-                    'acc_bank' => $accBank,
-                    'ppjb' => $ppjb,
-                    'akad' => $akad,
-                    'bast' => $bast,
-                    'terjual' => $terjual,
-                ];
-            });
-
-        $projectTotals = [
-            'booking' => $projectStats->sum('booking'),
-            'marketing' => $projectStats->sum('marketing'),
-            'sppr' => $projectStats->sum('sppr'),
-            'wawancara' => $projectStats->sum('wawancara'),
-            'acc_bank' => $projectStats->sum('acc_bank'),
-            'ppjb' => $projectStats->sum('ppjb'),
-            'akad' => $projectStats->sum('akad'),
-            'bast' => $projectStats->sum('bast'),
-            'terjual' => $projectStats->sum('terjual'),
         ];
 
         // Marketing Stats: aktif saja, hitung perbulan (default) dan semua waktu
@@ -394,7 +338,6 @@ class BerandaController extends Controller
 
         $currentYear = Carbon::now('Asia/Jakarta')->year;
 
-        $projectResumes = $this->getProjectResumes();
         $sumberMatrix = $this->getSumberProspekMatrix();
 
         $monthKeys = [
@@ -454,17 +397,19 @@ class BerandaController extends Controller
 
     public function getChartData(Request $request)
     {
-        $tahun = $request->input('tahun', Carbon::now('Asia/Jakarta')->year);
+        $tahun = (int) $request->input('tahun', Carbon::now('Asia/Jakarta')->year);
         $status = $request->input('status', 'semua');
 
         $months = collect(range(1, 12))->map(function ($month) use ($tahun, $status) {
             $monthName = Carbon::create($tahun, $month, 1)->translatedFormat('M');
 
-            $query = Customer::whereYear('tanggal_verif', $tahun)
-                ->whereMonth('tanggal_verif', $month)
-                ->where('stt_arsip', 0);
-
-            if ($status !== 'semua') {
+            if ($status === 'semua' || $status === 'booking') {
+                // Diambil dari Form Booking (pengajuan_hold) berdasarkan tgl_booking
+                $count = PengajuanHold::where('stt_reg', '!=', 2)
+                    ->whereYear('tgl_booking', $tahun)
+                    ->whereMonth('tgl_booking', $month)
+                    ->count();
+            } else {
                 $statusMap = [
                     'marketing' => 11,
                     'sppr' => 10,
@@ -473,10 +418,12 @@ class BerandaController extends Controller
                     'akad' => 3,
                     'bast' => 5,
                 ];
-                $query->where('id_status_progres', $statusMap[$status] ?? 0);
+                $count = Customer::whereYear('tanggal_verif', $tahun)
+                    ->whereMonth('tanggal_verif', $month)
+                    ->where('stt_arsip', 0)
+                    ->where('id_status_progres', $statusMap[$status] ?? 0)
+                    ->count();
             }
-
-            $count = $query->count();
 
             return [
                 'month' => $monthName,
@@ -747,24 +694,62 @@ class BerandaController extends Controller
         return $base;
     }
 
-    private function getProjectResumes()
+    public function getMarketingStats(Request $request)
     {
-        $isKomersil = session('app_type') === 'komersil';
-        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+        $filterType = $request->input('filter_type', 'bulan'); // 'bulan', 'semua', 'custom_date', 'custom_month'
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $startMonth = (int) $request->input('start_month');
+        $startYear = (int) $request->input('start_year');
+        $endMonth = (int) $request->input('end_month');
+        $endYear = (int) $request->input('end_year');
 
-        $query = DB::connection($conn)->table('lokasi_kavling')
-            ->whereIn('stt_tampil', [1, 3])
-            ->orderBy('urutan', 'asc')
-            ->orderBy('id', 'asc');
+        $now = Carbon::now('Asia/Jakarta');
+        $activeMarketings = MarketingOffline::where('status', 1)
+            ->orderBy('nama_marketing')
+            ->get();
 
-        if ($isKomersil) {
-            $query->whereIn('id', [1, 2]);
-        } else {
-            $query->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills']);
-        }
-        $lokasis = $query->get();
+        $stats = $activeMarketings->map(function (MarketingOffline $marketing) use ($filterType, $startDate, $endDate, $startMonth, $startYear, $endMonth, $endYear, $now) {
+            $query = Customer::where('id_marketing', $marketing->id)
+                ->where('stt_arsip', 0);
 
+            if ($filterType === 'bulan') {
+                $query->whereBetween('tanggal_verif', [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()]);
+            } elseif ($filterType === 'custom_date' && $startDate && $endDate) {
+                $start = Carbon::parse($startDate, 'Asia/Jakarta')->startOfDay();
+                $end = Carbon::parse($endDate, 'Asia/Jakarta')->endOfDay();
+                $query->whereBetween('tanggal_verif', [$start, $end]);
+            } elseif ($filterType === 'custom_month' && $startMonth && $startYear && $endMonth && $endYear) {
+                $start = Carbon::create($startYear, $startMonth, 1, 0, 0, 0, 'Asia/Jakarta')->startOfMonth();
+                $end = Carbon::create($endYear, $endMonth, 1, 23, 59, 59, 'Asia/Jakarta')->endOfMonth();
+                $query->whereBetween('tanggal_verif', [$start, $end]);
+            }
+
+            $count = $query->count();
+
+            return [
+                'id' => $marketing->id,
+                'nama' => $marketing->nama_marketing,
+                'kode' => $marketing->kode_marketing,
+                'inisial' => mb_substr($marketing->nama_marketing, 0, 1),
+                'jumlah' => $count,
+                'url' => route('beranda.detail-customer-marketing', $marketing->id),
+            ];
+        })
+        ->sortByDesc('jumlah')
+        ->values();
+
+        return response()->json([
+            'status' => 'success',
+            'filter_type' => $filterType,
+            'data' => $stats,
+        ]);
+    }
+
+    private function getUnifiedProjectData($lokasis, $conn, $isKomersil)
+    {
         $resumes = [];
+        $stats = collect();
         $totalAllUnits = 0;
         $totalAllTerjual = 0;
         $totalAllAkad = 0;
@@ -772,6 +757,7 @@ class BerandaController extends Controller
         $totalAllProses = 0;
         $totalAllFisik = 0;
         $totalAllSisa = 0;
+
         $allProsesItems = [
             'SP3K' => ['unit' => 0, 'fisik' => 0, 'icon' => 'fa-file-invoice', 'color' => '#8b5cf6'],
             'Proses Bank' => ['unit' => 0, 'fisik' => 0, 'icon' => 'fa-building-columns', 'color' => '#f97316'],
@@ -782,7 +768,6 @@ class BerandaController extends Controller
 
         foreach ($lokasis as $lokasi) {
             $lokasiId = $lokasi->id;
-            $key = 'lok_' . $lokasiId;
             $totalUnit = DB::connection($conn)->table('kavling_peta')->where('id_lokasi', $lokasiId)->count();
 
             // 1. Realisasi Terjual: Akad Kredit (id_status_progres = 3) dan Cash Lunas
@@ -801,68 +786,79 @@ class BerandaController extends Controller
 
             $terjual = $akad + $cash;
 
-            // 2. Sedang On Proses: Konsumen aktif dalam alur pembelian (SP3K, Bank, Admin, Marketing)
-            $sp3k = DB::connection($conn)->table('customer')
+            // 2. Alur Proses
+            $booking = DB::connection($conn)->table('pengajuan_hold')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_reg', '!=', 2)
+                ->count()
+                + DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('id_status_progres', 2)
+                ->where('stt_arsip', 0)
+                ->count();
+
+            $marketing = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('id_status_progres', 11)
+                ->where('stt_arsip', 0)
+                ->count();
+
+            $sppr = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_arsip', 0)
+                ->whereIn('id_status_progres', [1, 10])
+                ->count();
+
+            $wawancara = DB::connection($conn)->table('customer')
+                ->where('id_lokasi', $lokasiId)
+                ->where('stt_arsip', 0)
+                ->whereIn('id_status_progres', [7, 8])
+                ->count();
+
+            $accBank = DB::connection($conn)->table('customer')
                 ->where('id_lokasi', $lokasiId)
                 ->where('stt_arsip', 0)
                 ->where('id_status_progres', 4)
                 ->count();
 
-            $bank = DB::connection($conn)->table('customer')
+            $ppjb = DB::connection($conn)->table('customer')
                 ->where('id_lokasi', $lokasiId)
                 ->where('stt_arsip', 0)
-                ->whereIn('id_status_progres', [7, 10])
+                ->where('id_status_progres', 6)
                 ->count();
 
-            $admin = DB::connection($conn)->table('customer')
+            $bast = DB::connection($conn)->table('customer')
                 ->where('id_lokasi', $lokasiId)
                 ->where('stt_arsip', 0)
-                ->whereIn('id_status_progres', [1, 8])
+                ->where('id_status_progres', 5)
                 ->count();
 
-            $marketingCust = DB::connection($conn)->table('customer')
-                ->where('id_lokasi', $lokasiId)
-                ->where('stt_arsip', 0)
-                ->where('id_status_progres', 11)
-                ->pluck('id_kavling')
-                ->filter()
-                ->toArray();
+            $onProses = $accBank + $wawancara + $sppr + $marketing + $booking + $ppjb;
 
-            $holdNonCust = DB::connection($conn)->table('pengajuan_hold')
-                ->where('id_lokasi', $lokasiId)
-                ->where('stt_reg', '!=', 2)
-                ->whereNotIn('id_kavling', $marketingCust)
-                ->count();
-
-            $marketing = count($marketingCust) + $holdNonCust;
-
-            $onProses = $sp3k + $bank + $admin + $marketing;
-
-            // 3. Sisa Unit Ready: Secara matematis 100% konsisten (Total Unit - Terjual - On Proses)
+            // 3. Sisa Unit Ready
             $sisaUnit = max(0, $totalUnit - $terjual - $onProses);
 
             $pctTerjual = $totalUnit > 0 ? round(($terjual / $totalUnit) * 100, 1) : 0;
             $pctProses = $totalUnit > 0 ? round(($onProses / $totalUnit) * 100, 1) : 0;
             $pctSisa = $totalUnit > 0 ? max(0, round(100 - $pctTerjual - $pctProses, 1)) : 0;
 
-            // 4. Rincian Progres Fisik (Kesiapan Bangunan 80% - 100%):
-            // Unit SP3K & Proses Bank sudah dipersiapkan kesiapan fisiknya (80-100%)
-            $fSP3K = $sp3k;
-            $fBank = $bank;
+            // 4. Kesiapan Fisik (80% - 100%)
+            $fSP3K = $accBank;
+            $fBank = $wawancara;
             $fAdmin = 0;
             $fMkt = 0;
             $fBelum = 0;
             $totalFisik = $fSP3K + $fBank + $fAdmin + $fMkt + $fBelum;
 
             $prosesItems = [
-                ['label' => 'SP3K', 'unit' => $sp3k, 'fisik' => $fSP3K, 'icon' => 'fa-file-invoice', 'color' => '#8b5cf6'],
-                ['label' => 'Proses Bank', 'unit' => $bank, 'fisik' => $fBank, 'icon' => 'fa-building-columns', 'color' => '#f97316'],
-                ['label' => 'Admin', 'unit' => $admin, 'fisik' => $fAdmin, 'icon' => 'fa-user-tie', 'color' => '#06b6d4'],
-                ['label' => 'Marketing', 'unit' => $marketing, 'fisik' => $fMkt, 'icon' => 'fa-bullhorn', 'color' => '#3b82f6'],
+                ['label' => 'SP3K', 'unit' => $accBank, 'fisik' => $fSP3K, 'icon' => 'fa-file-invoice', 'color' => '#8b5cf6'],
+                ['label' => 'Proses Bank', 'unit' => $wawancara, 'fisik' => $fBank, 'icon' => 'fa-building-columns', 'color' => '#f97316'],
+                ['label' => 'Admin', 'unit' => $sppr, 'fisik' => $fAdmin, 'icon' => 'fa-user-tie', 'color' => '#06b6d4'],
+                ['label' => 'Marketing', 'unit' => ($marketing + $booking), 'fisik' => $fMkt, 'icon' => 'fa-bullhorn', 'color' => '#3b82f6'],
                 ['label' => 'Belum Terjual (Rumah Dibangun)', 'unit' => $fBelum, 'fisik' => $fBelum, 'icon' => 'fa-home', 'color' => '#ec4899'],
             ];
 
-            $resumes[$key] = [
+            $resumes['lok_' . $lokasiId] = [
                 'id' => $lokasiId,
                 'nama' => $lokasi->nama_kavling,
                 'short_name' => $lokasi->nama_singkat ?: $lokasi->nama_kavling,
@@ -882,6 +878,22 @@ class BerandaController extends Controller
                 'catatan' => 'Unit siap dipasarkan / booking',
             ];
 
+            $stats->push([
+                'id' => $lokasiId,
+                'nama' => $lokasi->nama_kavling,
+                'kode' => $lokasi->nama_singkat,
+                'total_unit' => $totalUnit,
+                'booking' => $booking,
+                'marketing' => $marketing,
+                'sppr' => $sppr,
+                'wawancara' => $wawancara,
+                'acc_bank' => $accBank,
+                'ppjb' => $ppjb,
+                'akad' => $akad,
+                'bast' => $bast,
+                'terjual' => $terjual,
+            ]);
+
             $totalAllUnits += $totalUnit;
             $totalAllTerjual += $terjual;
             $totalAllAkad += $akad;
@@ -890,13 +902,13 @@ class BerandaController extends Controller
             $totalAllFisik += $totalFisik;
             $totalAllSisa += $sisaUnit;
 
-            $allProsesItems['SP3K']['unit'] += $sp3k;
+            $allProsesItems['SP3K']['unit'] += $accBank;
             $allProsesItems['SP3K']['fisik'] += $fSP3K;
-            $allProsesItems['Proses Bank']['unit'] += $bank;
+            $allProsesItems['Proses Bank']['unit'] += $wawancara;
             $allProsesItems['Proses Bank']['fisik'] += $fBank;
-            $allProsesItems['Admin']['unit'] += $admin;
+            $allProsesItems['Admin']['unit'] += $sppr;
             $allProsesItems['Admin']['fisik'] += $fAdmin;
-            $allProsesItems['Marketing']['unit'] += $marketing;
+            $allProsesItems['Marketing']['unit'] += ($marketing + $booking);
             $allProsesItems['Marketing']['fisik'] += $fMkt;
             $allProsesItems['Belum Terjual (Rumah Dibangun)']['unit'] += $fBelum;
             $allProsesItems['Belum Terjual (Rumah Dibangun)']['fisik'] += $fBelum;
@@ -937,7 +949,28 @@ class BerandaController extends Controller
             'catatan' => $isKomersil ? 'Total konsolidasi seluruh Perumahan Komersil (sinkron otomatis dari database)' : 'Total konsolidasi seluruh Perumahan Subsidi (sinkron otomatis dari database)',
         ];
 
-        return $resumes;
+        $totals = [
+            'booking' => $stats->sum('booking'),
+            'marketing' => $stats->sum('marketing'),
+            'sppr' => $stats->sum('sppr'),
+            'wawancara' => $stats->sum('wawancara'),
+            'acc_bank' => $stats->sum('acc_bank'),
+            'ppjb' => $stats->sum('ppjb'),
+            'akad' => $stats->sum('akad'),
+            'bast' => $stats->sum('bast'),
+            'terjual' => $stats->sum('terjual'),
+        ];
+
+        return [
+            'stats' => $stats,
+            'totals' => $totals,
+            'resumes' => $resumes,
+            'total_units' => $totalAllUnits,
+            'total_terjual' => $totalAllTerjual,
+            'total_proses' => $totalAllProses,
+            'total_sisa' => $totalAllSisa,
+        ];
+    }
     }
 
     public function adminPemberkasanData(Request $request)
