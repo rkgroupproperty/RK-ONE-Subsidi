@@ -132,41 +132,25 @@ class AkadController extends Controller
                 // Tampilkan semua data konsumen akad
             } elseif ($filter === 'bulan_kemarin') {
                 $lastMonth = $now->copy()->subMonth();
-                $query->where(function ($q) use ($lastMonth) {
-                    $q->whereHas('akadDetail.akad', function ($qa) use ($lastMonth) {
-                        $qa->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
-                    })->orWhere(function ($qb) use ($lastMonth) {
-                        $qb->whereYear('tanggal_verif', $lastMonth->year)->whereMonth('tanggal_verif', $lastMonth->month);
-                    });
+                $query->whereHas('akadDetail.akad', function ($qa) use ($lastMonth) {
+                    $qa->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
                 });
             } elseif ($filter === 'pilih_bulan' && $request->filled('bulan') && $request->filled('tahun')) {
                 $bulan = (int) $request->get('bulan');
                 $tahun = (int) $request->get('tahun');
-                $query->where(function ($q) use ($bulan, $tahun) {
-                    $q->whereHas('akadDetail.akad', function ($qa) use ($bulan, $tahun) {
-                        $qa->whereYear('tgl_akad', $tahun)->whereMonth('tgl_akad', $bulan);
-                    })->orWhere(function ($qb) use ($bulan, $tahun) {
-                        $qb->whereYear('tanggal_verif', $tahun)->whereMonth('tanggal_verif', $bulan);
-                    });
+                $query->whereHas('akadDetail.akad', function ($qa) use ($bulan, $tahun) {
+                    $qa->whereYear('tgl_akad', $tahun)->whereMonth('tgl_akad', $bulan);
                 });
             } elseif ($filter === 'custom' && $request->filled('start_date') && $request->filled('end_date')) {
                 $startDate = Carbon::parse($request->get('start_date'))->startOfDay()->toDateString();
                 $endDate = Carbon::parse($request->get('end_date'))->endOfDay()->toDateString();
-                $query->where(function ($q) use ($startDate, $endDate) {
-                    $q->whereHas('akadDetail.akad', function ($qa) use ($startDate, $endDate) {
-                        $qa->whereBetween('tgl_akad', [$startDate, $endDate]);
-                    })->orWhere(function ($qb) use ($startDate, $endDate) {
-                        $qb->whereBetween('tanggal_verif', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-                    });
+                $query->whereHas('akadDetail.akad', function ($qa) use ($startDate, $endDate) {
+                    $qa->whereBetween('tgl_akad', [$startDate, $endDate]);
                 });
             } else {
                 // Default: bulan ini
-                $query->where(function ($q) use ($now) {
-                    $q->whereHas('akadDetail.akad', function ($qa) use ($now) {
-                        $qa->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
-                    })->orWhere(function ($qb) use ($now) {
-                        $qb->whereYear('tanggal_verif', $now->year)->whereMonth('tanggal_verif', $now->month);
-                    });
+                $query->whereHas('akadDetail.akad', function ($qa) use ($now) {
+                    $qa->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
                 });
             }
 
