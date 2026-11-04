@@ -76,18 +76,30 @@ class BerandaController extends Controller
                 break;
         }
 
-        // Hitung total customer yang booking secara bulanan murni dari data tanggal booking Form Booking (pengajuan_hold)
-        $startBulanIni = $now->copy()->startOfMonth();
-        $endBulanIni = $now->copy()->endOfMonth();
+        // Hitung total customer booking yang SUDAH DIVERIFIKASI (stt_reg = 2) pada periode terpilih (default: bulan ini)
+        $bookingVerifiedQuery = PengajuanHold::where('stt_reg', 2);
+        if ($isFilteredByDate && $startCarbon && $endCarbon) {
+            $startStr = $startCarbon->toDateTimeString();
+            $endStr = $endCarbon->toDateTimeString();
+            $bookingVerifiedQuery->where(function ($q) use ($startStr, $endStr, $startCarbon) {
+                $q->whereBetween('tgl_booking', [$startStr, $endStr])
+                  ->orWhere(function ($sub) use ($startCarbon) {
+                      $sub->whereYear('tgl_booking', $startCarbon->year)->whereMonth('tgl_booking', $startCarbon->month);
+                  })
+                  ->orWhereBetween('updated_at', [$startStr, $endStr]);
+            });
+        }
+        $bookingCustomerBulanIni = $bookingVerifiedQuery->count();
 
-        $bookingCustomerBulanIni = PengajuanHold::where('stt_reg', '!=', 2)
-            ->whereBetween('tgl_booking', [$startBulanIni->toDateTimeString(), $endBulanIni->toDateTimeString()])
-            ->count();
-
-        if ($bookingCustomerBulanIni === 0) {
-            $bookingCustomerBulanIni = PengajuanHold::where('stt_reg', '!=', 2)
-                ->whereYear('tgl_booking', $now->year)
-                ->whereMonth('tgl_booking', $now->month)
+        // Fallback jika verifikasi dicatat pada tanggal_verif Customer di periode ini:
+        if ($bookingCustomerBulanIni === 0 && $isFilteredByDate && $startCarbon && $endCarbon) {
+            $bookingCustomerBulanIni = Customer::where('stt_arsip', 0)
+                ->where(function ($q) use ($startCarbon, $endCarbon) {
+                    $q->whereBetween('tanggal_verif', [$startCarbon, $endCarbon])
+                      ->orWhere(function ($sub) use ($startCarbon) {
+                          $sub->whereYear('tanggal_verif', $startCarbon->year)->whereMonth('tanggal_verif', $startCarbon->month);
+                      });
+                })
                 ->count();
         }
 
@@ -173,22 +185,31 @@ class BerandaController extends Controller
             }
         }
 
-        $akadCountQuery = Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 3)->where('stt_arsip', 0);
+        // Pipeline Akad: data akad di bulan yang berjalan (atau sesuai filter periode terpilih)
         if ($isFilteredByDate && $startCarbon && $endCarbon) {
             $startDateStr = $startCarbon->toDateString();
             $endDateStr = $endCarbon->toDateString();
-            $akadCountQuery->where(function ($q) use ($startDateStr, $endDateStr) {
-                $q->whereHas('akadDetail.akad', function ($qa) use ($startDateStr, $endDateStr) {
+            $akadPipelineCount = Customer::whereIn('id_lokasi', $targetLokasiIds)
+                ->where('stt_arsip', 0)
+                ->whereHas('akadDetail.akad', function ($qa) use ($startDateStr, $endDateStr) {
                     $qa->whereBetween('tgl_akad', [$startDateStr, $endDateStr]);
-                })->orWhere(function ($qb) use ($startDateStr, $endDateStr) {
-                    $qb->whereBetween('tanggal_verif', [$startDateStr . ' 00:00:00', $endDateStr . ' 23:59:59']);
-                });
-            });
+                })
+                ->count();
+        } else {
+            // Semua Waktu
+            $akadPipelineCount = Customer::whereIn('id_lokasi', $targetLokasiIds)
+                ->where('id_status_progres', 3)
+                ->where('stt_arsip', 0)
+                ->count();
         }
-        $akadPipelineCount = $akadCountQuery->count();
+
+        $pendingHoldCount = PengajuanHold::whereIn('id_lokasi', $targetLokasiIds)->where('stt_reg', '!=', 2)->count();
+        if ($pendingHoldCount === 0) {
+            $pendingHoldCount = PengajuanHold::where('stt_reg', '!=', 2)->count();
+        }
 
         $pipelineCounts = [
-            'booking' => PengajuanHold::whereIn('id_lokasi', $targetLokasiIds)->where('stt_reg', '!=', 2)->count()
+            'booking' => $pendingHoldCount
                 + Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 2)->where('stt_arsip', 0)->count(),
             'marketing' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 11)->where('stt_arsip', 0)->count(),
             'sppr' => Customer::whereIn('id_lokasi', $targetLokasiIds)->where('id_status_progres', 10)->where('stt_arsip', 0)->count(),
