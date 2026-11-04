@@ -1311,7 +1311,7 @@
           <div class="kpi-info">
             <div class="kpi-title">Booking Bulan Ini</div>
             <div class="kpi-num" style="color:#f59e0b">{{ $summaryMetrics['booking_customer_bulan_ini'] ?? 0 }} <small style="font-size:12px;font-weight:700">Customer</small></div>
-            <div class="kpi-desc">Total Customer Booking ({{ $summaryMetrics['nama_bulan_ini'] ?? 'Bulan Ini' }})</div>
+            <div class="kpi-desc">Booking Terverifikasi ({{ $summaryMetrics['nama_bulan_ini'] ?? 'Bulan Ini' }})</div>
           </div>
         </article>
 
