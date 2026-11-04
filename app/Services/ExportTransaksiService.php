@@ -481,7 +481,13 @@ class ExportTransaksiService
                 ], null, "A{$row}");
                 $row++;
             }
-            return $this->download('Laporan_Jadwal_Akad.xlsx');
+            $colCount = count($headers);
+            $this->styleHeader($colCount);
+            if ($row > 2) {
+                $this->styleCells($colCount, $row - 1);
+            }
+            $this->autoWidth($colCount);
+            return $this->output('Laporan_Jadwal_Akad.xlsx');
         }
 
         // Export Konsumen Akad (Default)
@@ -500,40 +506,24 @@ class ExportTransaksiService
             // all
         } elseif ($filter === 'bulan_kemarin') {
             $lastMonth = $now->copy()->subMonth();
-            $query->where(function ($q) use ($lastMonth) {
-                $q->whereHas('akadDetail.akad', function ($qa) use ($lastMonth) {
-                    $qa->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
-                })->orWhere(function ($qb) use ($lastMonth) {
-                    $qb->whereYear('tanggal_verif', $lastMonth->year)->whereMonth('tanggal_verif', $lastMonth->month);
-                });
+            $query->whereHas('akadDetail.akad', function ($qa) use ($lastMonth) {
+                $qa->whereYear('tgl_akad', $lastMonth->year)->whereMonth('tgl_akad', $lastMonth->month);
             });
         } elseif ($filter === 'pilih_bulan' && request()->filled('bulan') && request()->filled('tahun')) {
             $b = (int) request('bulan');
             $t = (int) request('tahun');
-            $query->where(function ($q) use ($b, $t) {
-                $q->whereHas('akadDetail.akad', function ($qa) use ($b, $t) {
-                    $qa->whereYear('tgl_akad', $t)->whereMonth('tgl_akad', $b);
-                })->orWhere(function ($qb) use ($b, $t) {
-                    $qb->whereYear('tanggal_verif', $t)->whereMonth('tanggal_verif', $b);
-                });
+            $query->whereHas('akadDetail.akad', function ($qa) use ($b, $t) {
+                $qa->whereYear('tgl_akad', $t)->whereMonth('tgl_akad', $b);
             });
         } elseif ($filter === 'custom' && request()->filled('start_date') && request()->filled('end_date')) {
             $s = \Carbon\Carbon::parse(request('start_date'))->startOfDay()->toDateString();
             $e = \Carbon\Carbon::parse(request('end_date'))->endOfDay()->toDateString();
-            $query->where(function ($q) use ($s, $e) {
-                $q->whereHas('akadDetail.akad', function ($qa) use ($s, $e) {
-                    $qa->whereBetween('tgl_akad', [$s, $e]);
-                })->orWhere(function ($qb) use ($s, $e) {
-                    $qb->whereBetween('tanggal_verif', [$s . ' 00:00:00', $e . ' 23:59:59']);
-                });
+            $query->whereHas('akadDetail.akad', function ($qa) use ($s, $e) {
+                $qa->whereBetween('tgl_akad', [$s, $e]);
             });
         } else {
-            $query->where(function ($q) use ($now) {
-                $q->whereHas('akadDetail.akad', function ($qa) use ($now) {
-                    $qa->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
-                })->orWhere(function ($qb) use ($now) {
-                    $qb->whereYear('tanggal_verif', $now->year)->whereMonth('tanggal_verif', $now->month);
-                });
+            $query->whereHas('akadDetail.akad', function ($qa) use ($now) {
+                $qa->whereYear('tgl_akad', $now->year)->whereMonth('tgl_akad', $now->month);
             });
         }
 
@@ -577,8 +567,6 @@ class ExportTransaksiService
                 $ket,
             ], null, "A{$row}");
             $row++;
-        }
-            }
         }
 
         $colCount = count($headers);
