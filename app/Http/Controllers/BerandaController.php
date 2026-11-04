@@ -85,8 +85,7 @@ class BerandaController extends Controller
                 $q->whereBetween('tgl_booking', [$startStr, $endStr])
                   ->orWhere(function ($sub) use ($startCarbon) {
                       $sub->whereYear('tgl_booking', $startCarbon->year)->whereMonth('tgl_booking', $startCarbon->month);
-                  })
-                  ->orWhereBetween('updated_at', [$startStr, $endStr]);
+                  });
             });
         }
         $bookingCustomerBulanIni = $bookingVerifiedQuery->count();
