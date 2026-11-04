@@ -369,8 +369,13 @@ Route::middleware(['auth'])->group(function () {
             Route::get('booking', [ExportTransaksiController::class, 'booking'])->name('export.transaksi.booking');
             Route::get('sppr', [ExportTransaksiController::class, 'sppr'])->name('export.transaksi.sppr');
             Route::get('proses-marketing', [ExportTransaksiController::class, 'prosesMarketing'])->name('export.transaksi.proses-marketing');
+            Route::get('marketing', [ExportTransaksiController::class, 'prosesMarketing']);
             Route::get('wawancara', [ExportTransaksiController::class, 'wawancara'])->name('export.transaksi.wawancara');
+            Route::get('proses-bank', [ExportTransaksiController::class, 'wawancara']);
             Route::get('acc-bank', [ExportTransaksiController::class, 'accBank'])->name('export.transaksi.acc-bank');
+            Route::get('acc_bank', [ExportTransaksiController::class, 'accBank']);
+            Route::get('acc bank', [ExportTransaksiController::class, 'accBank']);
+            Route::get('sp3k', [ExportTransaksiController::class, 'accBank']);
             Route::get('ppjb', [ExportTransaksiController::class, 'ppjb'])->name('export.transaksi.ppjb');
             Route::get('akad', [ExportTransaksiController::class, 'akad'])->name('export.transaksi.akad');
             Route::get('bast', [ExportTransaksiController::class, 'bast'])->name('export.transaksi.bast');
