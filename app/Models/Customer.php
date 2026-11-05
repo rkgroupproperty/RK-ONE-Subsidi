@@ -118,5 +118,10 @@ class Customer extends Model
         return $this->belongsTo(\App\Models\AdminPemberkasan::class, 'id_admin_pemberkasan');
     }
 
+    public function berkas()
+    {
+        return $this->hasMany(UploudFile::class, 'id_customer');
+    }
+
     public $timestamps = false;
 }

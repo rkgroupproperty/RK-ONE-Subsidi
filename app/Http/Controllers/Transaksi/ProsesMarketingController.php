@@ -103,7 +103,7 @@ class ProsesMarketingController extends Controller
     public function getCustomerDetail($id)
     {
         try {
-            $customer = Customer::with(['lokasi', 'kavling'])->findOrFail($id);
+            $customer = Customer::with(['lokasi', 'kavling', 'berkas'])->findOrFail($id);
 
             return response()->json([
                 'status' => 'success',
@@ -130,12 +130,16 @@ class ProsesMarketingController extends Controller
 
     public function edit($id)
     {
-        $customer = Customer::with(['lokasi', 'kavling'])->findOrFail($id);
+        try {
+            $customer = Customer::with(['lokasi', 'kavling', 'berkas'])->findOrFail($id);
 
-        return response()->json([
-            'status' => 'success',
-            'data'   => $this->dataForm($customer),
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'data'   => $this->dataForm($customer),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Data customer tidak ditemukan.'], 404);
+        }
     }
 
     public function update(Request $request, $id)
@@ -328,8 +332,14 @@ class ProsesMarketingController extends Controller
     private function dataForm(Customer $customer)
     {
         $berkas = [];
-        foreach ($customer->berkas as $item) {
+        $labelToField = array_flip(self::BERKAS);
+        $fileList = $customer->relationLoaded('berkas') ? $customer->berkas : ($customer->berkas()->get() ?? []);
+
+        foreach ($fileList as $item) {
             $berkas[$item->nama_file] = $item->lampiran;
+            if (isset($labelToField[$item->nama_file])) {
+                $berkas[$labelToField[$item->nama_file]] = $item->lampiran;
+            }
         }
 
         return [

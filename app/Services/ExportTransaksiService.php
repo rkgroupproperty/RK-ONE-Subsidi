@@ -69,14 +69,14 @@ class ExportTransaksiService
 
     private function styleHeader(int $colCount): void
     {
-        $lastCol = chr(64 + $colCount);
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colCount);
         $this->sheet->getStyle("A1:{$lastCol}1")->applyFromArray($this->headerStyle);
         $this->sheet->getRowDimension(1)->setRowHeight(25);
     }
 
     private function styleCells(int $colCount, int $rowCount): void
     {
-        $lastCol = chr(64 + $colCount);
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colCount);
         $this->sheet->getStyle("A2:{$lastCol}{$rowCount}")->applyFromArray($this->cellStyle);
     }
 
@@ -112,17 +112,18 @@ class ExportTransaksiService
 
     private function output(string $filename)
     {
+        while (ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0, no-cache, no-store, must-revalidate');
+        header('Pragma: public');
+
         $writer = new Xlsx($this->spreadsheet);
-        $tempFile = tempnam(sys_get_temp_dir(), 'excel_');
-        $writer->save($tempFile);
-
-        $contents = file_get_contents($tempFile);
-        @unlink($tempFile);
-
-        return response($contents)
-            ->header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            ->header('Content-Disposition', "attachment; filename=\"{$filename}\"")
-            ->header('Cache-Control', 'max-age=0');
+        $writer->save('php://output');
+        exit;
     }
 
     public function exportBooking()

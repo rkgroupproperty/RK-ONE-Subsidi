@@ -675,7 +675,7 @@
 
         $(document).on('change', '#id_customer', function() {
             let id = $(this).val();
-            if (!id) {
+            if (!id || $(this).prop('disabled')) {
                 return;
             }
 
@@ -689,13 +689,30 @@
 
         $(document).on('click', '.edit-button', function() {
             var url = $(this).data('url');
+            var $btn = $(this);
+            $btn.prop('disabled', true);
+
             $.get(url, function(response) {
                 if (response.status === 'success') {
                     $('#modalFormLabel').text('Edit Proses Marketing');
                     isiForm(response.data);
-                    $('#id_customer').val(response.data.id_customer).trigger('change').prop('disabled', true);
+                    $('#id_customer').val(response.data.id_customer).trigger('change.select2').prop('disabled', true);
                     $('#modalForm').modal('show');
+                } else {
+                    toastr.error(response.message || 'Gagal memuat data.', 'GAGAL!', {
+                        progressBar: true,
+                        timeOut: 3500,
+                        positionClass: "toast-bottom-right",
+                    });
                 }
+            }).fail(function(xhr) {
+                toastr.error('Terjadi kesalahan saat memuat data customer.', 'GAGAL!', {
+                    progressBar: true,
+                    timeOut: 3500,
+                    positionClass: "toast-bottom-right",
+                });
+            }).always(function() {
+                $btn.prop('disabled', false);
             });
         });
 
