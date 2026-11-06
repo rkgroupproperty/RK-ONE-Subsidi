@@ -153,20 +153,39 @@ class PembayaranController extends Controller
 
         $lokasi          = null;
         $kavling         = null;
+        $perusahaan      = null;
         try {
             $lokasi          = LokasiKavling::find($customer->id_lokasi);
             $kavling         = KavlingPeta::find($customer->id_kavling);
+            if ($kavling && $kavling->id_perusahaan) {
+                $perusahaan = Perusahaan::find($kavling->id_perusahaan);
+            }
+            if (! $perusahaan && $lokasi) {
+                $perusahaan = $lokasi->perusahaan ? $lokasi->perusahaan->first() : null;
+            }
+            if (! $perusahaan) {
+                $perusahaan = Perusahaan::first();
+            }
         } catch (\Throwable $e) {}
 
-        $kopInfo         = \App\Helpers\KopSuratHelper::resolveInfo($lokasi, $kavling, $customer);
-        $perusahaan      = $kopInfo['perusahaan'];
-        $namaPerusahaan   = $kopInfo['nama_perusahaan'];
-        $alamatPerusahaan = $kopInfo['alamat_perusahaan'];
-        $telpPerusahaan   = $kopInfo['telp_perusahaan'];
+        if (! $perusahaan) {
+            $perusahaan = (object) [
+                'nama_perusahaan' => 'PT UNGGUL PERKASA SRIWIJAYA',
+                'alamat_perusahaan' => 'Jl. Sultan M. Mansyur No. 1181 Bukit Lama Palembang',
+                'telp_perusahaan' => '0711 441139',
+                'kota_penandatangan' => 'Palembang',
+                'nama_penandatangan' => 'Admin Keuangan',
+                'nama_mengetahui' => 'Pimpinan',
+            ];
+        }
+
+        $namaPerusahaan   = $lokasi->nama_kavling ?? 'Nama Perusahaan Belum diisi';
+        $alamatPerusahaan = $perusahaan->alamat_perusahaan ?? 'Jl. Sultan M. Mansyur No. 1181 Bukit Lama Palembang';
+        $telpPerusahaan   = $perusahaan->telp_perusahaan ?? '0711 441139';
         $profilPerusahaan = PengaturanProfil::first();
-        $namaProfil       = $profilPerusahaan->nama_perusahaan ?? $namaPerusahaan;
-        $telpProfil       = $profilPerusahaan->telp ?? $telpPerusahaan;
-        $kopPath         = $kopInfo['kop_path'];
+        $namaProfil       = $profilPerusahaan->nama_perusahaan ?? 'PT. ALAM INDAH SELALU';
+        $telpProfil       = $profilPerusahaan->telp ?? '0778-4173387';
+        $kopPath         = public_path('assets/img/kop-kwitansi.jpg');
         $pengaturanMedia = PengaturanMedia::where('jenis_data', 'Logo Rekap')->first();
         $logoPath        = null;
         if ($pengaturanMedia && $pengaturanMedia->nama_file) {
@@ -178,9 +197,25 @@ class PembayaranController extends Controller
         $pdf->AddPage();
 
         if (file_exists($kopPath)) {
-            // Kop Surat Resmi sesuai perumahan (Rasio 1024 x 342)
-            $pdf->Image($kopPath, 15, 8, 180, 0, 'PNG');
-            $pdf->SetY(71);
+            $pdf->Image($kopPath, 5, 5, 200, 0, 'JPG', '', '', false, 100);
+
+            $pdf->SetFont('helvetica', 'B', 18);
+            $pdf->SetTextColor(0, 0, 0);
+            $pdf->SetXY(60, 16);
+            $pdf->Cell(140, 5, strtoupper($namaPerusahaan), 0, 1, 'C');
+
+            $pdf->SetFont('helvetica', '', 9);
+            $pdf->SetX(60);
+            $pdf->Cell(140, 4, $alamatPerusahaan, 0, 1, 'C');
+            $pdf->SetX(60);
+            $pdf->Cell(140, 4, 'Telp: ' . $telpPerusahaan, 0, 1, 'C');
+
+            $lineY1 = 33.5;
+            $pdf->SetLineWidth(0.3);
+            $pdf->SetDrawColor(0, 0, 0);
+            $pdf->Line(9, $lineY1, 200, $lineY1);
+
+            $pdf->SetY(48);
         } else {
             if ($logoPath && file_exists($logoPath)) {
                 $pdf->Image($logoPath, 15, 15, 25);
@@ -373,13 +408,8 @@ class PembayaranController extends Controller
         $pdf->Cell(70, 6, '', 0, 0);
         $pdf->Cell(60, 6, $perusahaan->nama_penandatangan ?? 'ADMIN', 'B', 1, 'C');
 
-        $filename = 'Rekap_Pembayaran_' . ($customer->nama_lengkap ?? 'customer') . '.pdf';
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-        return response($pdf->Output($filename, 'S'), 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+        $pdf->Output();
+        exit;
     }
 
     public function cetak($id)
@@ -636,22 +666,14 @@ class PembayaranController extends Controller
         $pdf->SetXY(145.0, 110.0);
         $pdf->Cell(55, 4.5, $kota . ', ' . $tglCarbon->isoFormat('D MMMM Y'), 0, 0, 'C');
 
-        // 12. Nama Penerima
-        $namaPenerima = !empty($perusahaan->nama_penandatangan)
-            ? $perusahaan->nama_penandatangan
-            : (!empty($sppr->penandatangan) ? $sppr->penandatangan : 'Kasir / Keuangan');
-
-        $pdf->SetFont('helvetica', 'B', 8);
+        // 12. Nama Penerima (Dikosongkan sesuai permintaan user, tidak menampilkan nama direktur)
+        $pdf->SetFont('helvetica', '', 8);
         $pdf->SetXY(145.0, 122.5);
-        $pdf->Cell(55, 4.5, '( ' . $namaPenerima . ' )', 0, 0, 'C');
+        $pdf->Cell(55, 4.5, '(                                )', 0, 0, 'C');
 
         $filename = 'Kwitansi-' . ($pembayaran->no_kwitansi ?? 'draft') . '.pdf';
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-        return response($pdf->Output($filename, 'S'), 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+        $pdf->Output($filename, 'I');
+        exit;
     }
 
     private function terbilang($angka)
@@ -1575,12 +1597,8 @@ class PembayaranController extends Controller
         $pdf->SetFont('Helvetica', 'I', 8.5);
         $pdf->Cell(20, 5, 'NB : Kwitansi ini sah, apabila ada cap perusahaan dan tanda tangan kasir.', 0, 1, 'L');
 
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-        return response($pdf->Output('kwitansi.pdf', 'S'), 200)
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="kwitansi.pdf"');
+        return response($pdf->Output('kwitansi.pdf', 'I'), 200)
+            ->header('Content-Type', 'application/pdf');
     }
 
     private function bulanRomawi($bulan)
@@ -1812,4 +1830,3 @@ class PembayaranController extends Controller
         return view('admin.pembayaran.rekap', compact('pembayaran', 'lokasi', 'bankList', 'metodeBayar', 'bloks'));
     }
 }
-
