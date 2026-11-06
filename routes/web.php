@@ -1037,10 +1037,16 @@ Route::get('/system/fix-booking-novi/{secret}', function ($secret) {
                 ->where('tanggal_verif', '>=', '2026-10-25')
                 ->get(['id', 'kode_customer', 'nama_lengkap', 'nik', 'tanggal_verif', 'id_status_progres', 'id_lokasi', 'id_kavling']);
 
+            $hold24 = \Illuminate\Support\Facades\DB::table('pengajuan_hold')->where('id', 24)->first();
+            $hold25 = \Illuminate\Support\Facades\DB::table('pengajuan_hold')->where('id', 25)->first();
+            $cust593 = \Illuminate\Support\Facades\DB::table('customer')->where('id', 593)->first();
+            $cust594 = \Illuminate\Support\Facades\DB::table('customer')->where('id', 594)->first();
+
             $results[$conn] = [
-                'customers' => $custDetails,
-                'pengajuan_holds' => $holdDetails,
-                'pemasukans' => $pemasukanDetails,
+                'hold24' => $hold24,
+                'hold25' => $hold25,
+                'cust593' => $cust593,
+                'cust594' => $cust594,
                 'all_holds' => $allHolds,
                 'all_pending_holds' => $allPendingHolds,
                 'recent_customers' => $recentCustomers,
