@@ -1027,7 +1027,7 @@ Route::get('/system/fix-booking-novi/{secret}', function ($secret) {
 
             $allHolds = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
                 ->orderBy('id')
-                ->get(['id', 'no_registrasi', 'nama_lengkap', 'nik', 'tgl_booking', 'stt_reg', 'created_at', 'updated_at', 'id_lokasi', 'id_kavling']);
+                ->get(['id', 'no_registrasi', 'nama_lengkap', 'nik', 'tgl_booking', 'stt_reg', 'id_lokasi', 'id_kavling']);
 
             $allPendingHolds = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
                 ->where('stt_reg', '!=', 2)
