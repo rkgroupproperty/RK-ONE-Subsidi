@@ -1306,14 +1306,29 @@
           </div>
         </article>
 
-        <article class="kpi-card kpi-orange">
-          <div class="kpi-icon-box orange"><i class="fa-solid fa-receipt"></i></div>
-          <div class="kpi-info">
-            <div class="kpi-title">Booking Bulan Ini</div>
-            <div class="kpi-num" style="color:#f59e0b">{{ $summaryMetrics['booking_customer_bulan_ini'] ?? 0 }} <small style="font-size:12px;font-weight:700">Customer</small></div>
-            <div class="kpi-desc">Booking Terverifikasi ({{ $summaryMetrics['nama_bulan_ini'] ?? 'Bulan Ini' }})</div>
-          </div>
-        </article>
+        @php
+          $bookingUrlParams = ['filter_booking' => $summaryMetrics['periode_filter'] ?? 'bulan_ini'];
+          if (($summaryMetrics['periode_filter'] ?? '') === 'pilih_bulan') {
+              $bookingUrlParams['bulan'] = $summaryMetrics['filter_bulan'] ?? Carbon\Carbon::now()->month;
+              $bookingUrlParams['tahun'] = $summaryMetrics['filter_tahun'] ?? Carbon\Carbon::now()->year;
+          } elseif (($summaryMetrics['periode_filter'] ?? '') === 'custom') {
+              $bookingUrlParams['start_date'] = $summaryMetrics['custom_start'] ?? '';
+              $bookingUrlParams['end_date'] = $summaryMetrics['custom_end'] ?? '';
+          }
+        @endphp
+        <a href="{{ route('customer.index', $bookingUrlParams) }}" style="text-decoration: none; color: inherit; display: block;" title="Klik untuk melihat daftar konsumen booking terverifikasi">
+          <article class="kpi-card kpi-orange" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+            <div class="kpi-icon-box orange"><i class="fa-solid fa-receipt"></i></div>
+            <div class="kpi-info">
+              <div class="kpi-title" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Booking Bulan Ini</span>
+                <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px; opacity: 0.6;"></i>
+              </div>
+              <div class="kpi-num" style="color:#f59e0b">{{ $summaryMetrics['booking_customer_bulan_ini'] ?? 0 }} <small style="font-size:12px;font-weight:700">Customer</small></div>
+              <div class="kpi-desc">Booking Terverifikasi ({{ $summaryMetrics['nama_bulan_ini'] ?? 'Bulan Ini' }})</div>
+            </div>
+          </article>
+        </a>
 
         <article class="kpi-card kpi-purple">
           <div class="kpi-icon-box purple"><i class="fa-solid fa-house-circle-check"></i></div>
@@ -1346,7 +1361,7 @@
 
           <div class="pipeline-track">
             <article class="pipeline-node p-booking">
-              <h3>Booking</h3>
+              <h3>Booking <small style="font-size: 10px; font-weight: normal; opacity: 0.85; display: block;">(Belum Verifikasi)</small></h3>
               <div class="count-display">{{ $pipelineCounts['booking'] ?? 0 }}</div>
               <a class="pipeline-action-btn" href="{{ route('pengajuan-hold.index') }}">Buka Menu <i class="fa-solid fa-arrow-right"></i></a>
             </article>
