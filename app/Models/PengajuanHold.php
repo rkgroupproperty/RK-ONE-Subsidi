@@ -85,4 +85,9 @@ class PengajuanHold extends Model
     {
         return $this->belongsTo(\App\Models\AdminPemberkasan::class, 'id_admin_pemberkasan');
     }
+
+    public function customer()
+    {
+        return $this->hasOne(Customer::class, 'nik', 'nik');
+    }
 }
