@@ -410,6 +410,18 @@
                                 </div>
                             </div>
 
+                            @if (Auth::user()->id_role != 2)
+                            <div class="form-group row" id="row_tanggal_booking">
+                                <label class="control-label col-sm-3 font-weight-bold text-primary">
+                                    <i class="fas fa-calendar-alt mr-1"></i> Tanggal Booking
+                                </label>
+                                <div class="col-sm-4">
+                                    <input type="date" name="tanggal_verif" id="tanggal_verif" class="form-control font-weight-bold">
+                                    <small class="form-text text-muted">Khusus Admin: ubah tanggal ini jika salah pilih tanggal booking.</small>
+                                </div>
+                            </div>
+                            @endif
+
                             <!-- CASH ==================================> -->
                             <hr class="hr-transaksi" style="display: none;">
                             <div id="trx_cash" style="display: none;">
@@ -818,6 +830,7 @@
             $('#id_marketing').val('').trigger('change');
             $('#jenis_pembelian').val('').trigger('change');
             $('#sumber_prospek').val('');
+            $('#tanggal_verif').val('');
 
             let submitBtn = $('#submitBtn');
             let spinner = submitBtn.find('.spinner-border');
@@ -851,7 +864,9 @@
                     const data = response.data;
 
                     $('#primary_id').val(data.id);
-                    $('#tgl_booking').val(response.data.tgl_booking_formatted);
+                    let tglVerif = data.tanggal_verif_formatted || (data.tanggal_verif ? data.tanggal_verif.substring(0, 10) : '');
+                    $('#tanggal_verif').val(tglVerif);
+                    $('#tgl_booking').val(tglVerif);
                     $('#nama_lengkap').val(data.nama_lengkap);
                     $('#nik').val(data.nik);
                     $('#nik_p').val(data.nik_p);

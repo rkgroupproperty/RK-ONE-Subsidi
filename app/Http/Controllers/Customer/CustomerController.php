@@ -490,10 +490,12 @@ class CustomerController extends Controller
     public function edit($id)
     {
         $list = Customer::findOrFail($id);
+        $data = $list->toArray();
+        $data['tanggal_verif_formatted'] = $list->tanggal_verif ? Carbon::parse($list->tanggal_verif)->format('Y-m-d') : '';
 
         return response()->json([
             'status' => 'success',
-            'data'   => $list,
+            'data'   => $data,
         ]);
     }
 
@@ -511,6 +513,7 @@ class CustomerController extends Controller
             'jenis_kelamin'   => 'required',
             'alamat_ktp'      => 'required',
             'alamat_domisili' => 'required',
+            'tanggal_verif'   => 'nullable|date',
         ];
 
         $messages = [
@@ -550,6 +553,28 @@ class CustomerController extends Controller
                 'nama_saudara'      => $request->nama_saudara ?? null,
                 'no_telp_saudara'   => $request->no_telp_saudara ?? null,
             ];
+
+            // Khusus Admin: izinkan edit tanggal booking / verifikasi
+            if ($user->id_role != 2 && $request->filled('tanggal_verif')) {
+                $newTgl = Carbon::parse($request->tanggal_verif)->format('Y-m-d');
+                $updateData['tanggal_verif'] = $newTgl;
+
+                // Sync ke pengajuan_hold jika ada
+                \App\Models\PengajuanHold::where('nik', $data->nik)
+                    ->orWhere(function ($q) use ($data) {
+                        $q->where('id_kavling', $data->id_kavling)->where('stt_reg', 2);
+                    })
+                    ->update(['tgl_booking' => $newTgl]);
+
+                // Sync ke pemasukan (booking fee) jika ada
+                \App\Models\Pemasukan::where('id_customer', $data->id)
+                    ->where(function ($q) {
+                        $q->whereHas('kategori', function ($sub) {
+                            $sub->where('kategori', 'LIKE', '%BOOKING%')->orWhere('kategori', 'LIKE', '%TANDA JADI%');
+                        })->orWhere('keterangan', 'LIKE', '%BOOKING%');
+                    })
+                    ->update(['tanggal' => $newTgl]);
+            }
 
             if ($user->id_role == 2) {
                 $existingData = $data->toArray();

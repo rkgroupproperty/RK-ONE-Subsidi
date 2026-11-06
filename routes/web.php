@@ -951,6 +951,60 @@ Route::get('/system/fix-akad-date/{secret}', function ($secret) {
     ]);
 });
 
+Route::get('/system/fix-booking-novi/{secret}', function ($secret) {
+    if ($secret !== 'rk_sync_2026') abort(403);
+
+    $results = [];
+    foreach (['mysql_subsidi', 'mysql'] as $conn) {
+        try {
+            \Illuminate\Support\Facades\Config::set('database.default', $conn);
+            \Illuminate\Support\Facades\DB::setDefaultConnection($conn);
+
+            $custs = \Illuminate\Support\Facades\DB::table('customer')
+                ->where('nama_lengkap', 'LIKE', '%NOVI OKTALIA%')
+                ->orWhere('nik', '1607056010900003')
+                ->get();
+
+            $custUpdated = 0;
+            $pemasukanUpdated = 0;
+            $holdUpdated = 0;
+
+            foreach ($custs as $c) {
+                $custUpdated += \Illuminate\Support\Facades\DB::table('customer')
+                    ->where('id', $c->id)
+                    ->update(['tanggal_verif' => '2026-10-31']);
+
+                $pemasukanUpdated += \Illuminate\Support\Facades\DB::table('pemasukan')
+                    ->where('id_customer', $c->id)
+                    ->update(['tanggal' => '2026-10-31']);
+
+                $holdUpdated += \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+                    ->where('nik', $c->nik)
+                    ->orWhere('nama_lengkap', 'LIKE', '%NOVI OKTALIA%')
+                    ->orWhere('id_kavling', $c->id_kavling)
+                    ->update(['tgl_booking' => '2026-10-31']);
+            }
+
+            $results[$conn] = [
+                'customers_found' => $custs->count(),
+                'customer_updated' => $custUpdated,
+                'pemasukan_updated' => $pemasukanUpdated,
+                'pengajuan_hold_updated' => $holdUpdated,
+            ];
+        } catch (\Throwable $e) {
+            $results[$conn] = 'Error: ' . $e->getMessage();
+        }
+    }
+
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Tanggal booking NOVI OKTALIA berhasil diupdate ke 31 Oktober 2026!',
+        'results' => $results,
+    ]);
+});
+
 Route::get('/system/check-bir-4-units/{secret}', function ($secret) {
     if ($secret !== 'rk_sync_2026') abort(403);
     \Illuminate\Support\Facades\Config::set('database.default', 'mysql_subsidi');
