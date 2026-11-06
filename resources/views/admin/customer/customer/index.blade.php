@@ -86,6 +86,33 @@
                                     </div>
                                 </div>
 
+                                @if (request('filter_booking'))
+                                    <div class="alert alert-warning border-0 shadow-sm d-flex justify-content-between align-items-center mb-3 py-2 px-3" style="border-radius: 8px;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-receipt text-warning fa-lg mr-2"></i>
+                                            <div>
+                                                <strong>Filter Booking Aktif:</strong> Menampilkan konsumen dengan status <strong>Booking Terverifikasi</strong> pada periode 
+                                                <span class="badge badge-warning ml-1 text-dark font-weight-bold">
+                                                    @if(request('filter_booking') === 'bulan_ini')
+                                                        Bulan Ini ({{ \Carbon\Carbon::now()->translatedFormat('F Y') }})
+                                                    @elseif(request('filter_booking') === 'bulan_kemarin')
+                                                        Bulan Kemarin ({{ \Carbon\Carbon::now()->subMonthNoOverflow()->translatedFormat('F Y') }})
+                                                    @elseif(request('filter_booking') === 'pilih_bulan')
+                                                        {{ \Carbon\Carbon::createFromDate(request('tahun'), request('bulan'), 1)->translatedFormat('F Y') }}
+                                                    @elseif(request('filter_booking') === 'custom')
+                                                        {{ request('start_date') }} s/d {{ request('end_date') }}
+                                                    @else
+                                                        {{ request('filter_booking') }}
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <a href="{{ route('customer.index') }}" class="btn btn-sm btn-outline-dark">
+                                            <i class="fas fa-times-circle mr-1"></i> Tampilkan Semua Konsumen
+                                        </a>
+                                    </div>
+                                @endif
+
                                 <table class="table table-bordered w-100 table-striped data-table">
                                     <thead>
                                         <tr>
@@ -1179,6 +1206,11 @@
                         d.id_lokasi = $('#filter_lokasi').val() || '';
                         d.id_marketing = $('#filter_marketing').val() || '';
                         d.id_status_progres = $('#filter_status_progres').val() || '';
+                        d.filter_booking = "{{ request('filter_booking', '') }}";
+                        d.bulan = "{{ request('bulan', '') }}";
+                        d.tahun = "{{ request('tahun', '') }}";
+                        d.start_date = "{{ request('start_date', '') }}";
+                        d.end_date = "{{ request('end_date', '') }}";
                     }
                 },
                 columns: [{
