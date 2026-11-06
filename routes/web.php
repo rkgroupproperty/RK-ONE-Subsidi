@@ -1025,10 +1025,25 @@ Route::get('/system/fix-booking-novi/{secret}', function ($secret) {
                 ->whereBetween('tanggal_verif', ['2026-10-01', '2026-10-31'])
                 ->count();
 
+            $allNovHolds = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+                ->whereBetween('tgl_booking', ['2026-11-01 00:00:00', '2026-11-30 23:59:59'])
+                ->get(['id', 'no_registrasi', 'nama_lengkap', 'nik', 'tgl_booking', 'stt_reg', 'id_lokasi', 'id_kavling']);
+
+            $allPendingHolds = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+                ->where('stt_reg', '!=', 2)
+                ->get(['id', 'no_registrasi', 'nama_lengkap', 'nik', 'tgl_booking', 'stt_reg', 'id_lokasi', 'id_kavling']);
+
+            $recentCustomers = \Illuminate\Support\Facades\DB::table('customer')
+                ->where('tanggal_verif', '>=', '2026-10-25')
+                ->get(['id', 'kode_customer', 'nama_lengkap', 'nik', 'tanggal_verif', 'id_status_progres', 'id_lokasi', 'id_kavling']);
+
             $results[$conn] = [
                 'customers' => $custDetails,
                 'pengajuan_holds' => $holdDetails,
                 'pemasukans' => $pemasukanDetails,
+                'all_november_holds' => $allNovHolds,
+                'all_pending_holds' => $allPendingHolds,
+                'recent_customers' => $recentCustomers,
                 'stats' => [
                     'november_pengajuan_hold' => $novHoldCount,
                     'october_pengajuan_hold' => $octHoldCount,
