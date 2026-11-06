@@ -1128,7 +1128,7 @@ class PengajuanHoldController extends Controller
 
         $cust = [
             'kode_customer'        => $newKode,
-            'tanggal_verif'        => Carbon::now('Asia/Jakarta'),
+            'tanggal_verif'        => !empty($data->tgl_booking) ? Carbon::parse($data->tgl_booking)->format('Y-m-d H:i:s') : Carbon::now('Asia/Jakarta'),
             'id_lokasi'            => $data->id_lokasi,
             'id_kavling'           => $data->id_kavling,
             'hrg_jual'             => collect($data->rincian_biaya ?? [])->firstWhere('nama', 'Harga Rumah')['nilai'] ?? 0,
