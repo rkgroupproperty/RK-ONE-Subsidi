@@ -76,11 +76,35 @@ class BerandaController extends Controller
                 break;
         }
 
-        // Hitung total customer booking yang SUDAH DIVERIFIKASI (stt_reg = 2) pada periode terpilih (default: bulan ini)
-        $bookingVerifiedQuery = PengajuanHold::where('stt_reg', 2);
+        $isKomersil = session('app_type') === 'komersil';
+        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+        $lokasiQuery = DB::connection($conn)->table('lokasi_kavling')->whereIn('stt_tampil', [1, 3]);
+        if ($isKomersil) {
+            $lokasiQuery->whereIn('id', [1, 2]);
+        } else {
+            $lokasiQuery->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills']);
+        }
+        $targetLokasiIds = (clone $lokasiQuery)->pluck('id')->toArray();
+
+        // Hitung total customer booking yang SUDAH DIVERIFIKASI (stt_reg = 2) dan tidak diarsip (stt_arsip = 0)
+        // Mengacu pada tanggal saat dia booking (tgl_booking), walaupun diverifikasi di bulan yang berbeda
+        $archivedNiks = Customer::where('stt_arsip', 1)->pluck('nik')->filter()->toArray();
+        $archivedKavlings = Customer::where('stt_arsip', 1)->pluck('id_kavling')->filter()->toArray();
+
+        $bookingVerifiedQuery = PengajuanHold::whereIn('id_lokasi', $targetLokasiIds)
+            ->where('stt_reg', 2)
+            ->where(function($q) use ($archivedNiks, $archivedKavlings) {
+                if (!empty($archivedNiks)) {
+                    $q->whereNotIn('nik', $archivedNiks);
+                }
+                if (!empty($archivedKavlings)) {
+                    $q->whereNotIn('id_kavling', $archivedKavlings);
+                }
+            });
+
         if ($isFilteredByDate && $startCarbon && $endCarbon) {
-            $startStr = $startCarbon->toDateTimeString();
-            $endStr = $endCarbon->toDateTimeString();
+            $startStr = $startCarbon->toDateString();
+            $endStr = $endCarbon->toDateString();
             $bookingVerifiedQuery->where(function ($q) use ($startStr, $endStr, $startCarbon) {
                 $q->whereBetween('tgl_booking', [$startStr, $endStr])
                   ->orWhere(function ($sub) use ($startCarbon) {
@@ -90,9 +114,10 @@ class BerandaController extends Controller
         }
         $bookingCustomerBulanIni = $bookingVerifiedQuery->count();
 
-        // Fallback jika verifikasi dicatat pada tanggal_verif Customer di periode ini:
+        // Fallback jika verifikasi dicatat pada tanggal_verif Customer di periode ini (misal konsumen tanpa pengajuan hold):
         if ($bookingCustomerBulanIni === 0 && $isFilteredByDate && $startCarbon && $endCarbon) {
-            $bookingCustomerBulanIni = Customer::where('stt_arsip', 0)
+            $bookingCustomerBulanIni = Customer::whereIn('id_lokasi', $targetLokasiIds)
+                ->where('stt_arsip', 0)
                 ->where(function ($q) use ($startCarbon, $endCarbon) {
                     $q->whereBetween('tanggal_verif', [$startCarbon, $endCarbon])
                       ->orWhere(function ($sub) use ($startCarbon) {
@@ -105,6 +130,25 @@ class BerandaController extends Controller
         // Auto-reconciliation: Pastikan alur status progres konsumen selalu ngeflow sinkron dengan transaksi riil
         try {
             \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing();
+
+            // Pastikan tanggal_verif customer sama dengan tgl_booking pada pengajuan_hold
+            // sehingga jika diverifikasi di bulan berbeda, tanggal bookingnya tetap masuk di tanggal saat dia booking
+            $holdsList = PengajuanHold::where('stt_reg', 2)->get(['nik', 'id_kavling', 'tgl_booking']);
+            foreach ($holdsList as $hl) {
+                if (!empty($hl->tgl_booking)) {
+                    Customer::where(function($qc) use ($hl) {
+                        $qc->where('nik', $hl->nik);
+                        if (!empty($hl->id_kavling)) {
+                            $qc->orWhere('id_kavling', $hl->id_kavling);
+                        }
+                    })
+                    ->where(function($qc) use ($hl) {
+                        $qc->whereNull('tanggal_verif')
+                           ->orWhereDate('tanggal_verif', '!=', $hl->tgl_booking);
+                    })
+                    ->update(['tanggal_verif' => $hl->tgl_booking]);
+                }
+            }
 
             $bastCustIds = BAST::pluck('id_customer')->filter()->toArray();
             if (!empty($bastCustIds)) {
@@ -167,16 +211,6 @@ class BerandaController extends Controller
         } catch (\Throwable $e) {
             // Fallback aman
         }
-
-        $isKomersil = session('app_type') === 'komersil';
-        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
-        $lokasiQuery = DB::connection($conn)->table('lokasi_kavling')->whereIn('stt_tampil', [1, 3]);
-        if ($isKomersil) {
-            $lokasiQuery->whereIn('id', [1, 2]);
-        } else {
-            $lokasiQuery->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills']);
-        }
-        $targetLokasiIds = (clone $lokasiQuery)->pluck('id')->toArray();
 
         if ($isKomersil) {
             if (KavlingPeta::whereIn('id_lokasi', [1, 2])->count() < 105 || \App\Models\MasterSVG::whereIn('id_lokasi', [1, 2])->count() < 2) {
