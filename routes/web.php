@@ -965,31 +965,76 @@ Route::get('/system/fix-booking-novi/{secret}', function ($secret) {
                 ->orWhere('nik', '1607056010900003')
                 ->get();
 
-            $custUpdated = 0;
-            $pemasukanUpdated = 0;
-            $holdUpdated = 0;
+            $custDetails = [];
+            $holdDetails = [];
+            $pemasukanDetails = [];
 
             foreach ($custs as $c) {
-                $custUpdated += \Illuminate\Support\Facades\DB::table('customer')
+                \Illuminate\Support\Facades\DB::table('customer')
                     ->where('id', $c->id)
                     ->update(['tanggal_verif' => '2026-10-31']);
 
-                $pemasukanUpdated += \Illuminate\Support\Facades\DB::table('pemasukan')
-                    ->where('id_customer', $c->id)
-                    ->update(['tanggal' => '2026-10-31']);
+                $custDetails[] = \Illuminate\Support\Facades\DB::table('customer')->where('id', $c->id)->first();
 
-                $holdUpdated += \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+                // Check and update pengajuan_hold
+                $holds = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
                     ->where('nik', $c->nik)
                     ->orWhere('nama_lengkap', 'LIKE', '%NOVI OKTALIA%')
                     ->orWhere('id_kavling', $c->id_kavling)
-                    ->update(['tgl_booking' => '2026-10-31']);
+                    ->get();
+
+                foreach ($holds as $h) {
+                    \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+                        ->where('id', $h->id)
+                        ->update(['tgl_booking' => '2026-10-31']);
+                    $holdDetails[] = \Illuminate\Support\Facades\DB::table('pengajuan_hold')->where('id', $h->id)->first();
+                }
+
+                // Check and update pemasukan
+                $pemasukans = \Illuminate\Support\Facades\DB::table('pemasukan')
+                    ->where('id_customer', $c->id)
+                    ->orWhere('keterangan', 'LIKE', '%NOVI OKTALIA%')
+                    ->get();
+
+                foreach ($pemasukans as $p) {
+                    \Illuminate\Support\Facades\DB::table('pemasukan')
+                        ->where('id', $p->id)
+                        ->update(['tanggal' => '2026-10-31']);
+                    $pemasukanDetails[] = \Illuminate\Support\Facades\DB::table('pemasukan')->where('id', $p->id)->first();
+                }
             }
 
+            // Also check BerandaController booking count for October 2026 and November 2026
+            $novHoldCount = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+                ->where('stt_reg', 2)
+                ->whereBetween('tgl_booking', ['2026-11-01 00:00:00', '2026-11-30 23:59:59'])
+                ->count();
+
+            $octHoldCount = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+                ->where('stt_reg', 2)
+                ->whereBetween('tgl_booking', ['2026-10-01 00:00:00', '2026-10-31 23:59:59'])
+                ->count();
+
+            $novCustCount = \Illuminate\Support\Facades\DB::table('customer')
+                ->where('stt_arsip', 0)
+                ->whereBetween('tanggal_verif', ['2026-11-01', '2026-11-30'])
+                ->count();
+
+            $octCustCount = \Illuminate\Support\Facades\DB::table('customer')
+                ->where('stt_arsip', 0)
+                ->whereBetween('tanggal_verif', ['2026-10-01', '2026-10-31'])
+                ->count();
+
             $results[$conn] = [
-                'customers_found' => $custs->count(),
-                'customer_updated' => $custUpdated,
-                'pemasukan_updated' => $pemasukanUpdated,
-                'pengajuan_hold_updated' => $holdUpdated,
+                'customers' => $custDetails,
+                'pengajuan_holds' => $holdDetails,
+                'pemasukans' => $pemasukanDetails,
+                'stats' => [
+                    'november_pengajuan_hold' => $novHoldCount,
+                    'october_pengajuan_hold' => $octHoldCount,
+                    'november_customer_verif' => $novCustCount,
+                    'october_customer_verif' => $octCustCount,
+                ]
             ];
         } catch (\Throwable $e) {
             $results[$conn] = 'Error: ' . $e->getMessage();
@@ -1000,7 +1045,7 @@ Route::get('/system/fix-booking-novi/{secret}', function ($secret) {
 
     return response()->json([
         'status' => 'success',
-        'message' => 'Tanggal booking NOVI OKTALIA berhasil diupdate ke 31 Oktober 2026!',
+        'message' => 'Detail booking NOVI OKTALIA dan stats',
         'results' => $results,
     ]);
 });
