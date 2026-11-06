@@ -123,5 +123,10 @@ class Customer extends Model
         return $this->hasMany(UploudFile::class, 'id_customer');
     }
 
+    public function pengajuanHold()
+    {
+        return $this->hasOne(PengajuanHold::class, 'nik', 'nik');
+    }
+
     public $timestamps = false;
 }
