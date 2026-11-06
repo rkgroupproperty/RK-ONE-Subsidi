@@ -1004,58 +1004,55 @@ Route::get('/system/fix-booking-novi/{secret}', function ($secret) {
                 }
             }
 
-            // Also check BerandaController booking count for October 2026 and November 2026
-            $novHoldCount = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+            // Auto-sync customer tanggal_verif to match tgl_booking of verified holds
+            $syncCount = 0;
+            $verifiedHolds = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
                 ->where('stt_reg', 2)
-                ->whereBetween('tgl_booking', ['2026-11-01 00:00:00', '2026-11-30 23:59:59'])
-                ->count();
+                ->get();
 
-            $octHoldCount = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+            foreach ($verifiedHolds as $vh) {
+                if (!empty($vh->tgl_booking)) {
+                    $syncCount += \Illuminate\Support\Facades\DB::table('customer')
+                        ->where(function($qc) use ($vh) {
+                            $qc->where('nik', $vh->nik);
+                            if (!empty($vh->id_kavling)) {
+                                $qc->orWhere('id_kavling', $vh->id_kavling);
+                            }
+                        })
+                        ->where(function($qc) use ($vh) {
+                            $qc->whereNull('tanggal_verif')
+                               ->orWhereDate('tanggal_verif', '!=', $vh->tgl_booking);
+                        })
+                        ->update(['tanggal_verif' => $vh->tgl_booking]);
+                }
+            }
+
+            // Exclude archived customers (e.g. cancelled/archived)
+            $archivedNiks = \Illuminate\Support\Facades\DB::table('customer')->where('stt_arsip', 1)->pluck('nik')->filter()->toArray();
+            $archivedKavlings = \Illuminate\Support\Facades\DB::table('customer')->where('stt_arsip', 1)->pluck('id_kavling')->filter()->toArray();
+
+            $verifiedNovBookingQuery = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
                 ->where('stt_reg', 2)
-                ->whereBetween('tgl_booking', ['2026-10-01 00:00:00', '2026-10-31 23:59:59'])
-                ->count();
+                ->where(function($q) use ($archivedNiks, $archivedKavlings) {
+                    if (!empty($archivedNiks)) $q->whereNotIn('nik', $archivedNiks);
+                    if (!empty($archivedKavlings)) $q->whereNotIn('id_kavling', $archivedKavlings);
+                })
+                ->whereBetween('tgl_booking', ['2026-11-01', '2026-11-30']);
 
-            $novCustCount = \Illuminate\Support\Facades\DB::table('customer')
-                ->where('stt_arsip', 0)
-                ->whereBetween('tanggal_verif', ['2026-11-01', '2026-11-30'])
-                ->count();
+            $verifiedNovBookingCount = (clone $verifiedNovBookingQuery)->count();
+            $verifiedNovBookingList = (clone $verifiedNovBookingQuery)->get(['id', 'no_registrasi', 'nama_lengkap', 'nik', 'tgl_booking', 'stt_reg', 'id_lokasi', 'id_kavling']);
 
-            $octCustCount = \Illuminate\Support\Facades\DB::table('customer')
-                ->where('stt_arsip', 0)
-                ->whereBetween('tanggal_verif', ['2026-10-01', '2026-10-31'])
-                ->count();
-
-            $allHolds = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
-                ->orderBy('id')
-                ->get(['id', 'no_registrasi', 'nama_lengkap', 'nik', 'tgl_booking', 'stt_reg', 'id_lokasi', 'id_kavling']);
-
-            $allPendingHolds = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
-                ->where('stt_reg', '!=', 2)
-                ->get(['id', 'no_registrasi', 'nama_lengkap', 'nik', 'tgl_booking', 'stt_reg', 'id_lokasi', 'id_kavling']);
-
-            $recentCustomers = \Illuminate\Support\Facades\DB::table('customer')
-                ->where('tanggal_verif', '>=', '2026-10-25')
-                ->get(['id', 'kode_customer', 'nama_lengkap', 'nik', 'tanggal_verif', 'id_status_progres', 'id_lokasi', 'id_kavling']);
-
-            $hold24 = \Illuminate\Support\Facades\DB::table('pengajuan_hold')->where('id', 24)->first();
-            $hold25 = \Illuminate\Support\Facades\DB::table('pengajuan_hold')->where('id', 25)->first();
-            $cust593 = \Illuminate\Support\Facades\DB::table('customer')->where('id', 593)->first();
-            $cust594 = \Illuminate\Support\Facades\DB::table('customer')->where('id', 594)->first();
+            $pendingBookingQuery = \Illuminate\Support\Facades\DB::table('pengajuan_hold')
+                ->where('stt_reg', '!=', 2);
+            $pendingBookingCount = (clone $pendingBookingQuery)->count();
+            $pendingBookingList = (clone $pendingBookingQuery)->get(['id', 'no_registrasi', 'nama_lengkap', 'nik', 'tgl_booking', 'stt_reg', 'id_lokasi', 'id_kavling']);
 
             $results[$conn] = [
-                'hold24' => $hold24,
-                'hold25' => $hold25,
-                'cust593' => $cust593,
-                'cust594' => $cust594,
-                'all_holds' => $allHolds,
-                'all_pending_holds' => $allPendingHolds,
-                'recent_customers' => $recentCustomers,
-                'stats' => [
-                    'november_pengajuan_hold' => $novHoldCount,
-                    'october_pengajuan_hold' => $octHoldCount,
-                    'november_customer_verif' => $novCustCount,
-                    'october_customer_verif' => $octCustCount,
-                ]
+                'synced_customer_dates' => $syncCount,
+                'verified_november_booking_count' => $verifiedNovBookingCount,
+                'verified_november_bookings' => $verifiedNovBookingList,
+                'pipeline_pending_booking_count' => $pendingBookingCount,
+                'pipeline_pending_bookings' => $pendingBookingList,
             ];
         } catch (\Throwable $e) {
             $results[$conn] = 'Error: ' . $e->getMessage();
