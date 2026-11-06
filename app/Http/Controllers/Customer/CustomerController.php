@@ -64,6 +64,42 @@ class CustomerController extends Controller
                 });
             }
 
+            if ($request->filled('filter_booking')) {
+                $periode = $request->filter_booking;
+                $now = Carbon::now('Asia/Jakarta');
+                $startCarbon = null;
+                $endCarbon = null;
+
+                if ($periode === 'bulan_ini') {
+                    $startCarbon = $now->copy()->startOfMonth();
+                    $endCarbon = $now->copy()->endOfMonth();
+                } elseif ($periode === 'bulan_kemarin') {
+                    $startCarbon = $now->copy()->subMonthNoOverflow()->startOfMonth();
+                    $endCarbon = $now->copy()->subMonthNoOverflow()->endOfMonth();
+                } elseif ($periode === 'pilih_bulan') {
+                    $m = (int) $request->get('bulan', $now->month);
+                    $y = (int) $request->get('tahun', $now->year);
+                    $startCarbon = Carbon::createFromDate($y, $m, 1, 'Asia/Jakarta')->startOfMonth();
+                    $endCarbon = Carbon::createFromDate($y, $m, 1, 'Asia/Jakarta')->endOfMonth();
+                } elseif ($periode === 'custom' && $request->filled('start_date') && $request->filled('end_date')) {
+                    $startCarbon = Carbon::parse($request->start_date, 'Asia/Jakarta')->startOfDay();
+                    $endCarbon = Carbon::parse($request->end_date, 'Asia/Jakarta')->endOfDay();
+                }
+
+                if ($startCarbon && $endCarbon) {
+                    $startStr = $startCarbon->toDateString();
+                    $endStr = $endCarbon->toDateString();
+
+                    $data->where(function($q) use ($startStr, $endStr, $startCarbon) {
+                        $q->whereBetween('tanggal_verif', [$startStr . ' 00:00:00', $endStr . ' 23:59:59'])
+                          ->orWhere(function($sq) use ($startCarbon) {
+                              $sq->whereYear('tanggal_verif', $startCarbon->year)
+                                 ->whereMonth('tanggal_verif', $startCarbon->month);
+                          });
+                    });
+                }
+            }
+
             return DataTables::of($data)
                 ->addIndexColumn()
 
