@@ -512,6 +512,9 @@
                                 <i class="fas fa-exchange-alt mr-1"></i> {{ $switchLabel ?? 'Ganti Portal' }}
                             </a>
                         @endif
+                        <button type="button" id="btn-header-install-rkbos" class="btn btn-sm" style="display:none; border-radius: 50px; padding: 7px 18px; font-weight: 700; font-size: 0.82rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #001031; border: none; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);">
+                            <i class="fas fa-download mr-1"></i> Install RK-BOS
+                        </button>
                     </div>
                 </div>
                 <div class="booking-body">
