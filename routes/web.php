@@ -102,6 +102,105 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// PWA Routes
+Route::get('/manifest.json', function () {
+    $manifest = [
+        'name'             => 'RK Group Property',
+        'short_name'        => 'RK Property',
+        'description'       => 'Sistem Informasi Manajemen Blok Unit & Penjualan RK Group Property',
+        'start_url'         => url('/admin/beranda'),
+        'scope'             => url('/'),
+        'display'           => 'standalone',
+        'orientation'       => 'portrait-primary',
+        'background_color'  => '#0f172a',
+        'theme_color'       => '#4f46e5',
+        'categories'        => ['business', 'productivity'],
+        'icons'             => [
+            [
+                'src'     => url('/pwa-icon/192'),
+                'sizes'   => '192x192',
+                'type'    => 'image/png',
+                'purpose' => 'any maskable',
+            ],
+            [
+                'src'     => url('/pwa-icon/512'),
+                'sizes'   => '512x512',
+                'type'    => 'image/png',
+                'purpose' => 'any maskable',
+            ],
+        ],
+    ];
+    return response()->json($manifest, 200, [
+        'Content-Type'  => 'application/manifest+json; charset=utf-8',
+        'Cache-Control' => 'public, max-age=3600',
+    ]);
+});
+
+Route::get('/sw.js', function () {
+    $swPath = public_path('sw.js');
+    if (file_exists($swPath)) {
+        return response()->file($swPath, [
+            'Content-Type'           => 'application/javascript; charset=utf-8',
+            'Service-Worker-Allowed' => '/',
+        ]);
+    }
+    $swContent = '/* Service Worker */ self.addEventListener("install",e=>self.skipWaiting());self.addEventListener("activate",e=>self.clients.claim());self.addEventListener("fetch",e=>{if(e.request.method==="GET"){e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));}});';
+    return response($swContent, 200, [
+        'Content-Type'           => 'application/javascript; charset=utf-8',
+        'Service-Worker-Allowed' => '/',
+    ]);
+});
+
+Route::get('/pwa-icon/{size}', function ($size) {
+    $size = (int)$size;
+    if ($size < 48 || $size > 1024) $size = 192;
+    $iconFile = public_path("icons/icon-{$size}x{$size}.png");
+    if (file_exists($iconFile)) {
+        return response()->file($iconFile, ['Content-Type' => 'image/png']);
+    }
+    $img = imagecreatetruecolor($size, $size);
+    $bg = imagecolorallocate($img, 15, 23, 42);
+    $border = imagecolorallocate($img, 79, 70, 229);
+    $gold = imagecolorallocate($img, 245, 158, 11);
+    $white = imagecolorallocate($img, 255, 255, 255);
+    imagefilledrectangle($img, 0, 0, $size, $size, $bg);
+    $cx = $size / 2;
+    $cy = $size / 2;
+    imageellipse($img, (int)$cx, (int)$cy, (int)($size * 0.86), (int)($size * 0.86), $border);
+    imageellipse($img, (int)$cx, (int)$cy, (int)($size * 0.84), (int)($size * 0.84), $gold);
+    $font = 5;
+    $scale = (int)($size / 28);
+    $txt = 'RK';
+    $tw = imagefontwidth($font) * strlen($txt) * $scale;
+    $th = imagefontheight($font) * $scale;
+    $x = $cx - ($tw / 2);
+    $y = $cy - ($th / 2) - ($size * 0.08);
+    for ($dx = 0; $dx < $scale; $dx++) {
+        for ($dy = 0; $dy < $scale; $dy++) {
+            imagestring($img, $font, (int)($x + $dx), (int)($y + $dy), $txt, $gold);
+        }
+    }
+    if ($size >= 144) {
+        $sub = 'PROPERTY';
+        $subFont = 4;
+        $subScale = max(1, (int)($scale * 0.35));
+        $stw = imagefontwidth($subFont) * strlen($sub) * $subScale;
+        $sth = imagefontheight($subFont) * $subScale;
+        $sx = $cx - ($stw / 2);
+        $sy = $cy + ($size * 0.22);
+        for ($dx = 0; $dx < $subScale; $dx++) {
+            for ($dy = 0; $dy < $subScale; $dy++) {
+                imagestring($img, $subFont, (int)($sx + $dx), (int)($sy + $dy), $sub, $white);
+            }
+        }
+    }
+    ob_start();
+    imagepng($img);
+    $data = ob_get_clean();
+    imagedestroy($img);
+    return response($data, 200, ['Content-Type' => 'image/png']);
+});
+
 Route::get('/booking', [PengajuanHoldController::class, 'booking'])->name('booking');
 Route::get('/booking/subsidi', [PengajuanHoldController::class, 'bookingSubsidi'])->name('booking.subsidi');
 Route::get('/booking/komersil', [PengajuanHoldController::class, 'bookingKomersil'])->name('booking.komersil');
