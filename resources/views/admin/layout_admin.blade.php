@@ -20,6 +20,15 @@
     <link rel="icon" href="{{ $faviconPath }}">
     <link rel="shortcut icon" href="{{ $faviconPath }}">
 
+    <!-- PWA Progressive Web App -->
+    <link rel="manifest" href="{{ url('/manifest.json') }}">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RK Group Property">
+    <link rel="apple-touch-icon" href="{{ url('/pwa-icon/192') }}">
+
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -1064,6 +1073,80 @@
                 })
                 sessionStorage.removeItem('success');
             }
+        });
+    </script>
+
+    <!-- PWA Service Worker & Install Banner -->
+    <div id="pwa-install-banner" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 99999; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); border: 1.5px solid #6366f1; border-radius: 16px; padding: 12px 18px; box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.5); max-width: 92%; width: 390px; color: #fff; align-items: center; justify-content: space-between; backdrop-filter: blur(10px); animation: pwaSlideUp 0.4s ease-out;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="{{ url('/pwa-icon/192') }}" alt="RK Group Property" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            <div>
+                <div style="font-weight: 800; font-size: 13.5px; color: #f8fafc; letter-spacing: -0.01em;">RK Group Property</div>
+                <div style="font-size: 11px; color: #94a3b8;">Pasang di layar utama Android</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="pwa-install-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; border: none; font-weight: 800; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4); display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-download"></i> Install
+            </button>
+            <button id="pwa-close-btn" style="background: transparent; color: #94a3b8; border: none; font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px;" title="Tutup">&times;</button>
+        </div>
+    </div>
+    <style>
+        @keyframes pwaSlideUp {
+            from { opacity: 0; transform: translate(-50%, 30px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+    </style>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register("{{ url('/sw.js') }}", { scope: '/' })
+                    .then(function(reg) {
+                        console.log('PWA ServiceWorker registered with scope: ', reg.scope);
+                    })
+                    .catch(function(err) {
+                        console.warn('PWA ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const closeBtn = document.getElementById('pwa-close-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBanner && !sessionStorage.getItem('pwa_prompt_dismissed')) {
+                installBanner.style.display = 'flex';
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log('PWA user response:', outcome);
+                    deferredPrompt = null;
+                    if (installBanner) installBanner.style.display = 'none';
+                }
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                if (installBanner) installBanner.style.display = 'none';
+                sessionStorage.setItem('pwa_prompt_dismissed', 'true');
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            if (installBanner) installBanner.style.display = 'none';
+            console.log('RK Group Property PWA successfully installed!');
         });
     </script>
 
