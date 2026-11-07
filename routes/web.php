@@ -136,6 +136,39 @@ Route::get('/manifest.json', function () {
     ]);
 });
 
+Route::get('/manifest-booking.json', function () {
+    $manifest = [
+        'name'             => 'Form Booking Online RK Group Property',
+        'short_name'        => 'RK-BOS',
+        'description'       => 'Sistem Pemesanan Unit & Form Booking Online RK Group Property',
+        'start_url'         => url('/booking'),
+        'scope'             => url('/'),
+        'display'           => 'standalone',
+        'orientation'       => 'portrait-primary',
+        'background_color'  => '#001031',
+        'theme_color'       => '#001031',
+        'categories'        => ['business', 'productivity', 'shopping'],
+        'icons'             => [
+            [
+                'src'     => url('/pwa-icon/192'),
+                'sizes'   => '192x192',
+                'type'    => 'image/png',
+                'purpose' => 'any maskable',
+            ],
+            [
+                'src'     => url('/pwa-icon/512'),
+                'sizes'   => '512x512',
+                'type'    => 'image/png',
+                'purpose' => 'any maskable',
+            ],
+        ],
+    ];
+    return response()->json($manifest, 200, [
+        'Content-Type'  => 'application/manifest+json; charset=utf-8',
+        'Cache-Control' => 'public, max-age=3600',
+    ]);
+});
+
 Route::get('/sw.js', function () {
     $swPath = public_path('sw.js');
     if (file_exists($swPath)) {
