@@ -156,14 +156,30 @@ Route::get('/system/db-inspect/{secret}', function ($secret) {
         'DB_DATABASE_KOMERSIL' => env('DB_DATABASE_KOMERSIL'),
     ];
 
-    // Check each connection's lokasi_kavling table
+    // Check each connection's lokasi_kavling table and related tables
     $lokasiPerConn = [];
-    foreach (['mysql', 'mysql_subsidi', 'mysql_komersil'] as $c) {
+    $tablesPerConn = [];
+    foreach (['mysql_subsidi', 'mysql_komersil'] as $c) {
         try {
             $loks = DB::connection($c)->table('lokasi_kavling')->get(['id', 'nama_kavling', 'nama_singkat', 'stt_tampil']);
             $lokasiPerConn[$c] = $loks;
         } catch (\Throwable $e) {
             $lokasiPerConn[$c] = 'Error: ' . $e->getMessage();
+        }
+
+        try {
+            $allTables = DB::connection($c)->select('SHOW TABLES');
+            $tableNames = [];
+            foreach ($allTables as $t) {
+                foreach ((array)$t as $val) {
+                    if (str_contains($val, 'perusahaan') || str_contains($val, 'lokasi') || str_contains($val, 'kavling')) {
+                        $tableNames[] = $val;
+                    }
+                }
+            }
+            $tablesPerConn[$c] = $tableNames;
+        } catch (\Throwable $e) {
+            $tablesPerConn[$c] = 'Error: ' . $e->getMessage();
         }
     }
 
@@ -171,6 +187,7 @@ Route::get('/system/db-inspect/{secret}', function ($secret) {
         'db_configs' => $dbConfigs,
         'env_info' => $envInfo,
         'lokasi_per_conn' => $lokasiPerConn,
+        'tables_per_conn' => $tablesPerConn,
     ]);
 });
 Route::get('/system/clear-cache/{secret}', function ($secret) {
