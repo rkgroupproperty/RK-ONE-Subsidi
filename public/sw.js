@@ -1,7 +1,9 @@
-﻿const CACHE_NAME = 'rk-property-pwa-v1';
+const CACHE_NAME = 'rk-group-pwa-v2';
 const STATIC_ASSETS = [
-  '/favicon.ico',
-  '/manifest.json'
+  '/',
+  '/manifest.json',
+  '/pwa-icon/192',
+  '/pwa-icon/512'
 ];
 
 self.addEventListener('install', (event) => {
@@ -29,15 +31,12 @@ self.addEventListener('activate', (event) => {
 
 // Network-first strategy for dynamic web apps
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-
-  // Skip API or non-http requests
   if (!url.protocol.startsWith('http')) return;
 
-  // Static assets (images, css, js, fonts) can be stale-while-revalidate or cache-first
+  // Static assets (images, css, js, fonts)
   const isStatic = url.pathname.match(/\.(css|js|png|jpg|jpeg|svg|ico|woff2?|ttf|eot)$/i);
 
   if (isStatic) {
@@ -64,9 +63,8 @@ self.addEventListener('fetch', (event) => {
         .catch(() => {
           return caches.match(event.request).then((cached) => {
             if (cached) return cached;
-            // Fallback offline message if completely offline
             return new Response(
-              '<div style="font-family:sans-serif;text-align:center;padding:50px;"><h2>Anda sedang offline</h2><p>Silakan periksa koneksi internet Anda lalu tekan Refresh.</p><button onclick="window.location.reload()" style="padding:10px 20px;font-size:16px;cursor:pointer;border-radius:8px;background:#4f46e5;color:white;border:none;">Refresh Halaman</button></div>',
+              '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Offline - RK Group Property</title><style>body{font-family:sans-serif;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;box-sizing:border-box;text-align:center}button{padding:12px 24px;border:none;border-radius:8px;background:#4f46e5;color:white;font-weight:bold;cursor:pointer;margin-top:16px}</style></head><body><div><h2>Anda sedang offline</h2><p>Pastikan koneksi internet ponsel Anda aktif, lalu tekan tombol di bawah ini.</p><button onclick="window.location.reload()">Coba Muat Ulang</button></div></body></html>',
               { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
             );
           });
@@ -75,7 +73,6 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// Message listener for skipWaiting / manual refresh from UI
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
