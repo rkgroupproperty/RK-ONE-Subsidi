@@ -198,6 +198,7 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
     try {
         \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing('mysql_subsidi');
         \App\Http\Controllers\PengajuanHoldController::ensureKantorMarketing('mysql');
+        \App\Http\Controllers\Master\LokasiKavlingController::ensureLokasiKavlingPerusahaan();
     } catch (\Throwable $e) {}
 
     return response()->json([
@@ -206,6 +207,64 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
         'output' => \Illuminate\Support\Facades\Artisan::output(),
     ]);
 })->name('system.clear-cache');
+
+Route::get('/system/fix-lokasi-perusahaan/{secret}', function ($secret) {
+    if ($secret !== 'rk_fix_2026') abort(403);
+
+    $results = [];
+    foreach (['mysql_subsidi', 'mysql', 'mysql_komersil'] as $conn) {
+        try {
+            DB::connection($conn)->statement("
+                CREATE TABLE IF NOT EXISTS `lokasi_kavling_perusahaan` (
+                  `id` int NOT NULL AUTO_INCREMENT,
+                  `id_lokasi` int NOT NULL,
+                  `id_perusahaan` int NOT NULL,
+                  PRIMARY KEY (`id`),
+                  KEY `idx_id_lokasi` (`id_lokasi`),
+                  KEY `idx_id_perusahaan` (`id_perusahaan`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            $perusahaanList = DB::connection($conn)->table('perusahaan')->get();
+            $lokasis = DB::connection($conn)->table('lokasi_kavling')->get();
+
+            $firstP = $perusahaanList->first();
+            $linked = 0;
+            if ($firstP) {
+                foreach ($lokasis as $lok) {
+                    $exists = DB::connection($conn)->table('lokasi_kavling_perusahaan')
+                        ->where('id_lokasi', $lok->id)
+                        ->exists();
+                    if (!$exists) {
+                        DB::connection($conn)->table('lokasi_kavling_perusahaan')->insert([
+                            'id_lokasi'     => $lok->id,
+                            'id_perusahaan' => $firstP->id,
+                        ]);
+                        $linked++;
+                    }
+                }
+            }
+
+            $currentPivot = DB::connection($conn)->table('lokasi_kavling_perusahaan')->get();
+
+            $results[$conn] = [
+                'status'           => 'success',
+                'perusahaan_count' => $perusahaanList->count(),
+                'perusahaan_list'  => $perusahaanList,
+                'lokasi_count'     => $lokasis->count(),
+                'newly_linked'     => $linked,
+                'current_pivot'    => $currentPivot,
+            ];
+        } catch (\Throwable $e) {
+            $results[$conn] = [
+                'status'  => 'error',
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    return response()->json($results);
+});
 
 Route::get('/system/git-pull/{secret}', function ($secret) {
     if ($secret !== 'rk_git_pull_2026') {
