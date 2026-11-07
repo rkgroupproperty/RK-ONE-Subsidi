@@ -112,8 +112,8 @@ Route::get('/manifest.json', function () {
         'scope'             => url('/'),
         'display'           => 'standalone',
         'orientation'       => 'portrait-primary',
-        'background_color'  => '#0f172a',
-        'theme_color'       => '#4f46e5',
+        'background_color'  => '#001031',
+        'theme_color'       => '#001031',
         'categories'        => ['business', 'productivity'],
         'icons'             => [
             [
