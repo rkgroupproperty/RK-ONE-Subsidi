@@ -18,23 +18,62 @@ use Yajra\DataTables\DataTables;
 class LokasiKavlingController extends Controller
 {
     use LogAktivitasTrait;
+
+    public static function ensureLokasiKavlingPerusahaan()
+    {
+        try {
+            $conn = DB::getDefaultConnection();
+            DB::statement("
+                CREATE TABLE IF NOT EXISTS `lokasi_kavling_perusahaan` (
+                  `id` int NOT NULL AUTO_INCREMENT,
+                  `id_lokasi` int NOT NULL,
+                  `id_perusahaan` int NOT NULL,
+                  PRIMARY KEY (`id`),
+                  KEY `idx_id_lokasi` (`id_lokasi`),
+                  KEY `idx_id_perusahaan` (`id_perusahaan`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            $countPivot = DB::table('lokasi_kavling_perusahaan')->count();
+            if ($countPivot === 0) {
+                $firstP = DB::table('perusahaan')->first();
+                if ($firstP) {
+                    $lokasis = DB::table('lokasi_kavling')->get();
+                    foreach ($lokasis as $lok) {
+                        DB::table('lokasi_kavling_perusahaan')->insert([
+                            'id_lokasi'     => $lok->id,
+                            'id_perusahaan' => $firstP->id,
+                        ]);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+    }
+
     public function index(Request $request)
     {
         $permissions = HakAksesController::getUserPermissions();
 
+        self::ensureLokasiKavlingPerusahaan();
+
         if ($request->ajax()) {
-            $data = LokasiKavling::with(['kavlingPeta', 'perusahaan']);
+            $data = LokasiKavling::with(['kavlingPeta', 'perusahaan.detailPerusahaan']);
 
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('jumlah_kavling', function ($row) {
-                    return $row->KavlingPeta->count();
+                    return $row->kavlingPeta ? $row->kavlingPeta->count() : 0;
                 })
                 ->editColumn('nama_kavling', function ($row) {
-                    $field = '<strong>' . $row->nama_kavling . '</strong>';
+                    $field = '<strong>' . e($row->nama_kavling) . '</strong>';
 
-                    foreach ($row->perusahaan as $p) {
-                        $field .= '<br><span>' . $p->nama_perusahaan . '</span>';
+                    if ($row->perusahaan && $row->perusahaan->isNotEmpty()) {
+                        foreach ($row->perusahaan as $p) {
+                            $nama = $p->nama_perusahaan ?? optional($p->detailPerusahaan)->nama_perusahaan;
+                            if ($nama) {
+                                $field .= '<br><span class="text-muted" style="font-size: 12px;"><i class="fas fa-building mr-1"></i>' . e($nama) . '</span>';
+                            }
+                        }
                     }
 
                     return $field;
