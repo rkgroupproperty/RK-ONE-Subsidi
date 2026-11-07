@@ -1,28 +1,23 @@
-﻿{
-  "name": "RK Group Property - Sistem Penjualan Perumahan",
+{
+  "name": "RK Group Property",
   "short_name": "RK Property",
-  "description": "Sistem Manajemen Penjualan Perumahan RK Group Property",
+  "description": "Sistem Informasi Manajemen Blok Unit & Penjualan RK Group Property",
   "start_url": "/admin/beranda",
   "scope": "/",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#090d16",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
   "theme_color": "#4f46e5",
+  "categories": ["business", "productivity"],
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
+      "src": "/pwa-icon/192",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/pwa-icon/512",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
