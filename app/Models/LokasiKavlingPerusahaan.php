@@ -14,4 +14,24 @@ class LokasiKavlingPerusahaan extends Model
         'id_lokasi',
         'id_perusahaan'
     ];
+
+    public function detailPerusahaan()
+    {
+        return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
+    }
+
+    public function perusahaan()
+    {
+        return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
+    }
+
+    public function getNamaPerusahaanAttribute()
+    {
+        return $this->detailPerusahaan->nama_perusahaan ?? '';
+    }
+
+    public function getKotaPenandatanganAttribute()
+    {
+        return $this->detailPerusahaan->kota_penandatangan ?? '-';
+    }
 }
