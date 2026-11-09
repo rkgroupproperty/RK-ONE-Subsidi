@@ -20,7 +20,10 @@ class SiteplanPenjualanController extends Controller
 {
     public function index()
     {
-        if (session('app_type') === 'komersil') {
+        $isKomersil = (str_contains(request()->getHost(), 'komersil') || (session('app_type') === 'komersil' && !str_contains(request()->getHost(), 'subsidi')));
+        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+
+        if ($isKomersil) {
             try {
                 if (KavlingPeta::on('mysql_komersil')->whereIn('id_lokasi', [1, 2])->count() < 105 || \App\Models\MasterSVG::on('mysql_komersil')->whereIn('id_lokasi', [1, 2])->count() < 2) {
                     app(\App\Services\KomersilDatabaseService::class)->seedAvanaHillsSiteplan();
@@ -28,13 +31,14 @@ class SiteplanPenjualanController extends Controller
             } catch (\Throwable $ignored) {}
         }
 
-         $lokasiKavling = LokasiKavling::with([
-        'masterSvg',
-        'kavlingPeta.customer.progres',
-        'kavlingPeta.pengajuanHold',
-    ])->orderBy('urutan', 'asc')->get();
+        $lokasiKavling = LokasiKavling::on($conn)->with([
+            'masterSvg',
+            'kavlingPeta.customer.progres',
+            'kavlingPeta.pengajuanHold',
+            'kavlingPeta.progres'
+        ])->orderBy('urutan', 'asc')->get();
 
-        $legend = ProgresListPenjualan::whereNotNull('warna')
+        $legend = ProgresListPenjualan::on($conn)->whereNotNull('warna')
             ->where('warna', '!=', '')
             ->where('stt_tampil', 1)
             ->where('status_progres', 'NOT LIKE', '%Unit Sudah Laku%')
@@ -59,16 +63,19 @@ class SiteplanPenjualanController extends Controller
 
     public function show($id)
     {
-        $data = KavlingPeta::with(['lokasi', 'customer.marketing', 'customer.progres', 'pengajuanHold.marketing', 'listrikAir'])->findOrFail($id);
+        $isKomersil = (str_contains(request()->getHost(), 'komersil') || (session('app_type') === 'komersil' && !str_contains(request()->getHost(), 'subsidi')));
+        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
 
-        $tagihanList   = Piutang::where('id_customer', $data->id_customer)->orderBy('id')->get();
-        $pemasukanList = Pemasukan::with('kategori')->where('id_customer', $data->id_customer)->get();
+        $data = KavlingPeta::on($conn)->with(['lokasi', 'customer.marketing', 'customer.progres', 'pengajuanHold.marketing', 'listrikAir'])->findOrFail($id);
+
+        $tagihanList   = Piutang::on($conn)->where('id_customer', $data->id_customer)->orderBy('id')->get();
+        $pemasukanList = Pemasukan::on($conn)->with('kategori')->where('id_customer', $data->id_customer)->get();
 
         return response()->json([
             'success'         => true,
             'data'            => $data,
             'tagihan'         => $tagihanList,
-            'listrik_air' => $data->listrikAir,
+            'listrik_air'     => $data->listrikAir,
             'pemasukan'       => $pemasukanList,
             'total_tagihan'   => $tagihanList->sum('nominal'),
             'total_pemasukan' => $pemasukanList->sum('nominal'),
@@ -77,7 +84,10 @@ class SiteplanPenjualanController extends Controller
 
     private function generateSVG($id_lokasi, $width = '100%', $height = '100%')
     {
-        $lokasi = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres', 'kavlingPeta.pengajuanHold'])
+        $isKomersil = (str_contains(request()->getHost(), 'komersil') || (session('app_type') === 'komersil' && !str_contains(request()->getHost(), 'subsidi')));
+        $conn = $isKomersil ? 'mysql_komersil' : 'mysql_subsidi';
+
+        $lokasi = LokasiKavling::on($conn)->with(['masterSvg', 'kavlingPeta.customer.progres', 'kavlingPeta.pengajuanHold'])
             ->findOrFail($id_lokasi);
 
         if (! $lokasi->masterSvg) {

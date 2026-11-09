@@ -57,12 +57,18 @@
 
         .svg-container {
             width: 100%;
-            height: 100vh;
+            height: 72vh;
+            min-height: 560px;
+            max-height: 820px;
             overflow: hidden;
-            background: #f8fafc;
+            background: #ffffff;
             border: 2px solid #cbd5e1;
-            border-radius: 8px;
+            border-radius: 10px;
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.03);
         }
 
         @php
@@ -202,6 +208,8 @@
         .svg-container svg {
             width: 100%;
             height: 100%;
+            max-width: 100%;
+            max-height: 100%;
             cursor: grab;
             transition: transform 0.1s ease-out;
         }
@@ -249,22 +257,37 @@
                                         <div class="tab-pane fade {{ $kav->id == $activeLokasiId ? 'show active' : '' }}"
                                             id="custom-tabs-four-{{ $kav->id }}" role="tabpanel">
 
-                                            <a href="{{ route('siteplan-penjualan.cetak.pdf', $kav->id) }}" target="_blank"
-                                                class="btn btn-danger btn-sm mr-1">
-                                                <i class="fas fa-file-pdf mr-1"></i> Cetak Denah PDF
-                                            </a>
-                                            <a href="{{ route('siteplan-penjualan.cetak.jpg', $kav->id) }}" target="_blank"
-                                                class="btn btn-primary btn-sm">
-                                                <i class="fas fa-file-image mr-1"></i> Download Denah JPG
-                                            </a>
+                                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                                <div>
+                                                    <a href="{{ route('siteplan-penjualan.cetak.pdf', $kav->id) }}" target="_blank"
+                                                        class="btn btn-danger btn-sm mr-1">
+                                                        <i class="fas fa-file-pdf mr-1"></i> Cetak Denah PDF
+                                                    </a>
+                                                    <a href="{{ route('siteplan-penjualan.cetak.jpg', $kav->id) }}" target="_blank"
+                                                        class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-file-image mr-1"></i> Download Denah JPG
+                                                    </a>
+                                                </div>
+                                                <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                                                    <div class="btn-group btn-group-sm mr-2">
+                                                        <button type="button" class="btn btn-outline-secondary btn-zoom-in" title="Perbesar Denah">
+                                                            <i class="fas fa-search-plus"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-zoom-out" title="Perkecil Denah">
+                                                            <i class="fas fa-search-minus"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-secondary zoom-level-badge" style="min-width: 52px; font-weight: 600;" disabled>
+                                                            100%
+                                                        </button>
+                                                    </div>
+                                                    <button type="button" class="btn btn-success btn-sm reset-button btn-zoom-reset">
+                                                        <i class="fas fa-sync-alt mr-1"></i> Reset Siteplan
+                                                    </button>
+                                                </div>
+                                            </div>
 
                                             {{-- SVG Container khusus lokasi ini --}}
-                                            <div class="svg-container mt-3">
-                                                <button class="reset-button btn btn-success btn-sm"
-                                                    style="position: absolute; top: 10px; left: 10px; z-index: 10;">
-                                                    Reset Siteplan
-                                                </button>
-
+                                            <div class="svg-container mt-2">
                                                 {{-- SVG Header --}}
                                                 @if ($kav->masterSvg)
                                                     {!! str_replace(['[[lebar]]', '[[tinggi]]'], ['100%', '100%'], $kav->masterSvg->header_svg) !!}

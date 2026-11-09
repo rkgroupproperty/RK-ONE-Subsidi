@@ -266,37 +266,6 @@ Route::get('/piutang/sisa-bayar/{id}', [PiutangController::class, 'getSisaBayar'
 
 Route::match(['get', 'post'], 'switch-portal/verify', [AuthController::class, 'verifySwitchPortal'])->name('switch.portal.verify');
 
-Route::get('/system/inspect-subsidi-svg/{secret}', function ($secret) {
-    if ($secret !== 'rk_svg_2026') abort(403);
-    
-    $svgSubsidi = DB::connection('mysql_subsidi')->table('master_svg')->get();
-    $kavlingPetaSubsidiCount = DB::connection('mysql_subsidi')->table('kavling_peta')
-        ->select('id_lokasi', DB::raw('count(*) as c'))
-        ->groupBy('id_lokasi')
-        ->get();
-        
-    $kavlingSample = DB::connection('mysql_subsidi')->table('kavling_peta')
-        ->whereIn('id_lokasi', [1, 2, 3])
-        ->limit(20)
-        ->get(['id', 'id_lokasi', 'kode_kavling', 'blok', 'no']);
-
-    $svgList = [];
-    foreach ($svgSubsidi as $s) {
-        $svgList[] = [
-            'id_lokasi' => $s->id_lokasi,
-            'lebar' => $s->lebar,
-            'tinggi' => $s->tinggi,
-            'header_preview' => substr($s->header_svg ?? '', 0, 150),
-            'header_len' => strlen($s->header_svg ?? ''),
-        ];
-    }
-
-    return response()->json([
-        'svg_list' => $svgList,
-        'kavling_peta_counts' => $kavlingPetaSubsidiCount,
-        'kavling_sample' => $kavlingSample,
-    ]);
-});
 Route::get('/system/db-inspect/{secret}', function ($secret) {
     if ($secret !== 'rk_db_2026') abort(403);
     
@@ -365,12 +334,11 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
         \App\Http\Controllers\Master\LokasiKavlingController::ensureLokasiKavlingPerusahaan();
     } catch (\Throwable $e) {}
 
-    if (request()->has('restore_subsidi')) {
+    if (request()->has('calibrate')) {
         try {
-            $restoreResult = app(\App\Services\SubsidiSiteplanRestoreService::class)->restoreSubsidiSiteplan();
-            $extraLogs['restore_subsidi'] = $restoreResult;
+            $extraLogs['calibrate'] = app(\App\Services\SubsidiSiteplanRestoreService::class)->calibrateViewBoxOnly();
         } catch (\Throwable $e) {
-            $extraLogs['restore_subsidi_error'] = $e->getMessage();
+            $extraLogs['calibrate_error'] = $e->getMessage();
         }
     }
 
@@ -382,14 +350,6 @@ Route::get('/system/clear-cache/{secret}', function ($secret) {
     ]);
 })->name('system.clear-cache');
 
-Route::get('/system/restore-subsidi-siteplan/{secret}', function ($secret, \App\Services\SubsidiSiteplanRestoreService $service) {
-    if ($secret !== 'rk_restore_subsidi_2026') {
-        abort(403, 'Unauthorized access.');
-    }
-    $result = $service->restoreSubsidiSiteplan();
-    return response()->json($result);
-})->name('system.restore-subsidi-siteplan');
-
 Route::get('/system/calibrate-subsidi-siteplan/{secret}', function ($secret, \App\Services\SubsidiSiteplanRestoreService $service) {
     if ($secret !== 'rk_restore_subsidi_2026') {
         abort(403, 'Unauthorized access.');
@@ -397,6 +357,14 @@ Route::get('/system/calibrate-subsidi-siteplan/{secret}', function ($secret, \Ap
     $result = $service->calibrateViewBoxOnly();
     return response()->json($result);
 })->name('system.calibrate-subsidi-siteplan');
+
+Route::get('/system/restore-subsidi-siteplan/{secret}', function ($secret, \App\Services\SubsidiSiteplanRestoreService $service) {
+    if ($secret !== 'rk_restore_subsidi_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+    $result = $service->restoreSubsidiSiteplan();
+    return response()->json($result);
+})->name('system.restore-subsidi-siteplan');
 
 Route::get('/system/fix-lokasi-perusahaan/{secret}', function ($secret) {
     if ($secret !== 'rk_fix_2026') abort(403);
