@@ -185,23 +185,27 @@ class SubsidiSiteplanRestoreService
                         $matrik = trim($cols[24] ?? '');
 
                         if ($kodeKavling !== '') {
-                            $affected = $conn->table('kavling_peta')
+                            $exists = $conn->table('kavling_peta')
                                 ->where('id_lokasi', $idLokasi)
                                 ->where('kode_kavling', $kodeKavling)
-                                ->update([
-                                    'jenis_map' => $jenisMap,
-                                    'map' => $map,
-                                    'matrik' => $matrik,
-                                ]);
+                                ->exists();
 
-                            if ($affected === 0) {
+                            if ($exists) {
+                                $conn->table('kavling_peta')
+                                    ->where('id_lokasi', $idLokasi)
+                                    ->where('kode_kavling', $kodeKavling)
+                                    ->update([
+                                        'jenis_map' => $jenisMap,
+                                        'map' => $map,
+                                        'matrik' => $matrik,
+                                    ]);
+                            } else {
                                 $conn->table('kavling_peta')->insert([
                                     'id_lokasi' => $idLokasi,
                                     'kode_kavling' => $kodeKavling,
                                     'jenis_map' => $jenisMap,
                                     'map' => $map,
                                     'matrik' => $matrik,
-                                    'cluster' => '',
                                     'status' => 0,
                                     'status_ready' => 1,
                                     'tipe_bangunan' => 36,
@@ -233,13 +237,24 @@ class SubsidiSiteplanRestoreService
             @mkdir($svgDir, 0755, true);
         }
 
+        // If siteplan_1.svg does not exist, export it from master_svg where id_lokasi = 1
+        $siteplan1Path = $svgDir . '/siteplan_1.svg';
+        if (!file_exists($siteplan1Path)) {
+            $row1 = DB::connection('mysql_subsidi')->table('master_svg')->where('id_lokasi', 1)->first();
+            if ($row1 && !empty($row1->header_svg)) {
+                $fullSvg1 = $row1->header_xml . "\n" . $row1->header_svg . "\n" . $row1->footer_svg;
+                file_put_contents($siteplan1Path, $fullSvg1);
+                $logs[] = "Berhasil mengekstrak file public/svg/siteplan_1.svg dari master_svg.";
+            }
+        }
+
         // If siteplan_2.svg does not exist, export it from master_svg where id_lokasi = 2
         $siteplan2Path = $svgDir . '/siteplan_2.svg';
         if (!file_exists($siteplan2Path)) {
             $row2 = DB::connection('mysql_subsidi')->table('master_svg')->where('id_lokasi', 2)->first();
             if ($row2 && !empty($row2->header_svg)) {
-                $fullSvg = $row2->header_xml . "\n" . $row2->header_svg . "\n" . $row2->footer_svg;
-                file_put_contents($siteplan2Path, $fullSvg);
+                $fullSvg2 = $row2->header_xml . "\n" . $row2->header_svg . "\n" . $row2->footer_svg;
+                file_put_contents($siteplan2Path, $fullSvg2);
                 $logs[] = "Berhasil mengekstrak file public/svg/siteplan_2.svg dari master_svg.";
             }
         }
