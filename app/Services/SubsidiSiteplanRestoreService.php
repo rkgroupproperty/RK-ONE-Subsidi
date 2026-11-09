@@ -301,4 +301,79 @@ class SubsidiSiteplanRestoreService
             'logs' => $logs
         ];
     }
+
+    public function inspectAlzafa(): array
+    {
+        $conn = DB::connection('mysql_subsidi');
+        $master = $conn->table('master_svg')->where('id_lokasi', 3)->first();
+        $lots = $conn->table('kavling_peta')->where('id_lokasi', 3)->get(['id', 'kode_kavling', 'map', 'matrik', 'status']);
+        
+        $analysis = [];
+        $minX = INF; $maxX = -INF;
+        $minY = INF; $maxY = -INF;
+        $allIdealX = [];
+        $allIdealY = [];
+
+        foreach ($lots as $lot) {
+            $pts = preg_split('/[\s,]+/', trim($lot->map));
+            $xs = []; $ys = [];
+            for ($i = 0; $i < count($pts) - 1; $i += 2) {
+                $x = floatval($pts[$i]);
+                $y = floatval($pts[$i+1]);
+                $xs[] = $x;
+                $ys[] = $y;
+                if ($x < $minX) $minX = $x;
+                if ($x > $maxX) $maxX = $x;
+                if ($y < $minY) $minY = $y;
+                if ($y > $maxY) $maxY = $y;
+            }
+            $centerX = count($xs) ? array_sum($xs) / count($xs) : 0;
+            $centerY = count($ys) ? array_sum($ys) / count($ys) : 0;
+            
+            $matrixVals = [];
+            if (preg_match('/matrix\(([^)]+)\)/', $lot->matrik, $m)) {
+                $matrixVals = array_map('floatval', preg_split('/[\s,]+/', trim($m[1])));
+            }
+            
+            $idealX0 = null;
+            $idealY0 = null;
+            if (count($matrixVals) === 6) {
+                list($a, $b, $c, $d, $e, $f) = $matrixVals;
+                $det = $a * $d - $b * $c;
+                if (abs($det) > 1e-6) {
+                    $dx = $centerX - $e;
+                    $dy = $centerY - $f;
+                    $idealX0 = ($d * $dx - $c * $dy) / $det;
+                    $idealY0 = (-$b * $dx + $a * $dy) / $det;
+                    $allIdealX[] = $idealX0;
+                    $allIdealY[] = $idealY0;
+                }
+            }
+
+            $analysis[] = [
+                'kode' => $lot->kode_kavling,
+                'center' => [round($centerX, 1), round($centerY, 1)],
+                'matrik' => $lot->matrik,
+                'ideal_text_origin' => [$idealX0 ? round($idealX0, 1) : null, $idealY0 ? round($idealY0, 1) : null]
+            ];
+        }
+
+        $avgIdealX = count($allIdealX) ? array_sum($allIdealX) / count($allIdealX) : null;
+        $avgIdealY = count($allIdealY) ? array_sum($allIdealY) / count($allIdealY) : null;
+
+        return [
+            'master' => [
+                'lebar' => $master->lebar ?? null,
+                'tinggi' => $master->tinggi ?? null,
+                'view_box' => $master->view_box ?? null,
+                'header_svg_len' => strlen($master->header_svg ?? ''),
+                'header_svg_preview' => substr($master->header_svg ?? '', 0, 300),
+                'polygon_svg' => $master->polygon_svg ?? null,
+            ],
+            'lot_count' => count($lots),
+            'bbox' => ['minX' => $minX, 'maxX' => $maxX, 'minY' => $minY, 'maxY' => $maxY],
+            'avg_ideal_text_origin' => [round($avgIdealX, 1), round($avgIdealY, 1)],
+            'sample_lots' => array_slice($analysis, 0, 20)
+        ];
+    }
 }
