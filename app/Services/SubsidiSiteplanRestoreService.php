@@ -12,285 +12,15 @@ use Illuminate\Support\Facades\Log;
 class SubsidiSiteplanRestoreService
 {
     /**
-     * Restore original Subsidi siteplan (BIR 2 and BIR 4) in mysql_subsidi.
+     * Restore original Subsidi siteplan (BIR 2, BIR 4, Alzafa) in mysql_subsidi & mysql.
      */
     public function restoreSubsidiSiteplan(): array
     {
-        $logs = [];
-        $sqlPath = database_path('dealsaka.sql');
-
-        if (!file_exists($sqlPath)) {
-            return [
-                'success' => false,
-                'message' => "File dealsaka.sql tidak ditemukan di: {$sqlPath}",
-                'logs' => $logs,
-            ];
-        }
-
-        $targetConnections = ['mysql_subsidi'];
-        try {
-            if (config('database.connections.mysql.database') && config('database.connections.mysql.database') !== config('database.connections.mysql_komersil.database')) {
-                $targetConnections[] = 'mysql';
-            }
-        } catch (\Throwable $e) {}
-
-        $sqlContent = file_get_contents($sqlPath);
-        $logs[] = "Membaca dealsaka.sql (" . strlen($sqlContent) . " bytes)...";
-
-        foreach ($targetConnections as $connName) {
-            try {
-                $conn = DB::connection($connName);
-                $logs[] = "=== Memproses restorasi pada koneksi [{$connName}] ===";
-
-                // 1. Bersihkan kavling komersil yang sempat masuk ke database subsidi
-                $deletedAmmaia = $conn->table('kavling_peta')
-                    ->where('id_lokasi', 1)
-                    ->where(function ($q) {
-                        $q->where('kode_kavling', 'LIKE', 'Luna%')
-                          ->orWhere('kode_kavling', 'LIKE', 'Ivy%')
-                          ->orWhere('kode_kavling', 'LIKE', 'Zora%');
-                    })
-                    ->delete();
-                $logs[] = "Menghapus {$deletedAmmaia} kavling komersil (The Ammaia Hills) yang keliru ada di lokasi 1.";
-
-                $deletedAvana = $conn->table('kavling_peta')
-                    ->where('id_lokasi', 2)
-                    ->where(function ($q) {
-                        $q->where(function ($sub) {
-                            $sub->where('keterangan', 'LIKE', '%Tipe%')
-                                ->whereRaw("kode_kavling REGEXP '^[AB][0-9]+$'");
-                        });
-                    })
-                    ->delete();
-                $logs[] = "Menghapus {$deletedAvana} kavling komersil (Avana Hills) yang keliru ada di lokasi 2.";
-
-                // 2. Pulihkan Master SVG dari dealsaka.sql
-                $this->restoreMasterSvg($conn, $sqlContent, $logs);
-
-                // 3. Pulihkan koordinat kavling_peta untuk id_lokasi 1 dan 2 dari dealsaka.sql
-                $this->restoreKavlingCoordinates($conn, $sqlContent, $logs);
-
-            } catch (\Throwable $e) {
-                $logs[] = "ERROR pada [{$connName}]: " . $e->getMessage() . " (" . $e->getFile() . ":" . $e->getLine() . ")";
-            }
-        }
-
-        // 4. Pastikan file siteplan_1.svg dan siteplan_2.svg tersedia di public/svg
-        $this->ensurePublicSvgFiles($logs);
-
-        // 5. Jalankan ulang sinkronisasi CSV untuk BIR 2 dan BIR 4
-        try {
-            $logs[] = "Menjalankan sinkronisasi ulang Bir2SyncService dari CSV...";
-            Config::set('database.default', 'mysql_subsidi');
-            DB::setDefaultConnection('mysql_subsidi');
-            $bir2Result = app(\App\Services\Bir2SyncService::class)->syncFromCsv(database_path('bir_2_tahap_2.csv'));
-            $logs[] = "Bir2Sync: " . ($bir2Result['status'] ?? 'done');
-        } catch (\Throwable $e) {
-            $logs[] = "Bir2Sync Error: " . $e->getMessage();
-        }
-
-        try {
-            $logs[] = "Menjalankan sinkronisasi ulang Bir4SyncService dari CSV...";
-            Config::set('database.default', 'mysql_subsidi');
-            DB::setDefaultConnection('mysql_subsidi');
-            $bir4Result = app(\App\Services\Bir4SyncService::class)->syncFromCsv(database_path('bir_4.csv'));
-            $logs[] = "Bir4Sync: " . ($bir4Result['status'] ?? 'done');
-        } catch (\Throwable $e) {
-            $logs[] = "Bir4Sync Error: " . $e->getMessage();
-        }
-
-        // 6. Clear optimize cache
-        try {
-            Artisan::call('optimize:clear');
-            $logs[] = "Cache Laravel berhasil dibersihkan.";
-        } catch (\Throwable $e) {}
-
-        return [
-            'success' => true,
-            'message' => 'Restorasi siteplan Subsidi (BIR 2 & BIR 4) selesai dengan sukses!',
-            'logs' => $logs,
-        ];
+        return $this->calibrateViewBoxOnly();
     }
 
     /**
-     * Restore master_svg table rows 1 and 2 from dealsaka.sql
-     */
-    protected function restoreMasterSvg($conn, string $sqlContent, array &$logs): void
-    {
-        $lines = explode("\n", $sqlContent);
-        $masterSvgStatements = [];
-        $inMasterSvg = false;
-        $currentHeader = "";
-        $currentTuples = [];
-
-        foreach ($lines as $line) {
-            $t = trim($line);
-            if (strpos($t, "INSERT INTO `master_svg`") !== false) {
-                $inMasterSvg = true;
-                $currentHeader = $t;
-                $currentTuples = [];
-                continue;
-            }
-            if ($inMasterSvg) {
-                if (substr($t, 0, 1) === '(') {
-                    $currentTuples[] = $t;
-                }
-                if (substr($t, -1) === ';') {
-                    $masterSvgStatements[] = [
-                        'header' => $currentHeader,
-                        'tuples' => $currentTuples
-                    ];
-                    $inMasterSvg = false;
-                }
-            }
-        }
-
-        if (!empty($masterSvgStatements)) {
-            // Group 0 contains tuples for lokasi 1 and 2
-            $group0 = $masterSvgStatements[0];
-            $conn->statement("DELETE FROM `master_svg` WHERE `id_lokasi` IN (1, 2);");
-            $sqlStmt = $group0['header'] . "\n" . implode("\n", $group0['tuples']);
-            $conn->statement($sqlStmt);
-            $logs[] = "Berhasil memulihkan master_svg asli untuk id_lokasi 1 dan 2 dari dealsaka.sql.";
-
-            // Kalibrasi viewBox presisi sesuai blueprint resmi 40000x46000 (BIR 2) dan 40000x60000 (BIR 4)
-            $row1 = $conn->table('master_svg')->where('id_lokasi', 1)->first();
-            if ($row1 && !empty($row1->header_svg)) {
-                $newHeaderSvg1 = preg_replace('/viewBox="[^"]+"/', 'viewBox="0 0 40000 46000"', $row1->header_svg);
-                $newHeaderSvg1 = preg_replace('/height="[^"]+"/', 'height="460mm"', $newHeaderSvg1);
-                $newHeaderSvg1 = preg_replace('/width="[^"]+"/', 'width="400mm"', $newHeaderSvg1);
-                $conn->table('master_svg')->where('id_lokasi', 1)->update([
-                    'header_svg' => $newHeaderSvg1,
-                    'lebar' => 400,
-                    'tinggi' => 460,
-                    'ukuran_dashboard' => 100
-                ]);
-                $logs[] = "viewBox lokasi 1 (BIR 2) dikalibrasi menjadi '0 0 40000 46000'.";
-            }
-
-            $row2 = $conn->table('master_svg')->where('id_lokasi', 2)->first();
-            if ($row2 && !empty($row2->header_svg)) {
-                $newHeaderSvg2 = preg_replace('/viewBox="[^"]+"/', 'viewBox="0 0 40000 60000"', $row2->header_svg);
-                $newHeaderSvg2 = preg_replace('/height="[^"]+"/', 'height="600mm"', $newHeaderSvg2);
-                $newHeaderSvg2 = preg_replace('/width="[^"]+"/', 'width="400mm"', $newHeaderSvg2);
-                $conn->table('master_svg')->where('id_lokasi', 2)->update([
-                    'header_svg' => $newHeaderSvg2,
-                    'lebar' => 400,
-                    'tinggi' => 600,
-                    'ukuran_dashboard' => 100
-                ]);
-                $logs[] = "viewBox lokasi 2 (BIR 4) dikalibrasi menjadi '0 0 40000 60000'.";
-            }
-        } else {
-            $logs[] = "Blok INSERT INTO master_svg tidak ditemukan di dealsaka.sql.";
-        }
-    }
-
-    /**
-     * Restore coordinates for kavling_peta rows where id_lokasi IN (1, 2)
-     */
-    protected function restoreKavlingCoordinates($conn, string $sqlContent, array &$logs): void
-    {
-        $lines = explode("\n", $sqlContent);
-        $inKavling = false;
-        $updatedCount = 0;
-
-        foreach ($lines as $line) {
-            $t = trim($line);
-            if (strpos($t, "INSERT INTO `kavling_peta`") !== false) {
-                $inKavling = true;
-                continue;
-            }
-            if ($inKavling) {
-                if (substr($t, 0, 1) === '(') {
-                    $clean = preg_replace('/^\(|\)[,;]?$/', '', $t);
-                    $cols = str_getcsv($clean, ',', "'", "\\");
-
-                    $idLokasi = (int)($cols[1] ?? 0);
-                    if (in_array($idLokasi, [1, 2])) {
-                        $kodeKavling = trim($cols[7] ?? '');
-                        $jenisMap = trim($cols[22] ?? '');
-                        $map = trim($cols[23] ?? '');
-                        $matrik = trim($cols[24] ?? '');
-
-                        if ($kodeKavling !== '') {
-                            $exists = $conn->table('kavling_peta')
-                                ->where('id_lokasi', $idLokasi)
-                                ->where('kode_kavling', $kodeKavling)
-                                ->exists();
-
-                            if ($exists) {
-                                $conn->table('kavling_peta')
-                                    ->where('id_lokasi', $idLokasi)
-                                    ->where('kode_kavling', $kodeKavling)
-                                    ->update([
-                                        'jenis_map' => $jenisMap,
-                                        'map' => $map,
-                                        'matrik' => $matrik,
-                                    ]);
-                            } else {
-                                $conn->table('kavling_peta')->insert([
-                                    'id_lokasi' => $idLokasi,
-                                    'kode_kavling' => $kodeKavling,
-                                    'jenis_map' => $jenisMap,
-                                    'map' => $map,
-                                    'matrik' => $matrik,
-                                    'status' => 0,
-                                    'status_ready' => 1,
-                                    'tipe_bangunan' => 36,
-                                    'luas_bangunan' => 36,
-                                    'luas_tanah' => 72,
-                                    'hrg_jual' => 168000000,
-                                ]);
-                            }
-                            $updatedCount++;
-                        }
-                    }
-                }
-                if (substr($t, -1) === ';') {
-                    $inKavling = false;
-                }
-            }
-        }
-
-        $logs[] = "Berhasil memperbarui koordinat denah untuk {$updatedCount} kavling di lokasi 1 & 2.";
-    }
-
-    /**
-     * Ensure public/svg files exist for siteplan 1 and 2
-     */
-    protected function ensurePublicSvgFiles(array &$logs): void
-    {
-        $svgDir = public_path('svg');
-        if (!is_dir($svgDir)) {
-            @mkdir($svgDir, 0755, true);
-        }
-
-        // If siteplan_1.svg does not exist, export it from master_svg where id_lokasi = 1
-        $siteplan1Path = $svgDir . '/siteplan_1.svg';
-        if (!file_exists($siteplan1Path)) {
-            $row1 = DB::connection('mysql_subsidi')->table('master_svg')->where('id_lokasi', 1)->first();
-            if ($row1 && !empty($row1->header_svg)) {
-                $fullSvg1 = $row1->header_xml . "\n" . $row1->header_svg . "\n" . $row1->footer_svg;
-                file_put_contents($siteplan1Path, $fullSvg1);
-                $logs[] = "Berhasil mengekstrak file public/svg/siteplan_1.svg dari master_svg.";
-            }
-        }
-
-        // If siteplan_2.svg does not exist, export it from master_svg where id_lokasi = 2
-        $siteplan2Path = $svgDir . '/siteplan_2.svg';
-        if (!file_exists($siteplan2Path)) {
-            $row2 = DB::connection('mysql_subsidi')->table('master_svg')->where('id_lokasi', 2)->first();
-            if ($row2 && !empty($row2->header_svg)) {
-                $fullSvg2 = $row2->header_xml . "\n" . $row2->header_svg . "\n" . $row2->footer_svg;
-                file_put_contents($siteplan2Path, $fullSvg2);
-                $logs[] = "Berhasil mengekstrak file public/svg/siteplan_2.svg dari master_svg.";
-            }
-        }
-    }
-
-    /**
-     * Calibrate viewBox for BIR 2 and BIR 4 without full reseed
+     * Calibrate viewBox, exact headers, and lot templates for BIR 2, BIR 4, and Alzafa
      */
     public function calibrateViewBoxOnly(): array
     {
@@ -302,56 +32,261 @@ class SubsidiSiteplanRestoreService
             }
         } catch (\Throwable $e) {}
 
+        // 1. Baca file blueprint SVG asli dari public/svg
+        $p1 = public_path('svg/siteplan_1.svg');
+        $p2 = public_path('svg/siteplan_2.svg');
+        $p3 = public_path('svg/siteplan_3.svg');
+
+        $c1 = file_exists($p1) ? file_get_contents($p1) : null;
+        $c2 = file_exists($p2) ? file_get_contents($p2) : null;
+        $c3 = file_exists($p3) ? file_get_contents($p3) : null;
+
+        if (!$c1 || !$c2) {
+            return [
+                'success' => false,
+                'message' => 'File blueprint siteplan_1.svg atau siteplan_2.svg tidak ditemukan di public/svg.',
+                'logs' => $logs
+            ];
+        }
+
+        // Ekstraksi header asli (semua elemen sebelum kavling pertama)
+        // Lokasi 1 (BIR 2)
+        $idx1 = strpos($c1, '<g id="_2586081565776">');
+        if ($idx1 === false) {
+            $idx1 = strpos($c1, '<polygon');
+            $idx1 = strrpos(substr($c1, 0, $idx1), '<g');
+        }
+        $header1 = trim(substr($c1, 0, $idx1));
+
+        $polySvg1 = '<g id="_2586081565776">' . "\r\n" .
+                    '   <polygon class="fil3" points="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
+                    '   <g transform="[[3]]">' . "\r\n" .
+                    '    <text x="20000" y="23000"  class="fil4 fnt0">[[4]]</text>' . "\r\n" .
+                    '   </g>' . "\r\n" .
+                    '  </g>';
+        $pathSvg1 = '<g id="_2586081565776">' . "\r\n" .
+                    '   <path class="fil3" d="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
+                    '   <g transform="[[3]]">' . "\r\n" .
+                    '    <text x="20000" y="23000"  class="fil4 fnt0">[[4]]</text>' . "\r\n" .
+                    '   </g>' . "\r\n" .
+                    '  </g>';
+
+        // Lokasi 2 (BIR 4)
+        $idx2 = strpos($c2, '<g id="_2585927598000">');
+        if ($idx2 === false) {
+            $idx2 = strpos($c2, '<polygon');
+            $idx2 = strrpos(substr($c2, 0, $idx2), '<g');
+        }
+        $header2 = trim(substr($c2, 0, $idx2));
+
+        $polySvg2 = '<g id="_2585927598000">' . "\r\n" .
+                    '   <polygon class="fil3_2" points="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
+                    '   <g transform="[[3]]">' . "\r\n" .
+                    '    <text x="20000" y="30000"  class="fil4_2 fnt0_2">[[4]]</text>' . "\r\n" .
+                    '   </g>' . "\r\n" .
+                    '  </g>';
+        $pathSvg2 = '<g id="_2585927598000">' . "\r\n" .
+                    '   <path class="fil3_2" d="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
+                    '   <g transform="[[3]]">' . "\r\n" .
+                    '    <text x="20000" y="30000"  class="fil4_2 fnt0_2">[[4]]</text>' . "\r\n" .
+                    '   </g>' . "\r\n" .
+                    '  </g>';
+
+        // Lokasi 3 (Alzafa 3)
+        $header3 = null;
+        $polySvg3 = null;
+        $pathSvg3 = null;
+        if ($c3) {
+            $idx3 = strpos($c3, '<g id="_2927509423760">');
+            if ($idx3 === false) {
+                $idx3 = strpos($c3, '<polygon');
+                $idx3 = strrpos(substr($c3, 0, $idx3), '<g');
+            }
+            $header3 = trim(substr($c3, 0, $idx3));
+            $polySvg3 = '<g id="_2927509423760">' . "\r\n" .
+                        '   <polygon class="fil3_3" points="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
+                        '   <g transform="[[3]]">' . "\r\n" .
+                        '    <text x="20000" y="16250"  class="fil4_3 fnt0_3">[[4]]</text>' . "\r\n" .
+                        '   </g>' . "\r\n" .
+                        '  </g>';
+            $pathSvg3 = '<g id="_2927509423760">' . "\r\n" .
+                        '   <path class="fil3_3" d="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
+                        '   <g transform="[[3]]">' . "\r\n" .
+                        '    <text x="20000" y="16250"  class="fil4_3 fnt0_3">[[4]]</text>' . "\r\n" .
+                        '   </g>' . "\r\n" .
+                        '  </g>';
+        }
+
+        // 2. Parse koordinat & matrik untuk setiap kavling dari file SVG
+        $lotPattern = '/<polygon[^>]*points="([^"]+)"[^>]*>\s*<g transform="([^"]+)">\s*<text[^>]*>([^<]+)<\/text>/i';
+
+        $lotsBir2 = [];
+        if (preg_match_all($lotPattern, $c1, $m1, PREG_SET_ORDER)) {
+            foreach ($m1 as $match) {
+                $lotsBir2[strtoupper(trim($match[3]))] = [
+                    'map' => trim($match[1]),
+                    'matrik' => trim($match[2]),
+                ];
+            }
+        }
+
+        $lotsBir4 = [];
+        if (preg_match_all($lotPattern, $c2, $m2, PREG_SET_ORDER)) {
+            foreach ($m2 as $match) {
+                $lotsBir4[strtoupper(trim($match[3]))] = [
+                    'map' => trim($match[1]),
+                    'matrik' => trim($match[2]),
+                ];
+            }
+        }
+
+        $lotsAlzafa = [];
+        if ($c3 && preg_match_all($lotPattern, $c3, $m3, PREG_SET_ORDER)) {
+            foreach ($m3 as $match) {
+                $lotsAlzafa[strtoupper(trim($match[3]))] = [
+                    'map' => trim($match[1]),
+                    'matrik' => trim($match[2]),
+                ];
+            }
+        }
+
+        // 3. Terapkan pada koneksi database
         foreach ($targetConnections as $connName) {
             try {
                 $conn = DB::connection($connName);
 
-                // BIR 2 (id_lokasi = 1): viewBox="0 0 40000 46000"
-                $row1 = $conn->table('master_svg')->where('id_lokasi', 1)->first();
-                if ($row1 && !empty($row1->header_svg)) {
-                    $newHeaderSvg1 = preg_replace('/viewBox="[^"]+"/', 'viewBox="0 0 40000 46000"', $row1->header_svg);
-                    $newHeaderSvg1 = preg_replace('/height="[^"]+"/', 'height="460mm"', $newHeaderSvg1);
-                    $newHeaderSvg1 = preg_replace('/width="[^"]+"/', 'width="400mm"', $newHeaderSvg1);
-                    $conn->table('master_svg')->where('id_lokasi', 1)->update([
-                        'header_svg' => $newHeaderSvg1,
+                // A. Bersihkan kavling komersil jika sempat ada di subsidi
+                $conn->table('kavling_peta')
+                    ->where('id_lokasi', 1)
+                    ->where(function ($q) {
+                        $q->where('kode_kavling', 'LIKE', 'Luna%')
+                          ->orWhere('kode_kavling', 'LIKE', 'Ivy%')
+                          ->orWhere('kode_kavling', 'LIKE', 'Zora%');
+                    })
+                    ->delete();
+
+                $conn->table('kavling_peta')
+                    ->where('id_lokasi', 2)
+                    ->where(function ($q) {
+                        $q->where(function ($sub) {
+                            $sub->where('keterangan', 'LIKE', '%Tipe%')
+                                ->whereRaw("kode_kavling REGEXP '^[AB][0-9]+$'");
+                        });
+                    })
+                    ->delete();
+
+                // B. Kalibrasi master_svg Lokasi 1 (BIR 2)
+                $conn->table('master_svg')->updateOrInsert(
+                    ['id_lokasi' => 1],
+                    [
+                        'header_xml' => '<?xml version="1.0" encoding="UTF-8"?>',
+                        'header_svg' => $header1,
+                        'polygon_svg' => $polySvg1,
+                        'path_svg' => $pathSvg1,
+                        'body_svg' => '',
+                        'footer_svg' => " </g>\r\n</svg>",
                         'lebar' => 400,
                         'tinggi' => 460,
                         'ukuran_dashboard' => 100
-                    ]);
-                    $logs[] = "[$connName] viewBox lokasi 1 (BIR 2) dikalibrasi menjadi '0 0 40000 46000'.";
-                }
+                    ]
+                );
+                $logs[] = "[$connName] master_svg lokasi 1 (BIR 2) berhasil diperbarui ke header blueprint asli Corel (400x460mm, center y=23000).";
 
-                // BIR 4 (id_lokasi = 2): viewBox="0 0 40000 60000"
-                $row2 = $conn->table('master_svg')->where('id_lokasi', 2)->first();
-                if ($row2 && !empty($row2->header_svg)) {
-                    $newHeaderSvg2 = preg_replace('/viewBox="[^"]+"/', 'viewBox="0 0 40000 60000"', $row2->header_svg);
-                    $newHeaderSvg2 = preg_replace('/height="[^"]+"/', 'height="600mm"', $newHeaderSvg2);
-                    $newHeaderSvg2 = preg_replace('/width="[^"]+"/', 'width="400mm"', $newHeaderSvg2);
-                    $conn->table('master_svg')->where('id_lokasi', 2)->update([
-                        'header_svg' => $newHeaderSvg2,
+                // C. Kalibrasi master_svg Lokasi 2 (BIR 4)
+                $conn->table('master_svg')->updateOrInsert(
+                    ['id_lokasi' => 2],
+                    [
+                        'header_xml' => '<?xml version="1.0" encoding="UTF-8"?>',
+                        'header_svg' => $header2,
+                        'polygon_svg' => $polySvg2,
+                        'path_svg' => $pathSvg2,
+                        'body_svg' => '',
+                        'footer_svg' => " </g>\r\n</svg>",
                         'lebar' => 400,
                         'tinggi' => 600,
                         'ukuran_dashboard' => 100
-                    ]);
-                    $logs[] = "[$connName] viewBox lokasi 2 (BIR 4) dikalibrasi menjadi '0 0 40000 60000'.";
+                    ]
+                );
+                $logs[] = "[$connName] master_svg lokasi 2 (BIR 4) berhasil diperbarui ke header blueprint asli Corel (400x600mm, center y=30000).";
+
+                // D. Kalibrasi master_svg Lokasi 3 (Alzafa)
+                if ($header3) {
+                    $conn->table('master_svg')->updateOrInsert(
+                        ['id_lokasi' => 3],
+                        [
+                            'header_xml' => '<?xml version="1.0" encoding="UTF-8"?>',
+                            'header_svg' => $header3,
+                            'polygon_svg' => $polySvg3,
+                            'path_svg' => $pathSvg3,
+                            'body_svg' => '',
+                            'footer_svg' => " </g>\r\n</svg>",
+                            'lebar' => 400,
+                            'tinggi' => 325,
+                            'ukuran_dashboard' => 100
+                        ]
+                    );
+                    $logs[] = "[$connName] master_svg lokasi 3 (Alzafa) berhasil diperbarui ke header blueprint asli Corel (400x325mm, center y=16250).";
                 }
 
-                // Alzafa 3 (id_lokasi = 3): viewBox="0 0 40000 32500"
-                $row3 = $conn->table('master_svg')->where('id_lokasi', 3)->first();
-                if ($row3 && !empty($row3->header_svg)) {
-                    $newHeaderSvg3 = preg_replace('/viewBox="[^"]+"/', 'viewBox="0 0 40000 32500"', $row3->header_svg);
-                    $newHeaderSvg3 = preg_replace('/height="[^"]+"/', 'height="325mm"', $newHeaderSvg3);
-                    $newHeaderSvg3 = preg_replace('/width="[^"]+"/', 'width="400mm"', $newHeaderSvg3);
-                    $conn->table('master_svg')->where('id_lokasi', 3)->update([
-                        'header_svg' => $newHeaderSvg3,
-                        'lebar' => 400,
-                        'tinggi' => 325,
-                        'ukuran_dashboard' => 100
-                    ]);
-                    $logs[] = "[$connName] viewBox lokasi 3 (Alzafa) dikalibrasi menjadi '0 0 40000 32500'.";
+                // E. Sinkronisasi koordinat & matrik pada kavling_peta tanpa menghapus data booking
+                $updatedBir2 = 0;
+                foreach ($lotsBir2 as $kode => $geo) {
+                    $upd = $conn->table('kavling_peta')
+                        ->where('id_lokasi', 1)
+                        ->where(function ($q) use ($kode) {
+                            $q->where('kode_kavling', $kode)
+                              ->orWhere('kode_kavling', preg_replace('/^([A-Z]+)0*(\d+)-(0*[\dA-Z]+)$/i', '$1$2-$3', $kode))
+                              ->orWhere('kode_kavling', preg_replace('/^([A-Z]+)(\d+)-(\d+)$/i', '$1$2-0$3', $kode));
+                        })
+                        ->update([
+                            'map' => $geo['map'],
+                            'matrik' => $geo['matrik'],
+                            'jenis_map' => 'polygon',
+                        ]);
+                    if ($upd) $updatedBir2++;
                 }
+                $logs[] = "[$connName] Koordinat & matrik BIR 2 disinkronkan: {$updatedBir2} kavling diperbarui presisi.";
+
+                $updatedBir4 = 0;
+                foreach ($lotsBir4 as $kode => $geo) {
+                    $upd = $conn->table('kavling_peta')
+                        ->where('id_lokasi', 2)
+                        ->where(function ($q) use ($kode) {
+                            $q->where('kode_kavling', $kode)
+                              ->orWhere('kode_kavling', preg_replace('/^([A-Z]+)0*(\d+)-(0*[\dA-Z]+)$/i', '$1$2-$3', $kode))
+                              ->orWhere('kode_kavling', preg_replace('/^([A-Z]+)(\d+)-(\d+)$/i', '$1$2-0$3', $kode));
+                        })
+                        ->update([
+                            'map' => $geo['map'],
+                            'matrik' => $geo['matrik'],
+                            'jenis_map' => 'polygon',
+                        ]);
+                    if ($upd) $updatedBir4++;
+                }
+                $logs[] = "[$connName] Koordinat & matrik BIR 4 disinkronkan: {$updatedBir4} kavling diperbarui presisi.";
+
+                if (!empty($lotsAlzafa)) {
+                    $updatedAlzafa = 0;
+                    foreach ($lotsAlzafa as $kode => $geo) {
+                        $upd = $conn->table('kavling_peta')
+                            ->where('id_lokasi', 3)
+                            ->where(function ($q) use ($kode) {
+                                $q->where('kode_kavling', $kode)
+                                  ->orWhere('kode_kavling', preg_replace('/^([A-Z]+)0*(\d+)-(0*[\dA-Z]+)$/i', '$1$2-$3', $kode))
+                                  ->orWhere('kode_kavling', preg_replace('/^([A-Z]+)(\d+)-(\d+)$/i', '$1$2-0$3', $kode));
+                            })
+                            ->update([
+                                'map' => $geo['map'],
+                                'matrik' => $geo['matrik'],
+                                'jenis_map' => 'polygon',
+                            ]);
+                        if ($upd) $updatedAlzafa++;
+                    }
+                    $logs[] = "[$connName] Koordinat & matrik Alzafa disinkronkan: {$updatedAlzafa} kavling diperbarui presisi.";
+                }
+
             } catch (\Throwable $e) {
-                $logs[] = "[$connName] Error: " . $e->getMessage();
+                $logs[] = "[$connName] Error: " . $e->getMessage() . " (" . $e->getFile() . ":" . $e->getLine() . ")";
             }
         }
 
@@ -362,7 +297,7 @@ class SubsidiSiteplanRestoreService
 
         return [
             'success' => true,
-            'message' => 'Kalibrasi viewBox siteplan Subsidi (BIR 2 & BIR 4) berhasil!',
+            'message' => 'Kalibrasi dan perataan nama kavling & kotak denah Subsidi berhasil 100%!',
             'logs' => $logs
         ];
     }
