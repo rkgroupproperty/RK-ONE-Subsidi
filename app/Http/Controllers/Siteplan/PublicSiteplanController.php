@@ -19,9 +19,11 @@ class PublicSiteplanController extends Controller
      public function index()
     {
         if (session('app_type') === 'komersil') {
-            if (KavlingPeta::whereIn('id_lokasi', [1, 2])->count() < 105 || \App\Models\MasterSVG::whereIn('id_lokasi', [1, 2])->count() < 2) {
-                app(\App\Services\KomersilDatabaseService::class)->seedAvanaHillsSiteplan();
-            }
+            try {
+                if (KavlingPeta::on('mysql_komersil')->whereIn('id_lokasi', [1, 2])->count() < 105 || \App\Models\MasterSVG::on('mysql_komersil')->whereIn('id_lokasi', [1, 2])->count() < 2) {
+                    app(\App\Services\KomersilDatabaseService::class)->seedAvanaHillsSiteplan();
+                }
+            } catch (\Throwable $ignored) {}
         }
 
         $lokasiKavling = LokasiKavling::with(['masterSvg', 'kavlingPeta.customer.progres', 'kavlingPeta.pengajuanHold', 'kavlingPeta.progres'])

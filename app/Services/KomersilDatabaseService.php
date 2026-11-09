@@ -325,11 +325,6 @@ class KomersilDatabaseService
     {
         $logs = [];
         $targetConnections = ['mysql_komersil'];
-        try {
-            if (config('database.connections.mysql_subsidi.database')) {
-                $targetConnections[] = 'mysql_subsidi';
-            }
-        } catch (\Exception $e) {}
 
         foreach ($targetConnections as $connName) {
             try {
