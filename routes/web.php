@@ -366,13 +366,6 @@ Route::get('/system/restore-subsidi-siteplan/{secret}', function ($secret, \App\
     return response()->json($result);
 })->name('system.restore-subsidi-siteplan');
 
-Route::get('/system/inspect-alzafa/{secret}', function ($secret, \App\Services\SubsidiSiteplanRestoreService $service) {
-    if ($secret !== 'rk_inspect_2026') {
-        abort(403, 'Unauthorized access.');
-    }
-    return response()->json($service->inspectAlzafa());
-})->name('system.inspect-alzafa');
-
 Route::get('/system/fix-lokasi-perusahaan/{secret}', function ($secret) {
     if ($secret !== 'rk_fix_2026') abort(403);
 
