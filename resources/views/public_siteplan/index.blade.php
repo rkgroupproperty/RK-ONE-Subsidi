@@ -124,8 +124,8 @@
             min-height: 520px;
             overflow: hidden;
             position: relative;
-            background: #ffffff;
-            border: 2px solid #d1cfcf;
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
             border-radius: 8px;
         }
 
@@ -278,7 +278,11 @@
             fill: #ffffff !important;
         }
 
-        @if (session('app_type') === 'komersil')
+        @php
+            $isKomersil = (str_contains(request()->getHost(), 'komersil') || (session('app_type') === 'komersil' && !str_contains(request()->getHost(), 'subsidi')));
+        @endphp
+
+        @if ($isKomersil)
         /* Styling Komersil - Opacity & Multiply KHUSUS pada overlay kavling interaktif (a.detail-button) */
         a.detail-button polygon,
         a.detail-button path,
@@ -341,7 +345,7 @@
             cursor: pointer !important;
         }
         @else
-        /* Styling Subsidi (Asli 100% Cerah & Jelas: unit Ready tetap Putih #ffffff dengan garis rapi, unit berprogres sesuai warnanya) */
+        /* Styling Subsidi (Asli 100% Cerah, Rapi, & Jelas) */
         polygon.kavling-poly,
         path.kavling-poly,
         polyline.kavling-poly,
@@ -349,11 +353,14 @@
         a.detail-button path,
         a.detail-button polyline {
             transition: fill 0.2s ease, stroke 0.2s ease, filter 0.2s ease;
-            vector-effect: non-scaling-stroke;
+            vector-effect: non-scaling-stroke !important;
             cursor: pointer !important;
+            stroke: #334155 !important;
+            stroke-width: 1.2px !important;
+            stroke-linejoin: round !important;
         }
 
-        /* Blok unit Ready (putih #ffffff) di Subsidi dibuat putih bersih agar tidak tembus ke denah hitam di bawahnya */
+        /* Blok unit Ready (putih #ffffff) di Subsidi berlatar putih bersih dengan garis batas kavling tegas rapi */
         polygon.kavling-poly[style*="#ffffff"],
         polygon.kavling-poly[style*="#FFFFFF"],
         polygon.kavling-poly[style*="fill:#ffffff"],
@@ -379,8 +386,9 @@
         a.detail-button polyline[style*="fill:#ffffff"],
         a.detail-button polyline[style*="fill: #ffffff"] {
             fill: #ffffff !important;
-            stroke: #444444 !important;
-            stroke-width: 1px !important;
+            fill-opacity: 1 !important;
+            stroke: #475569 !important;
+            stroke-width: 1.2px !important;
         }
 
         /* Efek hover interaktif Subsidi */
@@ -390,11 +398,19 @@
         a.detail-button polygon:hover,
         a.detail-button path:hover,
         a.detail-button polyline:hover {
-            fill: rgba(59, 130, 246, 0.45) !important;
+            fill: #93c5fd !important;
+            fill-opacity: 0.8 !important;
             stroke: #1d4ed8 !important;
             stroke-width: 2.5px !important;
             filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.7));
             cursor: pointer !important;
+        }
+
+        /* Pastikan label teks nomor kavling di Subsidi tegas dan mudah dibaca */
+        a.detail-button text {
+            font-family: 'Bahnschrift', 'Segoe UI', Arial, sans-serif !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.4px !important;
         }
         @endif
 
@@ -494,7 +510,7 @@
 
                                             if ($pt->customer) {
                                                 $warna = $pt->customer->progres->warna ?? '#ffffff';
-                                            } elseif ($pt->pengajuanHold || $pt->status == 1) {
+                                            } elseif ($pt->status == 1 || $pt->status == 2 || $pt->pengajuanHold) {
                                                 $warna = '#42f202';
                                             }
                                         @endphp

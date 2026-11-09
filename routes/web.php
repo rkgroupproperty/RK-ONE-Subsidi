@@ -390,6 +390,14 @@ Route::get('/system/restore-subsidi-siteplan/{secret}', function ($secret, \App\
     return response()->json($result);
 })->name('system.restore-subsidi-siteplan');
 
+Route::get('/system/calibrate-subsidi-siteplan/{secret}', function ($secret, \App\Services\SubsidiSiteplanRestoreService $service) {
+    if ($secret !== 'rk_restore_subsidi_2026') {
+        abort(403, 'Unauthorized access.');
+    }
+    $result = $service->calibrateViewBoxOnly();
+    return response()->json($result);
+})->name('system.calibrate-subsidi-siteplan');
+
 Route::get('/system/fix-lokasi-perusahaan/{secret}', function ($secret) {
     if ($secret !== 'rk_fix_2026') abort(403);
 

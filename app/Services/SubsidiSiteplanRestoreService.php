@@ -152,6 +152,31 @@ class SubsidiSiteplanRestoreService
             $sqlStmt = $group0['header'] . "\n" . implode("\n", $group0['tuples']);
             $conn->statement($sqlStmt);
             $logs[] = "Berhasil memulihkan master_svg asli untuk id_lokasi 1 dan 2 dari dealsaka.sql.";
+
+            // Kalibrasi viewBox presisi agar pas membingkai seluruh kavling BIR 2 dan BIR 4
+            $row1 = $conn->table('master_svg')->where('id_lokasi', 1)->first();
+            if ($row1 && !empty($row1->header_svg)) {
+                $newHeaderSvg1 = preg_replace('/viewBox="[^"]+"/', 'viewBox="3000 0 35500 45500"', $row1->header_svg);
+                $newHeaderSvg1 = preg_replace('/height="[^"]+"/', 'height="455mm"', $newHeaderSvg1);
+                $conn->table('master_svg')->where('id_lokasi', 1)->update([
+                    'header_svg' => $newHeaderSvg1,
+                    'tinggi' => 455,
+                    'ukuran_dashboard' => 100
+                ]);
+                $logs[] = "viewBox lokasi 1 dikalibrasi menjadi '3000 0 35500 45500' agar pas dan utuh.";
+            }
+
+            $row2 = $conn->table('master_svg')->where('id_lokasi', 2)->first();
+            if ($row2 && !empty($row2->header_svg)) {
+                $newHeaderSvg2 = preg_replace('/viewBox="[^"]+"/', 'viewBox="1500 1500 35000 57000"', $row2->header_svg);
+                $newHeaderSvg2 = preg_replace('/height="[^"]+"/', 'height="570mm"', $newHeaderSvg2);
+                $conn->table('master_svg')->where('id_lokasi', 2)->update([
+                    'header_svg' => $newHeaderSvg2,
+                    'tinggi' => 570,
+                    'ukuran_dashboard' => 100
+                ]);
+                $logs[] = "viewBox lokasi 2 dikalibrasi menjadi '1500 1500 35000 57000' agar pas dan utuh.";
+            }
         } else {
             $logs[] = "Blok INSERT INTO master_svg tidak ditemukan di dealsaka.sql.";
         }
@@ -258,5 +283,64 @@ class SubsidiSiteplanRestoreService
                 $logs[] = "Berhasil mengekstrak file public/svg/siteplan_2.svg dari master_svg.";
             }
         }
+    }
+
+    /**
+     * Calibrate viewBox for BIR 2 and BIR 4 without full reseed
+     */
+    public function calibrateViewBoxOnly(): array
+    {
+        $logs = [];
+        $targetConnections = ['mysql_subsidi'];
+        try {
+            if (config('database.connections.mysql.database') && config('database.connections.mysql.database') !== config('database.connections.mysql_komersil.database')) {
+                $targetConnections[] = 'mysql';
+            }
+        } catch (\Throwable $e) {}
+
+        foreach ($targetConnections as $connName) {
+            try {
+                $conn = DB::connection($connName);
+
+                // BIR 2 (id_lokasi = 1): viewBox="3000 0 35500 45500"
+                $row1 = $conn->table('master_svg')->where('id_lokasi', 1)->first();
+                if ($row1 && !empty($row1->header_svg)) {
+                    $newHeaderSvg1 = preg_replace('/viewBox="[^"]+"/', 'viewBox="3000 0 35500 45500"', $row1->header_svg);
+                    $newHeaderSvg1 = preg_replace('/height="[^"]+"/', 'height="455mm"', $newHeaderSvg1);
+                    $conn->table('master_svg')->where('id_lokasi', 1)->update([
+                        'header_svg' => $newHeaderSvg1,
+                        'tinggi' => 455,
+                        'ukuran_dashboard' => 100
+                    ]);
+                    $logs[] = "[$connName] viewBox lokasi 1 dikalibrasi menjadi '3000 0 35500 45500'.";
+                }
+
+                // BIR 4 (id_lokasi = 2): viewBox="1500 1500 35000 57000"
+                $row2 = $conn->table('master_svg')->where('id_lokasi', 2)->first();
+                if ($row2 && !empty($row2->header_svg)) {
+                    $newHeaderSvg2 = preg_replace('/viewBox="[^"]+"/', 'viewBox="1500 1500 35000 57000"', $row2->header_svg);
+                    $newHeaderSvg2 = preg_replace('/height="[^"]+"/', 'height="570mm"', $newHeaderSvg2);
+                    $conn->table('master_svg')->where('id_lokasi', 2)->update([
+                        'header_svg' => $newHeaderSvg2,
+                        'tinggi' => 570,
+                        'ukuran_dashboard' => 100
+                    ]);
+                    $logs[] = "[$connName] viewBox lokasi 2 dikalibrasi menjadi '1500 1500 35000 57000'.";
+                }
+            } catch (\Throwable $e) {
+                $logs[] = "[$connName] Error: " . $e->getMessage();
+            }
+        }
+
+        try {
+            Artisan::call('optimize:clear');
+            $logs[] = "Cache Laravel berhasil dibersihkan.";
+        } catch (\Throwable $e) {}
+
+        return [
+            'success' => true,
+            'message' => 'Kalibrasi viewBox siteplan Subsidi (BIR 2 & BIR 4) berhasil!',
+            'logs' => $logs
+        ];
     }
 }
