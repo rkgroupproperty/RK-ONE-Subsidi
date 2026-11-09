@@ -92,30 +92,36 @@ class SubsidiSiteplanRestoreService
                     '   </g>' . "\r\n" .
                     '  </g>';
 
-        // Lokasi 3 (Alzafa 3)
-        $header3 = null;
-        $polySvg3 = null;
-        $pathSvg3 = null;
-        if ($c3) {
-            $idx3 = strpos($c3, '<g id="_2927509423760">');
-            if ($idx3 === false) {
-                $idx3 = strpos($c3, '<polygon');
-                $idx3 = strrpos(substr($c3, 0, $idx3), '<g');
-            }
-            $header3 = trim(substr($c3, 0, $idx3));
-            $polySvg3 = '<g id="_2927509423760">' . "\r\n" .
-                        '   <polygon class="fil3_3" points="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
-                        '   <g transform="[[3]]">' . "\r\n" .
-                        '    <text x="20000" y="16250"  class="fil4_3 fnt0_3">[[4]]</text>' . "\r\n" .
-                        '   </g>' . "\r\n" .
-                        '  </g>';
-            $pathSvg3 = '<g id="_2927509423760">' . "\r\n" .
-                        '   <path class="fil3_3" d="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
-                        '   <g transform="[[3]]">' . "\r\n" .
-                        '    <text x="20000" y="16250"  class="fil4_3 fnt0_3">[[4]]</text>' . "\r\n" .
-                        '   </g>' . "\r\n" .
-                        '  </g>';
-        }
+        // Lokasi 3 (Alzafa Residence Tahap 3)
+        // Bersihkan seluruh path / jalan asing dari De Alaska Serinity
+        // Gunakan viewBox 0 0 40000 42000 (lebar 400mm x tinggi 420mm) agar seluruh 245 kavling E1..E12 pas
+        $header3 = '<svg id="svg-image-3" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="400mm" height="420mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"' . "\r\n" .
+                   'viewBox="0 0 40000 42000"' . "\r\n" .
+                   ' xmlns:xlink="http://www.w3.org/1999/xlink">' . "\r\n" .
+                   ' <defs>' . "\r\n" .
+                   '  <style type="text/css">' . "\r\n" .
+                   '   <![CDATA[' . "\r\n" .
+                   '    .fil4_3 {fill:#222222;font-family:\'Bahnschrift\',\'Segoe UI\',sans-serif;font-weight:bold;}' . "\r\n" .
+                   '    .fil3_3 {fill:#EEEEEF;fill-rule:nonzero}' . "\r\n" .
+                   '    .fnt0_3 {font-weight:bold;font-size:420px;font-family:\'Bahnschrift\',\'Segoe UI\',sans-serif;text-anchor:middle;dominant-baseline:central;}' . "\r\n" .
+                   '   ]]>' . "\r\n" .
+                   '  </style>' . "\r\n" .
+                   ' </defs>' . "\r\n" .
+                   ' <g id="Layer_x0020_1">' . "\r\n" .
+                   '  <metadata id="CorelCorpID_0Corel-Layer"/>';
+
+        $polySvg3 = '<g id="_2927509423760">' . "\r\n" .
+                    '   <polygon class="fil3_3" points="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
+                    '   <g transform="[[3]]">' . "\r\n" .
+                    '    <text x="20540" y="24850" class="fil4_3 fnt0_3" text-anchor="middle" dominant-baseline="central">[[4]]</text>' . "\r\n" .
+                    '   </g>' . "\r\n" .
+                    '  </g>';
+        $pathSvg3 = '<g id="_2927509423760">' . "\r\n" .
+                    '   <path class="fil3_3" d="[[1]]" style="fill:[[2]]"/>' . "\r\n" .
+                    '   <g transform="[[3]]">' . "\r\n" .
+                    '    <text x="20540" y="24850" class="fil4_3 fnt0_3" text-anchor="middle" dominant-baseline="central">[[4]]</text>' . "\r\n" .
+                    '   </g>' . "\r\n" .
+                    '  </g>';
 
         // 2. Parse koordinat & matrik untuk setiap kavling dari file SVG
         $lotPattern = '/<polygon[^>]*points="([^"]+)"[^>]*>\s*<g transform="([^"]+)">\s*<text[^>]*>([^<]+)<\/text>/i';
@@ -221,11 +227,37 @@ class SubsidiSiteplanRestoreService
                             'body_svg' => '',
                             'footer_svg' => " </g>\r\n</svg>",
                             'lebar' => 400,
-                            'tinggi' => 325,
+                            'tinggi' => 420,
                             'ukuran_dashboard' => 100
                         ]
                     );
-                    $logs[] = "[$connName] master_svg lokasi 3 (Alzafa) berhasil diperbarui ke header blueprint asli Corel (400x325mm, center y=16250).";
+                    $logs[] = "[$connName] master_svg lokasi 3 (Alzafa) berhasil diperbarui (400x420mm, center x=20540, y=24850, background asing dihapus 100%).";
+
+                    // Sync & buat file public/svg/siteplan_3.svg yang bersih dengan 245 kavling Alzafa asli
+                    try {
+                        $alzafaLots = $conn->table('kavling_peta')
+                            ->where('id_lokasi', 3)
+                            ->orderBy('id', 'asc')
+                            ->get(['kode_kavling', 'map', 'matrik']);
+
+                        if ($alzafaLots->isNotEmpty()) {
+                            $svgLines = [];
+                            $svgLines[] = $header3;
+                            foreach ($alzafaLots as $lot) {
+                                $svgLines[] = '  <g id="_2927509423760">';
+                                $svgLines[] = '   <polygon class="fil3_3" points="' . $lot->map . '" style="fill:#ffffff"/>';
+                                $svgLines[] = '   <g transform="' . $lot->matrik . '">';
+                                $svgLines[] = '    <text x="20540" y="24850" class="fil4_3 fnt0_3" text-anchor="middle" dominant-baseline="central">' . $lot->kode_kavling . '</text>';
+                                $svgLines[] = '   </g>';
+                                $svgLines[] = '  </g>';
+                            }
+                            $svgLines[] = " </g>\r\n</svg>";
+                            file_put_contents(public_path('svg/siteplan_3.svg'), implode("\r\n", $svgLines));
+                            $logs[] = "[$connName] File public/svg/siteplan_3.svg berhasil disinkronkan dengan " . $alzafaLots->count() . " kavling Alzafa asli.";
+                        }
+                    } catch (\Throwable $err) {
+                        $logs[] = "[$connName] Catatan sync siteplan_3.svg: " . $err->getMessage();
+                    }
                 }
 
                 // E. Sinkronisasi koordinat & matrik pada kavling_peta tanpa menghapus data booking
