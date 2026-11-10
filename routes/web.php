@@ -366,6 +366,57 @@ Route::get('/system/restore-subsidi-siteplan/{secret}', function ($secret, \App\
     return response()->json($result);
 })->name('system.restore-subsidi-siteplan');
 
+Route::get('/system/debug-akad-info/{secret}', function ($secret) {
+    if ($secret !== 'rk_debug_2026') abort(403);
+    
+    $conn = 'mysql_subsidi';
+    $akads = DB::connection($conn)->table('akad')->get();
+    $detailAkadCount = DB::connection($conn)->table('detail_akad')->count();
+    $totalCustStatus3 = DB::connection($conn)->table('customer')->where('id_status_progres', 3)->where('stt_arsip', 0)->count();
+    
+    $targetLokasiIds = DB::connection($conn)->table('lokasi_kavling')
+        ->whereIn('stt_tampil', [1, 3])
+        ->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills'])
+        ->pluck('id')->toArray();
+
+    $now = \Carbon\Carbon::now('Asia/Jakarta');
+    $startDateStr = $now->copy()->startOfMonth()->toDateString();
+    $endDateStr = $now->copy()->endOfMonth()->toDateString();
+
+    $akadInPeriod = \App\Models\Customer::on($conn)->whereIn('id_lokasi', $targetLokasiIds)
+        ->where('stt_arsip', 0)
+        ->whereHas('akadDetail.akad', function ($qa) use ($startDateStr, $endDateStr) {
+            $qa->whereBetween('tgl_akad', [$startDateStr, $endDateStr]);
+        })
+        ->count();
+
+    // Check detail akads in period
+    $detailsInPeriod = DB::connection($conn)->table('detail_akad')
+        ->join('akad', 'detail_akad.id_akad', '=', 'akad.id')
+        ->whereBetween('akad.tgl_akad', [$startDateStr, $endDateStr])
+        ->select('detail_akad.*', 'akad.tgl_akad')
+        ->get();
+
+    // Check any akads ever
+    $allAkadDates = DB::connection($conn)->table('akad')->select('id', 'tgl_akad', 'keterangan')->orderBy('tgl_akad', 'desc')->get();
+
+    // Check customer tanggal_verif in November 2026
+    $custNov2026 = DB::connection($conn)->table('customer')
+        ->whereBetween('tanggal_verif', [$startDateStr, $endDateStr])
+        ->count();
+
+    return response()->json([
+        'totalCustStatus3' => $totalCustStatus3,
+        'targetLokasiIds' => $targetLokasiIds,
+        'current_month' => $startDateStr . ' to ' . $endDateStr,
+        'akadInPeriod_whereHas' => $akadInPeriod,
+        'detailAkadCount' => $detailAkadCount,
+        'detailsInPeriod' => $detailsInPeriod,
+        'allAkadDates' => $allAkadDates,
+        'custNov2026' => $custNov2026,
+    ]);
+});
+
 Route::get('/system/fix-lokasi-perusahaan/{secret}', function ($secret) {
     if ($secret !== 'rk_fix_2026') abort(403);
 
