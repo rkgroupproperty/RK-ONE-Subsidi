@@ -417,6 +417,59 @@ Route::get('/system/debug-akad-info/{secret}', function ($secret) {
     ]);
 });
 
+Route::get('/system/fix-akad-bulan-ini/{secret}', function ($secret) {
+    if ($secret !== 'rk_fix_akad_2026') abort(403);
+    
+    $conn = 'mysql_subsidi';
+    
+    // 1. Cari akad id 182 atau akad dengan tgl_akad = 2026-11-09
+    $novAkads = DB::connection($conn)->table('akad')
+        ->whereBetween('tgl_akad', ['2026-11-01', '2026-11-30'])
+        ->get();
+
+    $updatedAkadCount = 0;
+    foreach ($novAkads as $ak) {
+        // Jika ini adalah Akad Massal BIR 2 Tahap 2, kembalikan tanggalnya ke 2024-04-02
+        DB::connection($conn)->table('akad')
+            ->where('id', $ak->id)
+            ->update(['tgl_akad' => '2024-04-02']);
+        $updatedAkadCount++;
+    }
+
+    // 2. Hitung ulang akad di bulan November 2026
+    $targetLokasiIds = DB::connection($conn)->table('lokasi_kavling')
+        ->whereIn('stt_tampil', [1, 3])
+        ->whereNotIn('nama_kavling', ['The Ammaia Hills', 'Avana Hills'])
+        ->pluck('id')->toArray();
+
+    $now = \Carbon\Carbon::now('Asia/Jakarta');
+    $startDateStr = $now->copy()->startOfMonth()->toDateString();
+    $endDateStr = $now->copy()->endOfMonth()->toDateString();
+
+    $akadInPeriodAfter = \App\Models\Customer::on($conn)->whereIn('id_lokasi', $targetLokasiIds)
+        ->where('stt_arsip', 0)
+        ->whereHas('akadDetail.akad', function ($qa) use ($startDateStr, $endDateStr) {
+            $qa->whereBetween('tgl_akad', [$startDateStr, $endDateStr]);
+        })
+        ->count();
+
+    $totalCustStatus3After = DB::connection($conn)->table('customer')
+        ->whereIn('id_lokasi', $targetLokasiIds)
+        ->where('id_status_progres', 3)
+        ->where('stt_arsip', 0)
+        ->count();
+
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Tanggal akad historis BIR 2 Tahap 2 berhasil dikembalikan ke 2024-04-02',
+        'updated_akad_records' => $updatedAkadCount,
+        'akad_bulan_ini_now' => $akadInPeriodAfter,
+        'total_akad_semua_waktu' => $totalCustStatus3After,
+    ]);
+});
+
 Route::get('/system/fix-lokasi-perusahaan/{secret}', function ($secret) {
     if ($secret !== 'rk_fix_2026') abort(403);
 

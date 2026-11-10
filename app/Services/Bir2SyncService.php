@@ -101,7 +101,7 @@ class Bir2SyncService
             // Default Akad Event
             $defaultAkad = Akad::firstOrCreate(
                 ['keterangan' => 'Akad Massal Bukit Intan Residence 2 Tahap 2'],
-                ['tgl_akad' => Carbon::now('Asia/Jakarta')->toDateString()]
+                ['tgl_akad' => '2024-04-02']
             );
 
             // Buka dan baca CSV
@@ -323,7 +323,7 @@ class Bir2SyncService
                 switch ($idStatusProgres) {
                     case 3: // AKAD / CASH
                         $this->stats['akad_synced']++;
-                        $tglAkadParsed = $this->parseDate($jadwalAkad) ?: Carbon::now('Asia/Jakarta')->toDateString();
+                        $tglAkadParsed = $this->parseDate($jadwalAkad) ?: '2024-04-02';
 
                         $akadEvent = Akad::firstOrCreate(
                             ['tgl_akad' => $tglAkadParsed],
