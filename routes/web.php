@@ -167,10 +167,42 @@ Route::get('/system/db-inspect/{secret}', function ($secret) {
         }
     }
 
+    $kavlingStats = [];
+    foreach (['mysql_subsidi', 'mysql'] as $c) {
+        try {
+            $kav1 = DB::connection($c)->table('kavling_peta')->where('id_lokasi', 1)->select('kode_kavling', 'id_customer')->get();
+            $kav3 = DB::connection($c)->table('kavling_peta')->where('id_lokasi', 3)->select('kode_kavling', 'id_customer')->get();
+            $ms1 = DB::connection($c)->table('master_svg')->where('id_lokasi', 1)->first();
+            $ms3 = DB::connection($c)->table('master_svg')->where('id_lokasi', 3)->first();
+            $kavlingStats[$c] = [
+                'lokasi_1_total' => $kav1->count(),
+                'lokasi_1_with_customer' => $kav1->whereNotNull('id_customer')->count(),
+                'lokasi_1_sample_codes' => $kav1->pluck('kode_kavling')->take(30),
+                'lokasi_1_master_svg' => [
+                    'lebar' => $ms1->lebar ?? null,
+                    'tinggi' => $ms1->tinggi ?? null,
+                    'header_len' => strlen($ms1->header_svg ?? ''),
+                ],
+                'lokasi_3_total' => $kav3->count(),
+                'lokasi_3_with_customer' => $kav3->whereNotNull('id_customer')->count(),
+                'lokasi_3_sample_codes' => $kav3->pluck('kode_kavling')->take(30),
+                'lokasi_3_master_svg' => [
+                    'lebar' => $ms3->lebar ?? null,
+                    'tinggi' => $ms3->tinggi ?? null,
+                    'header_len' => strlen($ms3->header_svg ?? ''),
+                ],
+            ];
+            break;
+        } catch (\Throwable $e) {
+            $kavlingStats[$c] = $e->getMessage();
+        }
+    }
+
     return response()->json([
         'db_configs' => $dbConfigs,
         'env_info' => $envInfo,
         'lokasi_per_conn' => $lokasiPerConn,
+        'kavling_stats' => $kavlingStats,
     ]);
 });
 Route::get('/system/clear-cache/{secret}', function ($secret) {
