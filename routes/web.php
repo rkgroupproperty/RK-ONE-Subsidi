@@ -1203,4 +1203,179 @@ Route::get('/system/sync-bir-4/{secret}', function ($secret) {
     return response()->json($result);
 })->name('system.sync-bir-4');
 
+Route::get('/system/restore-siteplan-corel/{secret}', function ($secret) {
+    if ($secret !== 'rk_sync_2026') abort(403);
+
+    $conns = ['mysql_subsidi', 'mysql'];
+    $results = [];
+
+    // 1. Baca public/svg/siteplan_1.svg untuk Lokasi 1 (BIR 2)
+    $svg1Path = public_path('svg/siteplan_1.svg');
+    if (!file_exists($svg1Path)) {
+        return response()->json(['error' => 'public/svg/siteplan_1.svg not found'], 404);
+    }
+    $svg1Content = file_get_contents($svg1Path);
+
+    // Header BIR 2 (sebelum kavling pertama)
+    $marker1 = '<g id="_2903845185600">';
+    $idx1 = strpos($svg1Content, $marker1);
+    if ($idx1 === false) {
+        return response()->json(['error' => 'Marker not found in siteplan_1.svg'], 500);
+    }
+    $headerSvg1 = trim(substr($svg1Content, 0, $idx1));
+    // Ganti width dan height dengan [[lebar]] dan [[tinggi]]
+    $headerSvg1 = preg_replace('/width="[^"]+"/', 'width="[[lebar]]"', $headerSvg1);
+    $headerSvg1 = preg_replace('/height="[^"]+"/', 'height="[[tinggi]]"', $headerSvg1);
+
+    $polyTemplate1 = '<g id="_2903845185600"><polygon class="fil5" points="[[1]]" style="fill:[[2]]"/><g transform="[[3]]"><text x="20000" y="21500" class="fil4 fnt1">[[4]]</text></g></g>';
+    $pathTemplate1 = '<g id="_2903845185600"><path class="fil5" d="[[1]]" style="fill:[[2]]"/><g transform="[[3]]"><text x="20000" y="21500" class="fil4 fnt1">[[4]]</text></g></g>';
+    $footerSvg1 = ' </g>' . "\r\n" . '</svg>';
+
+    // Ekstrak 192 kavling dari siteplan_1.svg
+    preg_match_all('/<g id="_2903845185600">\s*<(polygon|path) class="fil5" (?:points|d)="([^"]+)" style="fill:([^"]+)"\s*\/>\s*<g transform="([^"]+)">\s*<text x="20000" y="21500"\s+class="fil4 fnt1">([^<]+)<\/text>\s*<\/g>\s*<\/g>/s', $svg1Content, $matches1, PREG_SET_ORDER);
+
+    // 2. Header bersih Alzafa (Lokasi 3)
+    $headerSvg3 = '<svg id="svg-image-3" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="[[lebar]]" height="[[tinggi]]" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"' . "\r\n"
+        . 'viewBox="0 0 40000 42000"' . "\r\n"
+        . ' xmlns:xlink="http://www.w3.org/1999/xlink">' . "\r\n"
+        . ' <defs>' . "\r\n"
+        . '  <style type="text/css">' . "\r\n"
+        . '   <![CDATA[' . "\r\n"
+        . '    .fil4_3 {fill:#222222;font-family:\'Bahnschrift\',\'Segoe UI\',sans-serif;font-weight:bold;}' . "\r\n"
+        . '    .fil3_3 {fill:#EEEEEF;fill-rule:nonzero;stroke:#332C2B;stroke-width:25;stroke-linejoin:round;}' . "\r\n"
+        . '    .fnt0_3 {font-weight:bold;font-size:420px;font-family:\'Bahnschrift\',\'Segoe UI\',sans-serif;text-anchor:middle;dominant-baseline:central;}' . "\r\n"
+        . '   ]]>' . "\r\n"
+        . '  </style>' . "\r\n"
+        . ' </defs>' . "\r\n"
+        . ' <g id="Layer_x0020_1">' . "\r\n"
+        . '  <metadata id="CorelCorpID_0Corel-Layer"/>';
+    $polyTemplate3 = '<g id="_3"><polygon class="fil3_3" points="[[1]]" style="fill:[[2]]"/><text x="0" y="0" transform="[[3]]" class="fil4_3 fnt0_3">[[4]]</text></g>';
+    $footerSvg3 = ' </g>' . "\r\n" . '</svg>';
+
+    foreach ($conns as $conn) {
+        try {
+            // Update MasterSVG Lokasi 1
+            \Illuminate\Support\Facades\DB::connection($conn)->table('master_svg')->updateOrInsert(
+                ['id_lokasi' => 1],
+                [
+                    'header_svg' => $headerSvg1,
+                    'polygon_svg' => $polyTemplate1,
+                    'path_svg' => $pathTemplate1,
+                    'polyline_svg' => $polyTemplate1,
+                    'footer_svg' => $footerSvg1,
+                    'lebar' => 400,
+                    'tinggi' => 430,
+                ]
+            );
+
+            // Update MasterSVG Lokasi 3 (Alzafa)
+            \Illuminate\Support\Facades\DB::connection($conn)->table('master_svg')->updateOrInsert(
+                ['id_lokasi' => 3],
+                [
+                    'header_svg' => $headerSvg3,
+                    'polygon_svg' => $polyTemplate3,
+                    'path_svg' => $polyTemplate3,
+                    'polyline_svg' => $polyTemplate3,
+                    'footer_svg' => $footerSvg3,
+                    'lebar' => 400,
+                    'tinggi' => 420,
+                ]
+            );
+
+            // Update Kavling Lokasi 1 (BIR 2)
+            $validKavlingCodes = [];
+            $updatedCount = 0;
+            $insertedCount = 0;
+
+            foreach ($matches1 as $m) {
+                $tag = $m[1];
+                $mapCoords = trim($m[2]);
+                $matrik = trim($m[4]);
+                $kode = trim($m[5]);
+                $validKavlingCodes[] = $kode;
+
+                // Cek apakah ada kavling dengan kode ini di lokasi 1
+                $existing = \Illuminate\Support\Facades\DB::connection($conn)->table('kavling_peta')
+                    ->where('id_lokasi', 1)
+                    ->where('kode_kavling', $kode)
+                    ->first();
+
+                if ($existing) {
+                    \Illuminate\Support\Facades\DB::connection($conn)->table('kavling_peta')
+                        ->where('id', $existing->id)
+                        ->update([
+                            'jenis_map' => $tag,
+                            'map' => $mapCoords,
+                            'matrik' => $matrik,
+                        ]);
+                    $updatedCount++;
+                } else {
+                    $parts = explode('-', $kode);
+                    $blok = $parts[0] ?? $kode;
+                    $no = $parts[1] ?? '01';
+                    \Illuminate\Support\Facades\DB::connection($conn)->table('kavling_peta')->insert([
+                        'id_lokasi' => 1,
+                        'kode_kavling' => $kode,
+                        'blok' => $blok,
+                        'no' => $no,
+                        'tipe_bangunan' => 36,
+                        'luas_bangunan' => 36,
+                        'luas_tanah' => 72,
+                        'hrg_jual' => 168000000,
+                        'status' => 0,
+                        'jenis_map' => $tag,
+                        'map' => $mapCoords,
+                        'matrik' => $matrik,
+                    ]);
+                    $insertedCount++;
+                }
+            }
+
+            // Bersihkan kavling lokasi 1 yang bukan bagian dari 192 kavling Corel asli
+            // Jika ada relasi customer, set jenis_map=null dan map=null agar tidak muncul di denah SVG
+            // Jika tidak ada relasi customer, hapus barisnya
+            $extraKavlings = \Illuminate\Support\Facades\DB::connection($conn)->table('kavling_peta')
+                ->where('id_lokasi', 1)
+                ->whereNotIn('kode_kavling', $validKavlingCodes)
+                ->get();
+
+            $cleanedExtras = 0;
+            foreach ($extraKavlings as $ek) {
+                if ($ek->id_customer) {
+                    \Illuminate\Support\Facades\DB::connection($conn)->table('kavling_peta')
+                        ->where('id', $ek->id)
+                        ->update(['map' => null, 'matrik' => null, 'jenis_map' => null]);
+                } else {
+                    \Illuminate\Support\Facades\DB::connection($conn)->table('kavling_peta')
+                        ->where('id', $ek->id)
+                        ->delete();
+                }
+                $cleanedExtras++;
+            }
+
+            $results[$conn] = [
+                'status' => 'success',
+                'lokasi_1' => [
+                    'total_corel' => count($matches1),
+                    'updated' => $updatedCount,
+                    'inserted' => $insertedCount,
+                    'cleaned_extras' => $cleanedExtras,
+                ],
+                'lokasi_3' => [
+                    'master_svg_cleaned' => true,
+                ]
+            ];
+            break;
+        } catch (\Throwable $e) {
+            $results[$conn] = 'Error: ' . $e->getMessage();
+        }
+    }
+
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+
+    return response()->json([
+        'result' => $results,
+        'message' => 'Siteplan BIR 2 and Alzafa restored successfully to pure Corel/SVG!'
+    ]);
+})->name('system.restore-siteplan-corel');
 
